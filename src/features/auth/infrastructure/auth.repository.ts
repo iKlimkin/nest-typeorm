@@ -3,19 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Equal, FindOptionsWhere, MoreThanOrEqual, Repository } from 'typeorm';
 import { OutputId } from '../../../domain/likes.types';
 import { UserAccount } from '../../admin/domain/entities/user-account.entity';
-import { PasswordRecoveryType } from '../api/models/auth-input.models.ts/input-password-rec.type';
 import { UserRecoveryType } from '../api/models/auth.output.models/auth.output.models';
 import { LoginOrEmailType } from '../api/models/auth.output.models/auth.user.types';
 import { CreateTempAccountDto } from '../api/models/temp-account.models.ts/temp-account-models';
 import { TemporaryUserAccount } from '../domain/entities/temp-account.entity';
-
-type PasswordsType = {
-  passwordHash: string;
-  passwordSalt: string;
-};
-
-type UpdatePasswordDto = Pick<PasswordRecoveryType, 'recoveryCode'> &
-  PasswordsType;
+import { UpdatePasswordDto } from '../api/models/auth-input.models.ts/password-recovery.types';
 
 @Injectable()
 export class AuthRepository {

@@ -26,59 +26,52 @@ export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
     command: CreateUserCommand,
   ): Promise<LayerNoticeInterceptor<UserIdType> | null> {
     const { email, login, password } = command.createDto;
+
+    const notice = new LayerNoticeInterceptor<UserIdType>();
+
     try {
-      const notice = new LayerNoticeInterceptor<UserIdType>();
-
-      try {
-        await validateOrRejectModel(command, CreateUserCommand);
-      } catch (error) {
-        notice.addError(
-          'invalid model',
-          'CreateUserUseCase',
-          GetErrors.IncorrectModel,
-        );
-        return notice;
-      }
-
-      const { passwordSalt, passwordHash } =
-        await this.bcryptAdapter.createHash(password);
-
-      const userDto: UsersSQLDto = {
-        login,
-        email,
-        password_salt: passwordSalt,
-        password_hash: passwordHash,
-        confirmation_code: uuidv4(),
-        confirmation_expiration_date: add(new Date(), {
-          hours: 1,
-          minutes: 15,
-        }),
-        is_confirmed: false,
-      };
-
-      const result = await this.usersRepo.createUser(userDto);
-
-      if (!result) {
-        notice.addError(
-          'Could not create user',
-          'db',
-          CreateUserErrors.DatabaseFail,
-        );
-      } else {
-        notice.addData({ userId: result.userId });
-      }
-
-      const event = new EmailNotificationEvent(
-        email,
-        userDto.confirmation_code,
+      await validateOrRejectModel(command, CreateUserCommand);
+    } catch (error) {
+      notice.addError(
+        'invalid model',
+        'CreateUserUseCase',
+        GetErrors.IncorrectModel,
       );
-
-      this.eventBus.publish(event);
-
       return notice;
-    } catch (e) {
-      console.error(`Error during user registration: ${e.message}`);
-      return null;
     }
+
+    const { passwordSalt, passwordHash } =
+      await this.bcryptAdapter.createHash(password);
+
+    const userDto: UsersSQLDto = {
+      login,
+      email,
+      password_salt: passwordSalt,
+      password_hash: passwordHash,
+      confirmation_code: uuidv4(),
+      confirmation_expiration_date: add(new Date(), {
+        hours: 1,
+        minutes: 15,
+      }),
+      is_confirmed: false,
+    };
+
+    const result = await this.usersRepo.createUser(userDto);
+
+    if (!result) {
+      notice.addError(
+        'Could not create user',
+        'db',
+        CreateUserErrors.DatabaseFail,
+      );
+    } else {
+      notice.addData({ userId: result.userId });
+    }
+
+    const event = new EmailNotificationEvent(email, userDto.confirmation_code);
+
+    this.eventBus.publish(event);
+
+    return notice;
   }
 }

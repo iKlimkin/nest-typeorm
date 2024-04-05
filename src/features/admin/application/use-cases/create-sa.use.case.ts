@@ -36,7 +36,7 @@ export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
       return notice;
     }
 
-    const { email, login, password } = command.saDTO;
+    const { email, login, password } = command.createData;
 
     const { passwordSalt, passwordHash } =
       await this.bcryptAdapter.createHash(password);

@@ -1,5 +1,6 @@
-import { UserInfoType } from '../../../../auth/api/models/auth-input.models.ts/user-info';
+import { UserInfoType } from '../../../../auth/api/models/auth-input.models.ts/security-user-session-info';
 import { SecurityViewDeviceModel } from '../security.view.models/security.view.types';
+import { SecurityInfoDto } from './security-info.model';
 
 export interface SecurityInterface {
   getUserActiveSessions(
@@ -7,7 +8,7 @@ export interface SecurityInterface {
   ): Promise<SecurityViewDeviceModel[]>;
   terminateOtherUserSessions(userInfo: UserInfoType): Promise<void>;
   terminateSpecificSession(
-    deviceId: string,
+    data: SecurityInfoDto,
     userInfo: UserInfoType,
   ): Promise<void>;
 }

@@ -24,7 +24,7 @@ import { ObjectIdPipe } from '../../../../infra/pipes/valid-objectId.pipe';
 import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { UsersSqlQueryRepository } from '../../../admin/api/query-repositories/users.query.sql-repo';
-import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/user-info';
+import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/security-user-session-info';
 import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
 import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';

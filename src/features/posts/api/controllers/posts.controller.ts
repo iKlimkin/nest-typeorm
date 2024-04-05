@@ -20,7 +20,7 @@ import { SetUserIdGuard } from '../../../../infra/guards/set-user-id.guard';
 import { ObjectIdPipe } from '../../../../infra/pipes/valid-objectId.pipe';
 import { getStatusCounting } from '../../../../infra/utils/status-counter';
 import { UsersQueryRepository } from '../../../admin/api/query-repositories/users.query.repo';
-import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/user-info';
+import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/security-user-session-info';
 import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
 import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';

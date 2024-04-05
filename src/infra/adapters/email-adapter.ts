@@ -1,20 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import nodemailer, { SentMessageInfo } from 'nodemailer';
-import { EmailEnvSettingTypes } from '../application/managers/email-manager';
-
-type InputEmailData = {
-  emailSettings: any;
-  from: string;
-  subject: string;
-  message: string;
-  email: string;
-};
+import { EmailData, EmailEnvSettingTypes } from '../../domain/notification-model';
 
 @Injectable()
 export class EmailAdapter {
   constructor() {}
 
-  async sendEmail(inputData: InputEmailData): Promise<SentMessageInfo | null> {
+  async sendEmail(inputData: EmailData): Promise<SentMessageInfo | null> {
     const transporter = this.createTransport(inputData.emailSettings);
 
     try {
@@ -31,7 +23,7 @@ export class EmailAdapter {
 
   private async sendMail(
     transporter: SentMessageInfo,
-    inputData: Omit<InputEmailData, 'emailSettings'>,
+    inputData: Omit<EmailData, 'emailSettings'>,
   ): Promise<SentMessageInfo> {
     return transporter.sendMail({
       from: inputData.from,

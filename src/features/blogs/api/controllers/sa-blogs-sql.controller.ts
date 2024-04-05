@@ -38,7 +38,7 @@ import { InputBlogModel } from '../models/input.blog.models/create.blog.model';
 import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
 import { BlogsSqlQueryRepo } from '../query-repositories/blogs.query.sql-repo';
 import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
-import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/user-info';
+import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/security-user-session-info';
 import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
 import { BlogsTORRepo } from '../../infrastructure/blogs.typeorm-repository';
 import { BlogsTORQueryRepo } from '../query-repositories/blogs.query.typeorm-repo';

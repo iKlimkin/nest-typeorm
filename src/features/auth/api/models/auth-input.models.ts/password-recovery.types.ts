@@ -15,3 +15,11 @@ export class RegistrationEmailDto {
   @Matches(emailMatches)
   email: string;
 }
+
+export type PasswordsType = {
+  passwordHash: string;
+  passwordSalt: string;
+};
+
+export type UpdatePasswordDto = Pick<PasswordRecoveryType, 'recoveryCode'> &
+  PasswordsType;

@@ -9,6 +9,6 @@ export class DeleteActiveSessionUseCase
   constructor(private securityRepo: SecurityRepository) {}
 
   async execute(command: DeleteActiveSessionCommand): Promise<boolean> {
-    return this.securityRepo.deleteSpecificSession(command.deviceId);
+    return this.securityRepo.deleteSpecificSession(command.deleteData.deviceId);
   }
 }

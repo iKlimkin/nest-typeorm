@@ -17,7 +17,7 @@ import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { CurrentUserId } from '../../../../infra/decorators/current-user-id.decorator';
 import { SetUserIdGuard } from '../../../../infra/guards/set-user-id.guard';
 import { ObjectIdPipe } from '../../../../infra/pipes/valid-objectId.pipe';
-import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/user-info';
+import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/security-user-session-info';
 import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
 import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
 import { InputLikeStatusModel } from '../../../posts/api/models/input.posts.models/input-post..model';

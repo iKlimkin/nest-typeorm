@@ -14,7 +14,7 @@ import { AuthQueryRepository } from '../../api/query-repositories/auth.query.rep
 import { CreateUserSessionUseCase } from '../../../security/application/use-cases/create-user-session.use-case';
 import { CreateTemporaryAccountUseCase } from '../../application/use-cases/create-temporary-account.use-case';
 import { SendRecoveryMsgUseCase } from '../../application/use-cases/send-recovery-msg.use-case';
-import { UpdateIssuedTokenUseCase } from '../../../security/application/use-cases/update-issued-token.use-case';
+import { UpdateIssuedTokenUseCase } from '../../application/use-cases/update-issued-token.use-case';
 import { UpdatePasswordUseCase } from '../../application/use-cases/update-password.use-case';
 import { UpdatePasswordTemporaryAccountUseCase } from '../../application/use-cases/update-password-temporary-account.use-case';
 import { RecoveryPasswordUseCase } from '../../application/use-cases/recovery-password.use-case';
@@ -29,6 +29,8 @@ import {
   AccessTokenStrategy,
   RefreshTokenStrategy,
 } from '../guards/strategies/jwt-strategy';
+import { DeleteSAUseCase } from '../../../admin/application/use-cases/delete-sa.use.case';
+import { DeleteOtherUserSessionsUseCase } from '../../../security/application/use-cases/delete-other-user-sessions.use-case';
 
 export const usersProviders: Provider[] = [
   UsersRepo,
@@ -49,6 +51,7 @@ export const securityProviders: Provider[] = [
 ];
 
 export const authUseCases: Provider[] = [
+  DeleteSAUseCase,
   CreateSAUseCase,
   CreateUserUseCase,
   VerificationCredentialsUseCase,
@@ -62,6 +65,7 @@ export const authUseCases: Provider[] = [
   ConfirmEmailUseCase,
   UpdateConfirmationCodeUseCase,
   DeleteActiveSessionUseCase,
+  DeleteOtherUserSessionsUseCase,
 ];
 
 export const securityUseCases: Provider[] = [];

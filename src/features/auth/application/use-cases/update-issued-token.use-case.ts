@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { SecurityRepository } from '../../infrastructure/security.repository';
+import { SecurityRepository } from '../../../security/infrastructure/security.repository';
 import { UpdateIssuedTokenCommand } from './commands/update-Issued-token.command';
 
 @CommandHandler(UpdateIssuedTokenCommand)
@@ -10,9 +10,9 @@ export class UpdateIssuedTokenUseCase
 
   async execute(command: UpdateIssuedTokenCommand): Promise<boolean> {
     return this.securityRepo.updateIssuedToken(
-      command.deviceId,
-      command.issuedAt,
-      command.expirationDate,
+      command.updateData.deviceId,
+      command.updateData.issuedAt,
+      command.updateData.expirationDate,
     );
   }
 }

@@ -7,7 +7,7 @@ import {
   JwtTokens,
 } from '../api/models/auth-input.models.ts/jwt.types';
 import { jwtConstants } from '../infrastructure/guards/constants';
-import { UserInfoType } from '../api/models/auth-input.models.ts/user-info';
+import { UserInfoType } from '../api/models/auth-input.models.ts/security-user-session-info';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()

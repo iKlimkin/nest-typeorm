@@ -7,7 +7,7 @@ const getConfig = (
     ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
     REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
   },
-  emailSetting: {
+  emailSettings: {
     EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
     EMAIL_USER: process.env.EMAIL_USER,
     EMAIL_SERVICE: process.env.EMAIL_SERVICE,

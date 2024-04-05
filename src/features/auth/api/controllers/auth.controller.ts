@@ -21,7 +21,7 @@ import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-h
 import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
 import { SessionCreationDto } from '../../../security/api/models/security-input.models/create-session.model';
 import { DeleteActiveSessionCommand } from '../../../security/application/use-cases/commands/delete-active-session.command';
-import { UpdateIssuedTokenCommand } from '../../../security/application/use-cases/commands/update-Issued-token.command';
+import { UpdateIssuedTokenCommand } from '../../application/use-cases/commands/update-Issued-token.command';
 import { AuthService } from '../../application/auth.service';
 import { ConfirmEmailCommand } from '../../application/use-cases/commands/confirm-email.command';
 import { CreateTemporaryAccountCommand } from '../../application/use-cases/commands/create-temp-account.command';
@@ -36,11 +36,11 @@ import { AccessTokenGuard } from '../../infrastructure/guards/accessToken.guard'
 import { CustomThrottlerGuard } from '../../infrastructure/guards/custom-throttler.guard';
 import { LocalAuthGuard } from '../../infrastructure/guards/local-auth.guard';
 import { RefreshTokenGuard } from '../../infrastructure/guards/refreshToken.guard';
-import { RegistrationEmailDto } from '../models/auth-input.models.ts/input-password-rec.type';
-import { RecoveryPassDto } from '../models/auth-input.models.ts/input-recovery.model';
-import { RegistrationCodeDto } from '../models/auth-input.models.ts/input-registration-code.model';
-import { CreateUserDto } from '../models/auth-input.models.ts/input-registration.model';
-import { UserInfoType } from '../models/auth-input.models.ts/user-info';
+import { RegistrationEmailDto } from '../models/auth-input.models.ts/password-recovery.types';
+import { RecoveryPassDto } from '../models/auth-input.models.ts/recovery.model';
+import { RegistrationCodeDto } from '../models/auth-input.models.ts/registration-code.model';
+import { CreateUserDto } from '../models/auth-input.models.ts/user-registration.model';
+import { UserSessionDto } from '../models/auth-input.models.ts/security-user-session-info';
 import { UserProfileType } from '../models/auth.output.models/auth.output.models';
 import { AuthQueryRepository } from '../query-repositories/auth.query.repo';
 import { CreateSessionCommand } from '../../../security/application/use-cases/commands/create-session.command';
@@ -62,7 +62,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
-    @CurrentUserInfo() userInfo: UserInfoType,
+    @CurrentUserInfo() userInfo: UserSessionDto,
     @GetClientInfo() clientInfo: ClientInfo,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -106,7 +106,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('refresh-token')
   async refreshToken(
-    @CurrentUserInfo() userInfo: UserInfoType,
+    @CurrentUserInfo() userInfo: UserSessionDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { userId, deviceId } = userInfo;
@@ -120,11 +120,11 @@ export class AuthController {
     const issuedAt = new Date(userInfoAfterRefresh!.iat * 1000);
     const expirationDate = new Date(userInfoAfterRefresh!.exp * 1000);
 
-    const command = new UpdateIssuedTokenCommand(
+    const command = new UpdateIssuedTokenCommand({
       deviceId,
       issuedAt,
       expirationDate,
-    );
+    });
 
     await this.commandBus.execute<UpdateIssuedTokenCommand, boolean>(command);
 
@@ -253,7 +253,7 @@ export class AuthController {
   @UseGuards(AccessTokenGuard)
   @Get('me')
   async getProfile(
-    @CurrentUserInfo() userInfo: UserInfoType,
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ): Promise<UserProfileType> {
     const user = await this.authRepo.getUserById(userInfo.userId);
 
@@ -268,8 +268,8 @@ export class AuthController {
   @UseGuards(RefreshTokenGuard)
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async logout(@CurrentUserInfo() userInfo: UserInfoType) {
-    const command = new DeleteActiveSessionCommand(userInfo.deviceId);
+  async logout(@CurrentUserInfo() userInfo: UserSessionDto) {
+    const command = new DeleteActiveSessionCommand(userInfo);
     await this.commandBus.execute(command);
   }
 }

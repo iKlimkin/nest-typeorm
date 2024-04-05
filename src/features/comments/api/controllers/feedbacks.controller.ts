@@ -16,7 +16,7 @@ import { CurrentUserId } from '../../../../infra/decorators/current-user-id.deco
 import { SetUserIdGuard } from '../../../../infra/guards/set-user-id.guard';
 import { CommentsViewModel } from '../models/comments.view.models/comments.view-model.type';
 import { CommandBus } from '@nestjs/cqrs';
-import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/user-info';
+import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/security-user-session-info';
 import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
 import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
 import { InputLikeStatusModel } from '../../../posts/api/models/input.posts.models/input-post..model';
