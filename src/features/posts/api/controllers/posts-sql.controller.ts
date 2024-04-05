@@ -35,13 +35,13 @@ import { CreateCommentSqlCommand } from '../../../comments/application/use-cases
 import { CreatePostSqlCommand } from '../../application/use-cases/commands/create-post-sql.command';
 import { DeletePostSqlCommand } from '../../application/use-cases/commands/delete-post-sql.command';
 import { UpdatePostReactionSqlCommand } from '../../application/use-cases/commands/update-post-reaction-sql.command';
-import { UpdatePostSqlCommand } from '../../application/use-cases/commands/update-post-sql.command';
+import { UpdatePostSqlCommand } from '../../application/use-cases/commands/update-post.command';
 import { InputPostModel } from '../models/input.posts.models/create.post.model';
 import { InputLikeStatusModel } from '../models/input.posts.models/input-post..model';
 import { PostsQueryFilter } from '../models/output.post.models/posts-query.filter';
 import { PostViewModelType } from '../models/post.view.models/post-view-model.type';
 import { PostsSqlQueryRepo } from '../query-repositories/posts-query.sql-repo';
-import { PostsTORQueryRepo } from '../query-repositories/posts-query.typeorm-repo';
+import { PostsTORQueryRepo } from '../query-repositories/posts.query.repo';
 import { FeedbacksQueryTORRepo } from '../../../comments/api/query-repositories/feedbacks.query.typeorm-repository';
 import { UsersQueryRepo } from '../../../admin/infrastructure/users.query.repo';
 

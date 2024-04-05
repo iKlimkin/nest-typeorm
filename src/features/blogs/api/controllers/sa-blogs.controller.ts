@@ -2,11 +2,9 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
-  InternalServerErrorException,
   NotFoundException,
   Param,
   Post,
@@ -18,41 +16,35 @@ import { CommandBus } from '@nestjs/cqrs';
 import { OutputId } from '../../../../domain/likes.types';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { CurrentUserId } from '../../../../infra/decorators/current-user-id.decorator';
-import { SetUserIdGuard } from '../../../../infra/guards/set-user-id.guard';
-import { ObjectIdPipe } from '../../../../infra/pipes/valid-objectId.pipe';
-import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
+import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
 import { InputPostModelByBlogId } from '../../../posts/api/models/input.posts.models/create.post.model';
 import { PostsQueryFilter } from '../../../posts/api/models/output.post.models/posts-query.filter';
 import { PostViewModelType } from '../../../posts/api/models/post.view.models/post-view-model.type';
-import { PostsSqlQueryRepo } from '../../../posts/api/query-repositories/posts-query.sql-repo';
-import { CreatePostSqlCommand } from '../../../posts/application/use-cases/commands/create-post-sql.command';
+import { PostsQueryRepo } from '../../../posts/api/query-repositories/posts.query.repo';
+import { CreatePostCommand } from '../../../posts/application/use-cases/commands/create-post-sql.command';
 import { DeletePostSqlCommand } from '../../../posts/application/use-cases/commands/delete-post-sql.command';
-import { UpdatePostSqlCommand } from '../../../posts/application/use-cases/commands/update-post-sql.command';
-import { CreateSABlogSqlCommand } from '../../application/use-case/commands/create-sa-blog-sql.command';
-import { DeleteBlogSqlCommand } from '../../application/use-case/commands/delete-blog-sql.command';
-import { UpdateSABlogSqlCommand } from '../../application/use-case/commands/update-sa-blog-sql.command copy';
+import { UpdatePostSqlCommand } from '../../../posts/application/use-cases/commands/update-post.command';
+import { CreateSABlogCommand } from '../../application/use-case/commands/create-sa-blog.command';
+
 import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
-import { InputBlogModel } from '../models/input.blog.models/create.blog.model';
 import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
-import { BlogsSqlQueryRepo } from '../query-repositories/blogs.query.sql-repo';
-import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
-import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/security-user-session-info';
-import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
-import { BlogsTORRepo } from '../../infrastructure/blogs.typeorm-repository';
-import { BlogsTORQueryRepo } from '../query-repositories/blogs.query.typeorm-repo';
-import { PostsTORQueryRepo } from '../../../posts/api/query-repositories/posts-query.typeorm-repo';
+import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
+import { SetUserIdGuard } from '../../../auth/infrastructure/guards/set-user-id.guard';
+import { CreateBlogInputDto } from '../models/input.blog.models/create.blog.model';
+import { UpdateBlogInputDto } from '../models/input.blog.models/update-blog-models';
+import { UpdateBlogCommand } from '../../application/use-case/commands/update-blog.command';
+import { UpdateSABlogCommand } from '../../application/use-case/commands/update-sa-blog.command';
+import { DeleteSABlogCommand } from '../../application/use-case/commands/delete-sa-blog.command';
 
 // @UseGuards(AccessTokenGuard)
 @UseGuards(BasicSAAuthGuard)
 @Controller('sa/blogs')
 export class SABlogsController {
   constructor(
-    private readonly blogsSqlQueryRepo: BlogsSqlQueryRepo,
-    private readonly blogsQueryRepo: BlogsTORQueryRepo,
-    private readonly postsSqlQueryRepo: PostsSqlQueryRepo,
-    private readonly postsQueryRepo: PostsTORQueryRepo,
+    private readonly blogsQueryRepo: BlogsQueryRepo,
+    private readonly postsQueryRepo: PostsQueryRepo,
     private readonly commandBus: CommandBus,
   ) {}
 
@@ -68,9 +60,7 @@ export class SABlogsController {
   }
 
   @Get(':id')
-  async getBlogById(
-    @Param('id', ObjectIdPipe) blogId: string,
-  ): Promise<BlogViewModelType> {
+  async getBlogById(@Param('id') blogId: string): Promise<BlogViewModelType> {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
 
     if (!blog) throw new NotFoundException('blog not found');
@@ -83,7 +73,7 @@ export class SABlogsController {
   async getPosts(
     //@CurrentUserInfo() userInfo: UserInfoType,
     @CurrentUserId() userId: string,
-    @Param('blogId', ObjectIdPipe) blogId: string,
+    @Param('blogId') blogId: string,
     @Query() query: PostsQueryFilter,
   ): Promise<PaginationViewModel<PostViewModelType>> {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
@@ -108,17 +98,17 @@ export class SABlogsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createBlog(
-    @Body() createBlogModel: InputBlogModel,
+    @Body() data: CreateBlogInputDto,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ): Promise<BlogViewModelType> {
-    const command = new CreateSABlogSqlCommand({
-      ...createBlogModel,
+    const command = new CreateSABlogCommand({
+      ...data,
       // userId: userInfo.userId,
     });
 
     const blog = await this.commandBus.execute<
-      CreateSABlogSqlCommand,
-      OutputId
+      CreateSABlogCommand,
+      OutputId | null
     >(command);
 
     return (await this.blogsQueryRepo.getBlogById(blog.id))!;
@@ -127,7 +117,7 @@ export class SABlogsController {
   @Post(':id/posts')
   @HttpCode(HttpStatus.CREATED)
   async createPost(
-    @Param('id', ObjectIdPipe) blogId: string,
+    @Param('id') blogId: string,
     @Body() body: InputPostModelByBlogId,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ): Promise<PostViewModelType> {
@@ -141,19 +131,19 @@ export class SABlogsController {
     //   throw new ForbiddenException();
     // }
 
-    const command = new CreatePostSqlCommand({
+    const command = new CreatePostCommand({
       ...body,
       blogId,
       blogTitle: blog.name,
     });
 
     const post = await this.commandBus.execute<
-      CreatePostSqlCommand,
+      CreatePostCommand,
       LayerNoticeInterceptor<OutputId | null>
     >(command);
 
     if (post.hasError()) {
-      const errors = handleErrors(post.code, post.extensions);
+      const errors = handleErrors(post.code, post.extensions[0]);
       throw errors.error;
     }
 
@@ -193,10 +183,9 @@ export class SABlogsController {
   async updateBlog(
     @Param('id') blogId: string,
     //@CurrentUserInfo() userInfo: UserInfoType,
-    @Body() inputBlogModel: InputBlogModel,
+    @Body() data: UpdateBlogInputDto,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
-    console.log(blog);
 
     if (!blog) {
       throw new NotFoundException();
@@ -206,10 +195,10 @@ export class SABlogsController {
     //   throw new ForbiddenException();
     // }
 
-    const command = new UpdateSABlogSqlCommand({ ...inputBlogModel, blogId });
+    const command = new UpdateSABlogCommand({ ...data, blogId });
 
     const result = await this.commandBus.execute<
-      UpdateSABlogSqlCommand,
+      UpdateBlogCommand,
       LayerNoticeInterceptor<boolean>
     >(command);
 
@@ -222,7 +211,7 @@ export class SABlogsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteBlog(
-    @Param('id', ObjectIdPipe) blogId: string,
+    @Param('id') blogId: string,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
@@ -235,15 +224,15 @@ export class SABlogsController {
     //   throw new ForbiddenException();
     // }
 
-    const command = new DeleteBlogSqlCommand(blogId);
+    const command = new DeleteSABlogCommand(blogId);
     await this.commandBus.execute(command);
   }
 
   @Delete(':id/posts/:postId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deletePost(
-    @Param('id', ObjectIdPipe) blogId: string,
-    @Param('postId', ObjectIdPipe) postId: string,
+    @Param('id') blogId: string,
+    @Param('postId') postId: string,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);

@@ -1,3 +1,3 @@
-export class DeleteBlogSqlCommand {
+export class DeleteSABlogCommand {
   constructor(public blogId: string) {}
 }

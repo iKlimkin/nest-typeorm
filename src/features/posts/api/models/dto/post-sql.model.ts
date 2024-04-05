@@ -1,4 +1,4 @@
-export class PostDtoSqlModel {
+export class PostCreationDto {
   constructor(public createPostDto: CreatePostSqlType) {}
 }
 

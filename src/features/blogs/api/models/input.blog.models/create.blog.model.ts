@@ -26,7 +26,7 @@ export type CreateBlogModelType = {
   websiteUrl: string;
 };
 
-export class InputBlogModel {
+export class CreateBlogInputDto {
   /**
    * name of the blog
    */
@@ -48,7 +48,7 @@ export class InputBlogModel {
   websiteUrl: string;
 }
 
-export class InputBlogSAModel extends InputBlogModel {
+export class InputBlogSAModel extends CreateBlogInputDto {
   userId: string;
 
   // @iSValidField(loginLength, loginMatch)

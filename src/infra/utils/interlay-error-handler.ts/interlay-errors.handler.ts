@@ -8,23 +8,23 @@ import { GetErrors } from './error-constants';
 
 export const handleErrors = (
   code: number,
-  extension: LayerInterceptorExtension[],
+  extension: LayerInterceptorExtension,
 ) => {
   switch (code) {
     case GetErrors.DatabaseFail:
       return {
-        message: 'Internal Server Error',
-        error: new InternalServerErrorException(extension[0]),
+        message: extension.message,
+        error: new InternalServerErrorException(`Error occurred in ${extension.key}`),
       };
     case GetErrors.NotFound:
       return {
-        message: 'Not Found',
-        error: new NotFoundException(extension[0]),
+        message: extension.message,
+        error: new NotFoundException(extension.key),
       };
     case GetErrors.IncorrectModel:
       return {
-        message: 'Bad Request',
-        error: new BadRequestException(extension[0]),
+        message: extension.message,
+        error: new BadRequestException(extension.key),
       };
     default:
       return {

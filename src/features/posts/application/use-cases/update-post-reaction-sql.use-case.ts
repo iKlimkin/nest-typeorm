@@ -7,7 +7,7 @@ import { getStatusCounting } from '../../../../infra/utils/status-counter';
 import { PostsSqlRepository } from '../../infrastructure/posts.sql-repository';
 import { UpdatePostReactionSqlCommand } from './commands/update-post-reaction-sql.command';
 import { UserAccountsTORRepo } from '../../../admin/infrastructure/users.repo';
-import { PostsTorRepo } from '../../infrastructure/posts.typeorm-repository';
+import { PostsTorRepo } from '../../infrastructure/posts.repository';
 
 @CommandHandler(UpdatePostReactionSqlCommand)
 export class UpdatePostReactionSqlUseCase

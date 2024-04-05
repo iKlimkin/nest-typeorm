@@ -8,9 +8,9 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
   constructor(private configService: ConfigService) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
-    const nodeEnv = this.configService.getOrThrow<ConfigurationType>('ENV', {
+    const nodeEnv = this.configService.getOrThrow<ConfigurationType>('env', {
       infer: true,
-    }).env;
+    });
 
     if (
       (nodeEnv && nodeEnv.toUpperCase() === 'DEVELOPMENT') ||
@@ -18,9 +18,6 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
     ) {
       console.log('dev');
       return this.createLocalConnection();
-    } else {
-      console.log('prod');
-      return this.createRemoteConnection();
     }
   }
 
@@ -33,20 +30,9 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
       logging: ['query', 'error'],
       username: 'NodeJS',
       password: 'NodeJS',
-      database: 'InteractHubNest',
-      autoLoadEntities: true,
-      synchronize: false,
-    };
-  }
-
-  private createRemoteConnection(): TypeOrmModuleOptions {
-    console.log(this.configService.get('PG_REMOTE_URL'));
-    return {
-      url: this.configService.get<string>('PG_REMOTE_URL') || '',
-      type: 'postgres',
+      database: 'nest-typeorm',
       autoLoadEntities: true,
       synchronize: true,
-      ssl: true,
     };
   }
 }

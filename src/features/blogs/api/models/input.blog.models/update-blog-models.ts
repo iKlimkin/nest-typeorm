@@ -1,21 +1,34 @@
-export type UpdateBlogModel = {
+import { Matches, IsNotEmpty, Length } from 'class-validator';
+import {
+  nameLength,
+  descriptionLength,
+  urlMatching,
+  urlLength,
+} from '../../../../../domain/validation.constants';
+import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-string';
+
+export class UpdateBlogInputDto {
   /**
-   * blog's name
+   * name of the blog
    */
+  @iSValidField(nameLength)
   name: string;
 
   /**
-   * description of the blog
+   * description of the blog.
    */
+  @iSValidField(descriptionLength)
   description: string;
 
   /**
-   * websiteUrl of existing blog
+   * websiteUrl for the blog.
    */
+  @Matches(urlMatching) // @IsUrl()
+  @IsNotEmpty()
+  @Length(urlLength.min, urlLength.max)
   websiteUrl: string;
-};
+}
 
-export type UpdateBlogCommandType = UpdateBlogModel & {
+export class UpdateBlogDto extends UpdateBlogInputDto {
   blogId: string;
-};
-
+}

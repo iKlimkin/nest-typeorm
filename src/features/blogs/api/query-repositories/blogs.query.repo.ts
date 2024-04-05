@@ -1,79 +1,84 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
-import { BaseModel } from '../../../../infra/utils/base-query-pagination-model';
 import { getPagination } from '../../../../infra/utils/get-pagination';
-import { getSearchTerm } from '../../../../infra/utils/search-term-finder';
-import { Blog, BlogModelType } from '../../domain/entities/blog.schema';
-import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
-import { BlogDBType, BlogType } from '../models/output.blog.models/blog.models';
+import { Blog } from '../../domain/entities/blog.entity';
 import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
-import { ObjectId } from 'mongodb';
-import { Types } from 'mongoose';
+import { getBlogSqlViewModel } from '../models/output.blog.models/blog-sql.view.model';
+import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
 
 @Injectable()
 export class BlogsQueryRepo {
-  constructor(@InjectModel(Blog.name) private BlogModel: BlogModelType) {}
+  constructor(
+    @InjectRepository(Blog) private readonly blogs: Repository<Blog>,
+  ) {}
 
   async getAllBlogs(
-    inputData: BlogsQueryFilter,
-  ): Promise<PaginationViewModel<BlogType>> {
+    queryOptions: BlogsQueryFilter,
+  ): Promise<PaginationViewModel<BlogViewModelType> | null> {
     try {
-      const blogModel = new this.BlogModel();
+      const { searchNameTerm } = queryOptions;
 
-      return BaseModel.paginateAndTransform<BlogDBType, BlogViewModelType>(
-        this.BlogModel,
-        blogModel.getBlogsViewModel,
-        inputData,
+      const paginationOptions = {
+        isSql: true,
+        isMongo: false,
+      };
+
+      const { pageNumber, pageSize, skip, sortBy, sortDirection } =
+        getPagination(
+          queryOptions,
+          paginationOptions.isMongo,
+          paginationOptions.isSql,
+        );
+
+      const searchTerm = `%${searchNameTerm ? searchNameTerm : ''}%`;
+
+      const queryBuilder = this.blogs.createQueryBuilder('blogs');
+
+      queryBuilder
+        .where('blogs.title ILIKE :title', { title: searchTerm })
+        .orderBy(
+          sortBy === 'title'
+            ? 'blogs.title COLLATE "C"'
+            : sortBy === 'created_at'
+              ? 'blogs.created_at'
+              : `blogs.${sortBy}`,
+          sortDirection,
+        )
+        .skip(skip)
+        .take(pageSize);
+
+      const result = await queryBuilder.getManyAndCount();
+
+      const blogs = result[0];
+      const blogsCount = result[1];
+
+      const blogsViewModel = new PaginationViewModel<BlogViewModelType>(
+        blogs.map(getBlogSqlViewModel),
+        pageNumber,
+        pageSize,
+        blogsCount,
       );
+
+      return blogsViewModel;
     } catch (e) {
-      throw new Error(
-        `There're something problems with find blogs by query: ${e}`,
-      );
+      // throw new InternalServerErrorException(`Some troubles occurred during find blogs: ${e}`)
+      console.error(`Some troubles occurred during find blogs: ${e}`);
+      return null;
     }
   }
 
   async getBlogById(blogId: string): Promise<BlogViewModelType | null> {
     try {
-      const foundedBlog = await this.BlogModel.findById(new ObjectId(blogId));
+      const result = await this.blogs.findOneBy({ id: blogId });
 
-      if (!foundedBlog) return null;
+      if (!result) return null;
 
-      return foundedBlog.getBlogsViewModel(foundedBlog);
+      return getBlogSqlViewModel(result);
     } catch (error) {
-      console.error(error);
+      console.error(`Some troubles occurred during find blog by id${error}`);
       return null;
-    }
-  }
-
-  async getBlogsByQuery(
-    inputData: BlogsQueryFilter,
-  ): Promise<PaginationViewModel<BlogViewModelType>> {
-    const { searchNameTerm } = inputData;
-    const { pageNumber, pageSize, sort, skip } = getPagination(inputData);
-
-    const filter = getSearchTerm({ searchNameTerm });
-
-    try {
-      const blogs = await this.BlogModel.find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(pageSize);
-
-      const totalCount = await this.BlogModel.countDocuments(filter);
-
-      const blogModel = new this.BlogModel();
-
-      const blogsViewModel = new PaginationViewModel<BlogViewModelType>(
-        blogs.map(blogModel.getBlogsViewModel),
-        pageNumber,
-        pageSize,
-        totalCount,
-      );
-
-      return blogsViewModel;
-    } catch (e) {
-      throw new Error(`There're something problems with find blogs: ${e}`);
     }
   }
 }

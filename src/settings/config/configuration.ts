@@ -18,12 +18,15 @@ const getConfig = (
   },
   pg: {
     name: 'postgres',
-    url: process.env.POSTGRES_URL,
+    url: process.env.DATABASE_URL,
     host: 'postgres',
-    db_name: 'InteractHubNest',
+    db_name: 'nest-typeorm',
     port: process.env.POSTGRES_PORT,
     username: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
+  },
+  env: {
+    currentEnvironment: process.env.ENV,
   },
 });
 

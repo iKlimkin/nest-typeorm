@@ -1,4 +1,4 @@
-export class BlogDtoSqlModel {
+export class BlogCreationDto {
   constructor(
     public title: string,
     public description: string,
@@ -7,7 +7,7 @@ export class BlogDtoSqlModel {
   ) {}
 }
 
-export class BlogDtoSASqlModel extends BlogDtoSqlModel {
+export class BlogSADto extends BlogCreationDto {
   public userId: string;
   // public userLogin: string,
 }
