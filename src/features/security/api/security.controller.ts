@@ -11,15 +11,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { UserSessionDto } from '../../auth/api/models/auth-input.models.ts/security-user-session-info';
-import { CurrentUserInfo } from '../../auth/infrastructure/decorators/current-user-info.decorator';
-import { RefreshTokenGuard } from '../../auth/infrastructure/guards/refreshToken.guard';
-import { SecurityInterface } from './models/security-input.models/security.interface';
-import { SecurityViewDeviceModel } from './models/security.view.models/security.view.types';
-import { SecurityQueryRepo } from './query-repositories/security.query.repo';
-import { SecurityInfoDto } from './models/security-input.models/security-info.model';
-import { DeleteActiveSessionCommand } from '../application/use-cases/commands/delete-active-session.command';
-import { DeleteOtherUserSessionsCommand } from '../application/use-cases/commands/delete-other-user-sessions.command';
+import {
+  UserSessionDto,
+  CurrentUserInfo,
+  RefreshTokenGuard,
+  SecurityInterface,
+  SecurityViewDeviceModel,
+  SecurityQueryRepo,
+  SecurityInfoDto,
+  DeleteActiveSessionCommand,
+  DeleteOtherUserSessionsCommand,
+} from './index';
 
 @Controller('security/devices')
 @UseGuards(RefreshTokenGuard)
@@ -47,7 +49,9 @@ export class SecurityController implements SecurityInterface {
 
   @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
-  async terminateOtherUserSessions(@CurrentUserInfo() userInfo: UserSessionDto) {
+  async terminateOtherUserSessions(
+    @CurrentUserInfo() userInfo: UserSessionDto,
+  ) {
     const command = new DeleteOtherUserSessionsCommand(userInfo.deviceId);
     await this.commandBus.execute(command);
   }

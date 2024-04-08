@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Equal, FindOptionsWhere, MoreThanOrEqual, Repository } from 'typeorm';
-import { OutputId } from '../../../domain/likes.types';
+import { OutputId } from '../../../domain/output.models';
 import { UserAccount } from '../../admin/domain/entities/user-account.entity';
 import { UserRecoveryType } from '../api/models/auth.output.models/auth.output.models';
 import { LoginOrEmailType } from '../api/models/auth.output.models/auth.user.types';

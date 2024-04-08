@@ -1,12 +1,11 @@
 import { ConfigModule } from '@nestjs/config';
-import Joi from 'joi';
-import configuration from '../config/configuration';
-import { getMongoConnection, getEnv } from '../config/env-configurations';
+import configuration from './config/configuration';
+// import Joi from 'joi'
 
 export const configModule = ConfigModule.forRoot({
   // envFilePath: ['.env.local', '.env'] prioritize
   isGlobal: true,
-  load: [configuration, getMongoConnection, getEnv],
+  load: [configuration],
   // cache: true,
   // validationSchema: Joi.object({
   //   PORT: Joi.number().valid(5000),

@@ -14,22 +14,26 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { OutputId } from '../../../../domain/likes.types';
-import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
-import { CurrentUserId } from '../../../../infra/decorators/current-user-id.decorator';
-import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
-import { SetUserIdGuard } from '../../../auth/infrastructure/guards/set-user-id.guard';
-import { PostsQueryFilter } from '../../../posts/api/models/output.post.models/posts-query.filter';
-import { PostViewModelType } from '../../../posts/api/models/post.view.models/post-view-model.type';
-import { PostsQueryRepo } from '../../../posts/api/query-repositories/posts.query.repo';
-import { CreateBlogCommand } from '../../application/use-case/commands/create-blog.command';
-import { DeleteBlogCommand } from '../../application/use-case/commands/delete-blog.command';
-import { UpdateBlogCommand } from '../../application/use-case/commands/update-blog.command';
-import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
-import { CreateBlogInputDto } from '../models/input.blog.models/create.blog.model';
-import { UpdateBlogInputDto } from '../models/input.blog.models/update-blog-models';
-import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
-import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
+import {
+  OutputId,
+  PaginationViewModel,
+  CurrentUserId,
+  BasicSAAuthGuard,
+  SetUserIdGuard,
+  PostsQueryFilter,
+  PostViewModelType,
+  PostsQueryRepo,
+  CreateBlogCommand,
+  DeleteBlogCommand,
+  UpdateBlogCommand,
+  BlogsQueryFilter,
+  CreateBlogInputDto,
+  UpdateBlogInputDto,
+  BlogViewModelType,
+  BlogsQueryRepo,
+  LayerNoticeInterceptor,
+  handleErrors,
+} from './index';
 
 @Controller('blogs')
 export class BlogsController {
@@ -137,12 +141,21 @@ export class BlogsController {
     @Param('id') blogId: string,
     @Body() data: UpdateBlogInputDto,
   ) {
-    const result = await this.commandBus.execute(
-      new UpdateBlogCommand({ ...data, blogId }),
-    );
+    const blog = await this.blogsQueryRepo.getBlogById(blogId);
 
-    if (!result) {
+    if (!blog) {
       throw new NotFoundException();
+    }
+
+    const command = new UpdateBlogCommand({ ...data, blogId });
+    const result = await this.commandBus.execute<
+      UpdateBlogCommand,
+      LayerNoticeInterceptor<boolean>
+    >(command);
+
+    if (result.hasError()) {
+      const errors = handleErrors(result.code, result.extensions[0]);
+      throw errors.error;
     }
   }
 

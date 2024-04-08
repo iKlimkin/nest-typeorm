@@ -1,4 +1,4 @@
-import { likesStatus } from '../../../../../domain/likes.types';
+import { LikesStatuses } from '../../../../../domain/reaction.models';
 
 export type PostStatusInfo = {
   addedAt: string;
@@ -47,7 +47,7 @@ export type PostViewModelType = {
 
     dislikesCount: number;
 
-    myStatus: likesStatus;
+    myStatus: LikesStatuses;
 
     newestLikes: PostStatusInfo[] | [];
   };

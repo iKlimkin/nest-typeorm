@@ -2,11 +2,11 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
+import { getPagination } from '../../../../infra/utils/get-pagination';
 import { UserAccount } from '../../domain/entities/user-account.entity';
 import { SAQueryFilter } from '../models/outputSA.models.ts/sa-query.filter';
 import { getSAViewSQLModel } from '../models/userAdmin.view.models/saView.model';
 import { SAViewType } from '../models/userAdmin.view.models/userAdmin.view.model';
-import { getPagination } from '../../../../infra/utils/get-pagination';
 
 @Injectable()
 export class UsersQueryRepo {

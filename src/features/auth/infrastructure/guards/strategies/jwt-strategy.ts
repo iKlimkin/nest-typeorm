@@ -3,18 +3,22 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { SecurityQueryRepo } from '../../../../security/api/query-repositories/security.query.repo';
-import { jwtConstants } from '../constants';
+import { ConfigService } from '@nestjs/config';
+import { ConfigurationType } from '../../../../../settings/config/configuration';
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(
   Strategy,
   'access-token',
 ) {
-  constructor(private securityQueryRepo: SecurityQueryRepo) {
+  constructor(
+    private securityQueryRepo: SecurityQueryRepo,
+    private configService: ConfigService<ConfigurationType>,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: jwtConstants.jwt_access_secret,
+      secretOrKey: configService.get('jwtSettings', { infer: true }).ACCESS_TOKEN_SECRET,
     });
   }
 
@@ -34,11 +38,14 @@ export class RefreshTokenStrategy extends PassportStrategy(
   Strategy,
   'refresh-token',
 ) {
-  constructor(private securityQueryRepo: SecurityQueryRepo) {
+  constructor(
+    private securityQueryRepo: SecurityQueryRepo,
+    private configService: ConfigService<ConfigurationType>,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
       ignoreExpiration: false,
-      secretOrKey: jwtConstants.jwt_refresh_secret,
+      secretOrKey: configService.get('jwtSettings', { infer: true }).REFRESH_TOKEN_SECRET,
     });
   }
 

@@ -1,5 +1,5 @@
-import { InputCommentModel } from "../../../api/models/input.comment.models";
+import { InputCommentDto } from '../../../api/models/input.comment.models/comment.models';
 
 export class CreateCommentCommand {
-  constructor(public inputData: InputCommentModel) {}
+  constructor(public createData: InputCommentDto) {}
 }

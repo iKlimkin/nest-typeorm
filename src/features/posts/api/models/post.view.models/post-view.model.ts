@@ -1,46 +1,60 @@
-import { WithId } from 'mongodb';
-import {
-  LikesUserInfoType,
-  likesStatus,
-} from '../../../../../domain/likes.types';
-import { getLikeStatus } from '../../../../../infra/utils/get-like-status';
-import { PostType } from '../output.post.models/output.post.models';
-import { PostStatusInfo, PostViewModelType } from './post-view-model.type';
+import { LikesStatuses } from '../../../../../domain/reaction.models';
+import { PostReaction } from '../../../domain/entities/post-reactions.entity';
+import { Post } from '../../../domain/entities/post.entity';
+import { PostViewModelType } from './post-view-model.type';
 
-export type PostDBType = WithId<PostType>;
+export class TransReaction extends Post {
+  post_id: string;
+}
 
-const transformLikesUserInfo = (
-  likesUserInfo: LikesUserInfoType[],
-): PostStatusInfo[] =>
-  likesUserInfo
-    .filter((like) => like.status === likesStatus.Like)
+const convertStatus = (
+  myReactions: PostReaction[] | LikesStatuses,
+  post: Post,
+): LikesStatuses => {
+  if (Array.isArray(myReactions)) {
+    if (!myReactions.length) return LikesStatuses.None;
+    return (
+      (myReactions
+        .filter((r) => r.post.id === post.id)
+        .map((r) =>
+          r.post.id === post.id ? r.reaction_type : LikesStatuses.None,
+        )
+        .join('') as LikesStatuses) || LikesStatuses.None
+    );
+  }
+
+  return myReactions || LikesStatuses.None;
+};
+
+const filterNewestLikes = (reactions: PostReaction[], postId: string) => {
+  return reactions
+    .filter((reaction) => reaction.post.id === postId)
     .map((like) => ({
-      addedAt: like.addedAt,
-      userId: like.userId,
-      login: like.login,
+      addedAt: like.created_at.toISOString(),
+      userId: like.user.id,
+      login: like.user_login,
     }))
-    .slice(-3)
-    .reverse();
+    .slice(0, 3);
+};
 
-export const getPostViewModel = (
-  post: PostDBType,
-  userId?: string,
+export const getPostTORViewModel = (
+  post: Post,
+  latestReactions: PostReaction[],
+  myReaction: LikesStatuses | PostReaction[],
 ): PostViewModelType => {
-  const [status] = getLikeStatus(post.likesUserInfo, userId);
-
   return {
-    id: post._id.toString(),
+    id: post.id,
     title: post.title,
-    shortDescription: post.shortDescription,
+    shortDescription: post.short_description,
     content: post.content,
-    blogId: post.blogId,
-    blogName: post.blogName,
-    createdAt: post.createdAt,
+    blogId: post.blog.id,
+    blogName: post.blog_title,
+    createdAt: post.created_at.toISOString(),
     extendedLikesInfo: {
-      likesCount: post.likesCountInfo.likesCount,
-      dislikesCount: post.likesCountInfo.dislikesCount,
-      myStatus: status || likesStatus.None,
-      newestLikes: transformLikesUserInfo(post.likesUserInfo),
+      likesCount: post.postReactionCounts?.likes_count || 0,
+      dislikesCount: post.postReactionCounts?.dislikes_count || 0,
+      myStatus: convertStatus(myReaction, post),
+      newestLikes: filterNewestLikes(latestReactions, post.id),
     },
   };
 };

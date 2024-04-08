@@ -1,20 +1,26 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { jwtConstants } from '../../features/auth/infrastructure/guards/constants';
+import { ConfigurationType } from '../../../../settings/config/configuration';
 
 @Injectable()
 export class SetUserIdGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private configService: ConfigService<ConfigurationType>,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const accessToken = this.extractTokenFromHeaders(request);
 
+    const jwtConfig = this.configService.get('jwtSettings', { infer: true });
+
     if (accessToken) {
       try {
         const userPayload = await this.jwtService.verifyAsync(accessToken, {
-          secret: jwtConstants.jwt_access_secret,
+          secret: jwtConfig.ACCESS_TOKEN_SECRET,
         });
         request.userId = userPayload.userId;
       } catch (error) {
@@ -28,6 +34,6 @@ export class SetUserIdGuard implements CanActivate {
 
   private extractTokenFromHeaders(request: Request): string | null {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return (type && type === 'Bearer') ? token : null;
+    return type === 'Bearer' ? token : null;
   }
 }

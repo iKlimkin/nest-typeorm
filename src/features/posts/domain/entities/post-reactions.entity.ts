@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
-import { likesStatus } from '../../../../domain/likes.types';
+import { LikesStatuses } from '../../../../domain/reaction.models';
 import type { UserAccount } from '../../../admin/domain/entities/user-account.entity';
 import type { Post } from './post.entity';
 
@@ -8,7 +8,7 @@ import type { Post } from './post.entity';
 // @Unique(['user', 'post'])
 export class PostReaction extends BaseEntity {
   @Column()
-  reaction_type: likesStatus;
+  reaction_type: LikesStatuses;
 
   @Column()
   user_login: string;

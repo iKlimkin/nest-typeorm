@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
-import { OutputId } from '../../../domain/likes.types';
-import { UserSessionDto } from '../../auth/api/models/dto/user-session.dto';
+import { UserSessionDto } from '../../auth/api/models/dtos/user-session.dto';
 import { UserSession } from '../domain/entities/security.entity';
+import { OutputId } from '../../../domain/output.models';
 
 @Injectable()
 export class SecurityRepository {

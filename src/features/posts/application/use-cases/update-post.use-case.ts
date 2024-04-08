@@ -6,9 +6,7 @@ import { PostsRepository } from '../../infrastructure/posts.repository';
 import { UpdatePostCommand } from './commands/update-post.command';
 
 @CommandHandler(UpdatePostCommand)
-export class UpdatePostUseCase
-  implements ICommandHandler<UpdatePostCommand>
-{
+export class UpdatePostUseCase implements ICommandHandler<UpdatePostCommand> {
   constructor(private postsRepo: PostsRepository) {}
 
   async execute(

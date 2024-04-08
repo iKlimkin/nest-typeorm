@@ -1,6 +1,4 @@
-import { SAController } from '../../../admin/api/controllers/sa.controller';
-import { SecurityController } from '../../../security/api/security.controller';
-import { AuthController } from '../../api/controllers/auth.controller';
+import { AuthController, SAController, SecurityController } from '.';
 
 export const authControllers = [
   AuthController,
@@ -8,6 +6,4 @@ export const authControllers = [
   SAController,
 ];
 
-export const controllers = [
-  ...authControllers
-];
+export const controllers = [...authControllers];

@@ -13,30 +13,31 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { OutputId } from '../../../../domain/likes.types';
-import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
-import { CurrentUserId } from '../../../../infra/decorators/current-user-id.decorator';
-import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
-import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
-import { InputPostModelByBlogId } from '../../../posts/api/models/input.posts.models/create.post.model';
-import { PostsQueryFilter } from '../../../posts/api/models/output.post.models/posts-query.filter';
-import { PostViewModelType } from '../../../posts/api/models/post.view.models/post-view-model.type';
-import { PostsQueryRepo } from '../../../posts/api/query-repositories/posts.query.repo';
-import { CreatePostCommand } from '../../../posts/application/use-cases/commands/create-post-sql.command';
-import { DeletePostSqlCommand } from '../../../posts/application/use-cases/commands/delete-post-sql.command';
-import { UpdatePostSqlCommand } from '../../../posts/application/use-cases/commands/update-post.command';
-import { CreateSABlogCommand } from '../../application/use-case/commands/create-sa-blog.command';
-
-import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
-import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
-import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
-import { SetUserIdGuard } from '../../../auth/infrastructure/guards/set-user-id.guard';
-import { CreateBlogInputDto } from '../models/input.blog.models/create.blog.model';
-import { UpdateBlogInputDto } from '../models/input.blog.models/update-blog-models';
-import { UpdateBlogCommand } from '../../application/use-case/commands/update-blog.command';
-import { UpdateSABlogCommand } from '../../application/use-case/commands/update-sa-blog.command';
-import { DeleteSABlogCommand } from '../../application/use-case/commands/delete-sa-blog.command';
+import {
+  OutputId,
+  PaginationViewModel,
+  CurrentUserId,
+  BasicSAAuthGuard,
+  SetUserIdGuard,
+  PostsQueryFilter,
+  PostViewModelType,
+  PostsQueryRepo,
+  CreateBlogCommand,
+  DeleteBlogCommand,
+  UpdateBlogCommand,
+  BlogsQueryFilter,
+  CreateBlogInputDto,
+  UpdateBlogInputDto,
+  BlogViewModelType,
+  BlogsQueryRepo,
+  LayerNoticeInterceptor,
+  handleErrors,
+  CreationPostDto,
+  CreationPostDtoByBlogId,
+  CreatePostCommand,
+  DeletePostCommand,
+  UpdatePostCommand,
+} from './index';
 
 // @UseGuards(AccessTokenGuard)
 @UseGuards(BasicSAAuthGuard)
@@ -101,13 +102,13 @@ export class SABlogsController {
     @Body() data: CreateBlogInputDto,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ): Promise<BlogViewModelType> {
-    const command = new CreateSABlogCommand({
+    const command = new CreateBlogCommand({
       ...data,
       // userId: userInfo.userId,
     });
 
     const blog = await this.commandBus.execute<
-      CreateSABlogCommand,
+      CreateBlogCommand,
       OutputId | null
     >(command);
 
@@ -118,7 +119,7 @@ export class SABlogsController {
   @HttpCode(HttpStatus.CREATED)
   async createPost(
     @Param('id') blogId: string,
-    @Body() body: InputPostModelByBlogId,
+    @Body() body: CreationPostDto,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ): Promise<PostViewModelType> {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
@@ -159,7 +160,7 @@ export class SABlogsController {
   async updatePost(
     @Param('id') blogId: string,
     @Param('postId') postId: string,
-    @Body() inputPostModel: InputPostModelByBlogId,
+    @Body() data: CreationPostDtoByBlogId,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
@@ -170,8 +171,8 @@ export class SABlogsController {
     //if (userInfo.userId !== blog.ownerInfo.userId)
     // throw new ForbiddenException();
 
-    const command = new UpdatePostSqlCommand({
-      ...inputPostModel,
+    const command = new UpdatePostCommand({
+      ...data,
       postId,
     });
 
@@ -195,7 +196,7 @@ export class SABlogsController {
     //   throw new ForbiddenException();
     // }
 
-    const command = new UpdateSABlogCommand({ ...data, blogId });
+    const command = new UpdateBlogCommand({ ...data, blogId });
 
     const result = await this.commandBus.execute<
       UpdateBlogCommand,
@@ -203,7 +204,7 @@ export class SABlogsController {
     >(command);
 
     if (result.hasError()) {
-      const errors = handleErrors(result.code, result.extensions);
+      const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     }
   }
@@ -224,7 +225,7 @@ export class SABlogsController {
     //   throw new ForbiddenException();
     // }
 
-    const command = new DeleteSABlogCommand(blogId);
+    const command = new DeleteBlogCommand(blogId);
     await this.commandBus.execute(command);
   }
 
@@ -243,7 +244,7 @@ export class SABlogsController {
     //if (userInfo.userId !== blog.ownerInfo.userId)
     // throw new ForbiddenException();
 
-    const command = new DeletePostSqlCommand(postId);
+    const command = new DeletePostCommand(postId);
     await this.commandBus.execute(command);
   }
 }

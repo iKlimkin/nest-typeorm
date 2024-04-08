@@ -3,18 +3,18 @@ const getConfig = (
   currentEnvironment: Environments,
 ) => ({
   Port: parseInt(process.env.PORT ?? '5000'),
-  jwtSetting: {
+  jwtSettings: {
     ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
     REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
+  },
+  basicAuth: {
+    USERNAME: process.env.BASIC_AUTH_USERNAME,
+    PASSWORD: process.env.BASIC_AUTH_PASSWORD,
   },
   emailSettings: {
     EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
     EMAIL_USER: process.env.EMAIL_USER,
     EMAIL_SERVICE: process.env.EMAIL_SERVICE,
-  },
-  authBasic: {
-    HTTP_BASIC_USER: process.env.HTTP_BASIC_USER,
-    HTTP_BASIC_PASS: process.env.HTTP_BASIC_PASS,
   },
   pg: {
     name: 'postgres',
@@ -38,14 +38,10 @@ export enum Environments {
   PRODUCTION = 'PRODUCTION',
   TESTING = 'TESTING',
 }
+
 export type EnvironmentVariable = { [key: string]: string | undefined };
 export type EnvironmentTypes = keyof typeof Environments;
 
-export type ConfigType = ConfigurationType & {
-  MONGO_URI: string;
-  MONGO_URI2: string;
-  NODE_ENV: 'production' | 'development' | 'stage';
-};
 
 export default () => {
   const environmentVariables = process.env;

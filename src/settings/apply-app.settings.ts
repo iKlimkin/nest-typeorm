@@ -4,6 +4,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { AppModule } from '../app.module';
+import * as cookieParser from 'cookie-parser';
 import { ValidationError, useContainer } from 'class-validator';
 import { HttpExceptionFilter } from '../infra/exception.filter';
 
@@ -55,6 +56,4 @@ const setAppPipes = (app: INestApplication) => {
 const setAppExceptionsFilters = (app: INestApplication) => {
   app.useGlobalFilters(new HttpExceptionFilter());
 };
-function cookieParser(): any {
-  throw new Error('Function not implemented.');
-}
+

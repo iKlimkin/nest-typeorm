@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OutputId } from '../../../domain/likes.types';
 import { Blog } from '../domain/entities/blog.entity';
 import { BlogCreationDto } from '../api/models/dto/blog-dto.model';
 import { UpdateBlogDto } from '../api/models/input.blog.models/update-blog-models';
+import { OutputId } from '../api/controllers';
 
 @Injectable()
 export class BlogsRepository {
@@ -53,7 +53,7 @@ export class BlogsRepository {
         { id: blogId },
         { title: name, description, website_url: websiteUrl },
       );
-
+      
       return result.affected !== 0;
     } catch (e) {
       console.error(`Database fails operate during the upgrade blog`, e);

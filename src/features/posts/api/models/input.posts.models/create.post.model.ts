@@ -32,7 +32,7 @@ export type CreatePostModel = {
   blogId: string;
 };
 
-export class InputPostModel {
+export class CreationPostDto {
   /**
    *  post's title
    */
@@ -59,7 +59,7 @@ export class InputPostModel {
   blogId: string;
 }
 
-export class InputPostModelByBlogId {
+export class CreationPostDtoByBlogId {
   /**
    *  post's title
    */
@@ -78,7 +78,7 @@ export class InputPostModelByBlogId {
   @iSValidField(contentLength)
   content: string;
 }
-export class CreatePostByBlogIdModel extends InputPostModelByBlogId {
+export class CreatePostByBlogIdModel extends CreationPostDtoByBlogId {
   @IsString()
   blogId: string;
 
@@ -86,7 +86,7 @@ export class CreatePostByBlogIdModel extends InputPostModelByBlogId {
   blogTitle: string;
 }
 
-export class UpdatePostDto extends InputPostModelByBlogId {
+export class UpdatePostDto extends CreationPostDtoByBlogId {
   @IsString()
   postId: string;
 }

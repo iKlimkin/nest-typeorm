@@ -1,9 +1,9 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { OutputId } from '../../../../domain/likes.types';
+import { OutputId } from '../../../../domain/output.models';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { PostCreationDto } from '../../api/models/dto/post-sql.model';
-import { CreatePostCommand } from './commands/create-post-sql.command';
+import { CreatePostCommand } from './commands/create-post.command';
 import { PostsRepository } from '../../infrastructure/posts.repository';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
 
@@ -28,7 +28,7 @@ export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
     }
 
     const { title, shortDescription, content, blogId, blogTitle } =
-      command.createDataDto;
+      command.createData;
 
     const postDto = new PostCreationDto({
       title,

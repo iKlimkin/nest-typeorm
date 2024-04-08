@@ -17,13 +17,14 @@ import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { CreateUserErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
-import { CreateSACommand } from '../../application/commands/create-sa.command';
 import { DeleteSACommand } from '../../application/commands/delete-sa.command';
-import { UsersQueryRepo } from '../../infrastructure/users.query.repo';
-import { InputUserModel } from '../models/create-user.model';
 import { SAQueryFilter } from '../models/outputSA.models.ts/sa-query.filter';
 import { SAViewType } from '../models/userAdmin.view.models/userAdmin.view.model';
 import { UserIdType } from '../models/outputSA.models.ts/user-models';
+import { UsersQueryRepo } from '../query-repositories/users.query.repo';
+import { CreateUserDto } from '../models/create-user.model';
+import { CreateSACommand } from '../../application/commands/create-sa.command';
+import { seedAllData } from '../../../../infra/utils/seed-data';
 
 @UseGuards(BasicSAAuthGuard)
 @Controller('sa/users')
@@ -55,7 +56,7 @@ export class SAController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createSA(@Body() body: InputUserModel): Promise<SAViewType> {
+  async createSA(@Body() body: CreateUserDto): Promise<SAViewType> {
     const command = new CreateSACommand(body);
 
     const result = await this.commandBus.execute<

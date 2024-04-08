@@ -5,16 +5,14 @@ import { ConfigurationType } from './config/configuration';
 
 @Injectable()
 export class TypeOrmOptions implements TypeOrmOptionsFactory {
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService<ConfigurationType>) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
-    const nodeEnv = this.configService.getOrThrow<ConfigurationType>('env', {
-      infer: true,
-    });
+    const env = this.configService.getOrThrow('env');
 
     if (
-      (nodeEnv && nodeEnv.toUpperCase() === 'DEVELOPMENT') ||
-      nodeEnv.toUpperCase() === 'TESTING'
+      env?.toUpperCase() === 'DEVELOPMENT' ||
+      env?.toUpperCase() === 'TESTING'
     ) {
       console.log('dev');
       return this.createLocalConnection();
@@ -23,6 +21,7 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
 
   private createLocalConnection(): TypeOrmModuleOptions {
     console.log('local connection postgres');
+
     return {
       type: 'postgres',
       host: 'localhost',

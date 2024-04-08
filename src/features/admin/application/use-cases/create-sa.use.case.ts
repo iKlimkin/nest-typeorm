@@ -5,26 +5,25 @@ import {
   CreateUserErrors,
   GetErrors,
 } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
-import { UsersSQLDto } from '../../../auth/api/models/auth.output.models/auth-raw.output.models';
 import { CreateSACommand } from '../commands/create-sa.command';
 import { UserIdType } from '../../api/models/outputSA.models.ts/user-models';
 import { BcryptAdapter } from '../../../../infra/adapters/bcrypt-adapter';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
-import { UsersRepo } from '../../infrastructure/users.repo';
+import { UsersRepository } from '../../infrastructure/users.repo';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
 @CommandHandler(CreateSACommand)
 export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
   constructor(
     private bcryptAdapter: BcryptAdapter,
-    private usersRepo: UsersRepo,
+    private usersRepo: UsersRepository,
   ) {}
 
   async execute(
     command: CreateSACommand,
   ): Promise<LayerNoticeInterceptor<UserIdType>> {
     let notice = new LayerNoticeInterceptor<UserIdType>();
-
+    
     try {
       await validateOrRejectModel(command, CreateSACommand);
     } catch (error) {
@@ -41,7 +40,7 @@ export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
     const { passwordSalt, passwordHash } =
       await this.bcryptAdapter.createHash(password);
 
-    const userAdminSQLDto: UsersSQLDto = {
+    const saDto = {
       login,
       email,
       password_salt: passwordSalt,
@@ -51,7 +50,7 @@ export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
       is_confirmed: true,
     };
 
-    const userAdminId = await this.usersRepo.createUser(userAdminSQLDto);
+    const userAdminId = await this.usersRepo.createUser(saDto);
 
     if (!userAdminId) {
       notice.addError(

@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
-import { likesStatus } from '../../../../domain/likes.types';
+import { LikesStatuses } from '../../../../domain/reaction.models';
 import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
 import { Comment } from './comment.entity';
 
@@ -8,7 +8,7 @@ import { Comment } from './comment.entity';
 @Unique(['userAccount', 'comment'])
 export class CommentReaction extends BaseEntity {
   @Column()
-  reaction_type: likesStatus;
+  reaction_type: LikesStatuses;
 
   @ManyToOne('Comment', 'commentReactions', { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'comment_id' })

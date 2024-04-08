@@ -1,4 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { ClientInfo } from './models';
 
 export const GetClientInfo = createParamDecorator(
   (data: unknown, context: ExecutionContext) => {
@@ -10,6 +11,6 @@ export const GetClientInfo = createParamDecorator(
 
     const ip = (forwardedIpsStr as string).split(',')[0];
 
-    return { ip, userAgentInfo };
+    return { ip, userAgentInfo } as ClientInfo;
   },
 );

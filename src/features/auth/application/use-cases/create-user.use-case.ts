@@ -8,7 +8,7 @@ import {
 } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
-import { UsersRepo } from '../../../admin/infrastructure/users.repo';
+import { UsersRepository } from '../../../admin/infrastructure/users.repo';
 import { UsersSQLDto } from '../../api/models/auth.output.models/auth-raw.output.models';
 import { CreateUserCommand } from './commands/create-user.command';
 import { EmailNotificationEvent } from './events/email-notification-event';
@@ -17,7 +17,7 @@ import { UserIdType } from '../../../admin/api/models/outputSA.models.ts/user-mo
 @CommandHandler(CreateUserCommand)
 export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
   constructor(
-    private usersRepo: UsersRepo,
+    private usersRepo: UsersRepository,
     private bcryptAdapter: BcryptAdapter,
     private eventBus: EventBus,
   ) {}

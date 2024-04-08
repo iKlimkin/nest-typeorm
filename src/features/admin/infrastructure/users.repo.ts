@@ -6,7 +6,7 @@ import { UserAccount } from '../domain/entities/user-account.entity';
 import { UserIdType } from '../api/models/outputSA.models.ts/user-models';
 
 @Injectable()
-export class UsersRepo {
+export class UsersRepository {
   constructor(
     @InjectRepository(UserAccount)
     private readonly userAccounts: Repository<UserAccount>,

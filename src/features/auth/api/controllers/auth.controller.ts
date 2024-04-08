@@ -11,44 +11,40 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Response } from 'express';
-import { OutputId } from '../../../../domain/likes.types';
-import { getDeviceInfo } from '../../../../infra/utils/device-handler';
 import {
+  AccessTokenGuard,
+  AuthQueryRepository,
+  AuthService,
+  ClientInfo,
+  ConfirmEmailCommand,
+  CreateSessionCommand,
+  CreateTemporaryAccountCommand,
+  CreateUserCommand,
+  CreateUserDto,
+  CurrentUserInfo,
+  CustomThrottlerGuard,
+  DeleteActiveSessionCommand,
   ErrorType,
+  GetClientInfo,
+  LayerNoticeInterceptor,
+  LocalAuthGuard,
+  OutputId,
+  PasswordRecoveryCommand,
+  RecoveryPassDto,
+  RefreshTokenGuard,
+  RegistrationCodeDto,
+  RegistrationEmailDto,
+  SessionCreationDto,
+  UpdateConfirmationCodeCommand,
+  UpdateIssuedTokenCommand,
+  UpdatePassTempAccountCommand,
+  UpdatePasswordCommand,
+  UserProfileType,
+  UserSessionDto,
+  getDeviceInfo,
+  handleErrors,
   makeErrorsMessages,
-} from '../../../../infra/utils/error-handler';
-import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
-import { SessionCreationDto } from '../../../security/api/models/security-input.models/create-session.model';
-import { DeleteActiveSessionCommand } from '../../../security/application/use-cases/commands/delete-active-session.command';
-import { UpdateIssuedTokenCommand } from '../../application/use-cases/commands/update-Issued-token.command';
-import { AuthService } from '../../application/auth.service';
-import { ConfirmEmailCommand } from '../../application/use-cases/commands/confirm-email.command';
-import { CreateTemporaryAccountCommand } from '../../application/use-cases/commands/create-temp-account.command';
-import { CreateUserCommand } from '../../application/use-cases/commands/create-user.command';
-import { PasswordRecoveryCommand } from '../../application/use-cases/commands/recovery-password.command';
-import { UpdateConfirmationCodeCommand } from '../../application/use-cases/commands/update-confirmation-code.command';
-import { UpdatePassTempAccountCommand } from '../../application/use-cases/commands/update-password-temporary-account.command';
-import { UpdatePasswordCommand } from '../../application/use-cases/commands/update-password.command';
-import { GetClientInfo } from '../../infrastructure/decorators/client-ip.decorator';
-import { CurrentUserInfo } from '../../infrastructure/decorators/current-user-info.decorator';
-import { AccessTokenGuard } from '../../infrastructure/guards/accessToken.guard';
-import { CustomThrottlerGuard } from '../../infrastructure/guards/custom-throttler.guard';
-import { LocalAuthGuard } from '../../infrastructure/guards/local-auth.guard';
-import { RefreshTokenGuard } from '../../infrastructure/guards/refreshToken.guard';
-import { RegistrationEmailDto } from '../models/auth-input.models.ts/password-recovery.types';
-import { RecoveryPassDto } from '../models/auth-input.models.ts/recovery.model';
-import { RegistrationCodeDto } from '../models/auth-input.models.ts/registration-code.model';
-import { CreateUserDto } from '../models/auth-input.models.ts/user-registration.model';
-import { UserSessionDto } from '../models/auth-input.models.ts/security-user-session-info';
-import { UserProfileType } from '../models/auth.output.models/auth.output.models';
-import { AuthQueryRepository } from '../query-repositories/auth.query.repo';
-import { CreateSessionCommand } from '../../../security/application/use-cases/commands/create-session.command';
-
-type ClientInfo = {
-  ip: string;
-  userAgentInfo: any;
-};
+} from '.';
 
 @Controller('auth')
 export class AuthController {
@@ -93,7 +89,7 @@ export class AuthController {
     >(command);
 
     if (result.hasError()) {
-      const errors = handleErrors(result.code, result.extensions);
+      const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     }
 

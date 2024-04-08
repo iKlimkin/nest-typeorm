@@ -1,4 +1,4 @@
-import { likesStatus } from '../../../../../domain/likes.types';
+import { LikesStatuses } from '../../../../../domain/reaction.models';
 
 export type CommentsViewModel = {
   /**
@@ -36,6 +36,6 @@ export type CommentsViewModel = {
 
     dislikesCount: number;
 
-    myStatus: likesStatus;
+    myStatus: LikesStatuses;
   };
 };

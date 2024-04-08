@@ -1,20 +1,22 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import {
+  ReactionCommentDto,
+  ReactionCommentType,
+} from '../../../../domain/reaction.models';
 import { getStatusCounting } from '../../../../infra/utils/status-counter';
 import { FeedbacksRepository } from '../../infrastructure/feedbacks.repository';
-import { UpdateCommentReactionCommand } from './commands/update-user-reaction.command';
-import { ReactionCommentDto, ReactionCommentType } from '../../../../domain/likes.types';
-
+import { UpdateCommentReactionCommand } from './commands/update-comment-reaction.command';
 
 @CommandHandler(UpdateCommentReactionCommand)
 export class UpdateCommentReactionUseCase
   implements ICommandHandler<UpdateCommentReactionCommand>
 {
-  constructor(private feedbacksRepository: FeedbacksRepository) {}
+  constructor(private feedbacksRepo: FeedbacksRepository) {}
 
   async execute(command: UpdateCommentReactionCommand) {
-    const { commentId, userId, inputStatus } = command.inputData;
+    const { commentId, userId, inputStatus } = command.updateData;
 
-    const existingReaction = await this.feedbacksRepository.getUserReaction(
+    const existingReaction = await this.feedbacksRepo.getUserReaction(
       userId,
       commentId,
     );
@@ -27,15 +29,15 @@ export class UpdateCommentReactionUseCase
     });
   }
 
-  private async handleReaction(reactionDto: ReactionCommentType) {
-    const { commentId, currentStatus, inputStatus, userId } = reactionDto;
+  private async handleReaction(reactionData: ReactionCommentType) {
+    const { commentId, currentStatus, inputStatus, userId } = reactionData;
 
     const { likesCount, dislikesCount } = getStatusCounting(
       inputStatus,
       currentStatus || 'None',
     );
 
-    const reactionData: ReactionCommentDto = {
+    const reactionDto: ReactionCommentDto = {
       commentId,
       userId,
       inputStatus,
@@ -43,10 +45,6 @@ export class UpdateCommentReactionUseCase
       likesCount,
     };
 
-    if (!currentStatus) {
-      await this.feedbacksRepository.createLikeStatus(reactionData);
-    } else {
-      await this.feedbacksRepository.updateLikeStatus(reactionData);
-    }
+    await this.feedbacksRepo.updateReactionType(reactionDto);
   }
 }

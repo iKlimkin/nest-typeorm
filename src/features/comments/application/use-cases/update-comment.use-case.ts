@@ -6,12 +6,9 @@ import { UpdateCommentCommand } from './commands/update-comment.command';
 export class UpdateCommentUseCase
   implements ICommandHandler<UpdateCommentCommand>
 {
-  constructor(private feedbacksRepository: FeedbacksRepository) {}
+  constructor(private feedbacksRepo: FeedbacksRepository) {}
 
   async execute(command: UpdateCommentCommand): Promise<boolean> {
-    return this.feedbacksRepository.updateComment(
-      command.commentId,
-      command.content,
-    );
+    return this.feedbacksRepo.updateComment(command.commentId, command.content);
   }
 }

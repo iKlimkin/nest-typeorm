@@ -1,14 +1,14 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { likesStatus } from '../../../../domain/likes.types';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { LikesStatuses } from '../../../../domain/reaction.models';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../infra/utils/get-pagination';
 import { PostReaction } from '../../domain/entities/post-reactions.entity';
 import { Post } from '../../domain/entities/post.entity';
 import { PostsQueryFilter } from '../models/output.post.models/posts-query.filter';
 import { PostViewModelType } from '../models/post.view.models/post-view-model.type';
-import { getPostTORViewModel } from '../models/post.view.models/post-view-typeorm.model';
+import { getPostTORViewModel } from '../models/post.view.models/post-view.model';
 
 @Injectable()
 export class PostsQueryRepo {
@@ -78,7 +78,7 @@ export class PostsQueryRepo {
         .leftJoin('pr.user', 'user')
         .addSelect('user.id')
         .where('pr.reaction_type = :reactionType', {
-          reactionType: likesStatus.Like,
+          reactionType: LikesStatuses.Like,
         })
         .orderBy('pr.created_at', 'DESC')
         .getMany();
@@ -170,7 +170,7 @@ export class PostsQueryRepo {
         .leftJoin('pr.user', 'user')
         .addSelect('user.id')
         .where('pr.reaction_type = :reactionType', {
-          reactionType: likesStatus.Like,
+          reactionType: LikesStatuses.Like,
         })
         .andWhere('posts.blog_id = :blogId', { blogId })
         .orderBy('pr.created_at', 'DESC')
@@ -197,7 +197,7 @@ export class PostsQueryRepo {
     userId?: string,
   ): Promise<PostViewModelType | null> {
     try {
-      let myReaction: likesStatus = likesStatus.None;
+      let myReaction: LikesStatuses = LikesStatuses.None;
 
       const queryBuilder = this.posts.createQueryBuilder('posts');
 
@@ -225,7 +225,7 @@ export class PostsQueryRepo {
         .leftJoin('pr.post', 'post')
         .where('pr.post_id = :postId', { postId })
         .andWhere('pr.reaction_type = :reactionType', {
-          reactionType: likesStatus.Like,
+          reactionType: LikesStatuses.Like,
         })
         .orderBy('pr.created_at', 'DESC')
         .limit(3)
@@ -244,7 +244,7 @@ export class PostsQueryRepo {
           relations: ['post'],
         });
 
-        myReaction = reaction ? reaction.reaction_type : likesStatus.None;
+        myReaction = reaction ? reaction.reaction_type : LikesStatuses.None;
       }
 
       return getPostTORViewModel(post, latestReactions, myReaction);
@@ -310,7 +310,7 @@ export class PostsQueryRepo {
         .leftJoin('pr.user', 'user')
         .addSelect('user.id')
         .where('pr.reaction_type = :reactionType', {
-          reactionType: likesStatus.Like,
+          reactionType: LikesStatuses.Like,
         })
         .orderBy('pr.created_at', 'DESC')
         .getMany();

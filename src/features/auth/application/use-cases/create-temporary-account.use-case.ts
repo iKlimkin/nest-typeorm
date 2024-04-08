@@ -1,4 +1,4 @@
-import { OutputId } from '../../../../domain/likes.types';
+import { OutputId } from '../../../../domain/output.models';
 import { UserRecoveryType } from '../../api/models/auth.output.models/auth.output.models';
 import { CreateTemporaryAccountCommand } from './commands/create-temp-account.command';
 import { SendRecoveryMsgCommand } from './commands/send-recovery-msg.command';

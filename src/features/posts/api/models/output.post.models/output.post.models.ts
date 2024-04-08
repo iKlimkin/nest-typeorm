@@ -1,9 +1,9 @@
 import {
   LikesUserInfoType,
   LikesCountType,
-  likesStatus,
+  LikesStatuses,
   ReactionsSqlCounter,
-} from '../../../../../domain/likes.types';
+} from '../../../../../domain/reaction.models';
 
 export type PostType = {
   title: string;
@@ -37,7 +37,7 @@ export type UserPostReactionsType = {
   user_login: string;
   user_id: string;
   post_id: string;
-  reaction_type: likesStatus;
+  reaction_type: LikesStatuses;
 };
 
 export type UserReactionsOutType = Pick<

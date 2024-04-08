@@ -12,30 +12,28 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CurrentUserId } from '../../../../infra/decorators/current-user-id.decorator';
-import { SetUserIdGuard } from '../../../../infra/guards/set-user-id.guard';
-import { CommentsViewModel } from '../models/comments.view.models/comments.view-model.type';
 import { CommandBus } from '@nestjs/cqrs';
-import { UserInfoType } from '../../../auth/api/models/auth-input.models.ts/security-user-session-info';
-import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
-import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
-import { InputLikeStatusModel } from '../../../posts/api/models/input.posts.models/input-post..model';
-import { DeleteCommentCommand } from '../../application/use-cases/commands/delete-comment.command';
-import { UpdateCommentCommand } from '../../application/use-cases/commands/update-comment.command';
-import { UpdateCommentReactionCommand } from '../../application/use-cases/commands/update-user-reaction.command';
 import {
-  InputContentModel,
-  ReactionDataModel,
-} from '../models/input.comment.models';
-import { FeedbacksQueryRepository } from '../query-repositories/feedbacks.query.repository';
-import { ObjectIdPipe } from '../../../../infra/pipes/valid-objectId.pipe';
-import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
-import { CommentsQueryFilter } from '../models/output.comment.models/comment-query.filter';
+  AccessTokenGuard,
+  CommentsQueryFilter,
+  CommentsViewModel,
+  CurrentUserId,
+  CurrentUserInfo,
+  DeleteCommentCommand,
+  FeedbacksQueryRepo,
+  InputContentDto,
+  LikeStatusInputDto,
+  PaginationViewModel,
+  SetUserIdGuard,
+  UpdateCommentCommand,
+  UpdateCommentReactionCommand,
+  UserSessionDto,
+} from '.';
 
 @Controller('comments')
 export class FeedbacksController {
   constructor(
-    private feedbacksQueryRepo: FeedbacksQueryRepository,
+    private feedbacksQueryRepo: FeedbacksQueryRepo,
     private commandBus: CommandBus,
   ) {}
 
@@ -43,7 +41,7 @@ export class FeedbacksController {
   @UseGuards(SetUserIdGuard)
   @HttpCode(HttpStatus.OK)
   async getComment(
-    @Param('id', ObjectIdPipe) commentId: string,
+    @Param('id') commentId: string,
     @CurrentUserId() userId: string,
   ): Promise<CommentsViewModel> {
     const comment = await this.feedbacksQueryRepo.getCommentById(
@@ -58,14 +56,25 @@ export class FeedbacksController {
     return comment;
   }
 
-  @Get('user/:id')
+  @Get()
+  @UseGuards(SetUserIdGuard)
+  @HttpCode(HttpStatus.OK)
+  async getComments(
+    @Query() query: CommentsQueryFilter,
+    @CurrentUserId() userId: string,
+  ): Promise<PaginationViewModel<CommentsViewModel>> {
+    return this.feedbacksQueryRepo.getComments(query, userId);
+  }
+
+  @Get('user/test')
+  @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
   async getUserComments(
-    @Param('id', ObjectIdPipe) userId: string,
+    @CurrentUserInfo() userInfo: UserSessionDto,
     @Query() query: CommentsQueryFilter,
   ): Promise<PaginationViewModel<CommentsViewModel>> {
     const comment = await this.feedbacksQueryRepo.getCommentsByUserId(
-      userId,
+      userInfo.userId,
       query,
     );
 
@@ -80,20 +89,20 @@ export class FeedbacksController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AccessTokenGuard)
   async updateComment(
-    @Param('id', ObjectIdPipe) commentId: string,
-    @CurrentUserInfo() userInfo: UserInfoType,
-    @Body() body: InputContentModel,
+    @Param('id') commentId: string,
+    @CurrentUserInfo() userInfo: UserSessionDto,
+    @Body() body: InputContentDto,
   ) {
     const { content } = body;
 
-    const foundedCommentById =
+    const foundedComment =
       await this.feedbacksQueryRepo.getCommentById(commentId);
 
-    if (!foundedCommentById) {
+    if (!foundedComment) {
       throw new NotFoundException('Comment not found');
     }
 
-    if (userInfo.userId !== foundedCommentById.commentatorInfo.userId) {
+    if (userInfo.userId !== foundedComment.commentatorInfo.userId) {
       throw new ForbiddenException('Do not have permission');
     }
 
@@ -106,27 +115,25 @@ export class FeedbacksController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AccessTokenGuard)
   async updateLikesStatus(
-    @Param('id', ObjectIdPipe) commentId: string,
-    @CurrentUserInfo() userInfo: UserInfoType,
-    @Body() inputStatusModel: InputLikeStatusModel,
+    @Param('id') commentId: string,
+    @CurrentUserInfo() userInfo: UserSessionDto,
+    @Body() inputStatusModel: LikeStatusInputDto,
   ) {
     const { likeStatus } = inputStatusModel;
     const { userId } = userInfo;
 
-    const foundComment = await this.feedbacksQueryRepo.getCommentById(
+    const comment = await this.feedbacksQueryRepo.getCommentById(
       commentId,
       userId,
     );
 
-    if (!foundComment) {
+    if (!comment) {
       throw new NotFoundException('Comment not found');
     }
 
-    const { myStatus } = foundComment.likesInfo;
+    if (comment.likesInfo.myStatus === likeStatus) return;
 
-    if (myStatus === likeStatus) return;
-
-    const reactionData: ReactionDataModel = {
+    const reactionData = {
       commentId,
       userId,
       inputStatus: likeStatus,
@@ -141,8 +148,8 @@ export class FeedbacksController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AccessTokenGuard)
   async deleteComment(
-    @Param('id', ObjectIdPipe) commentId: string,
-    @CurrentUserInfo() userInfo: UserInfoType,
+    @Param('id') commentId: string,
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ) {
     const comment = await this.feedbacksQueryRepo.getCommentById(commentId);
 

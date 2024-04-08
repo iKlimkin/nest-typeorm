@@ -2,15 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import {
-  OutputId,
-  ReactionPostDtoType,
-  likesStatus,
-} from '../../../domain/likes.types';
-import { UpdatePostModel } from '../api/models/input.posts.models/create.post.model';
+  ReactionPostDto,
+  LikesStatuses,
+} from '../../../domain/reaction.models';
+import { UpdatePostDto } from '../api/models/input.posts.models/create.post.model';
 import { PostCreationDto } from '../api/models/dto/post-sql.model';
 import { PostReactionCounts } from '../domain/entities/post-reaction-counts.entity';
 import { PostReaction } from '../domain/entities/post-reactions.entity';
 import { Post } from '../domain/entities/post.entity';
+import { OutputId } from '../../../domain/output.models';
 
 @Injectable()
 export class PostsRepository {
@@ -49,7 +49,7 @@ export class PostsRepository {
   async getUserReaction(
     userId: string,
     postId: string,
-  ): Promise<likesStatus | null> {
+  ): Promise<LikesStatuses | null> {
     try {
       const result = await this.postReactions
         .createQueryBuilder('pr')
@@ -69,7 +69,7 @@ export class PostsRepository {
     }
   }
 
-  async updatePost(updateData: UpdatePostModel): Promise<boolean> {
+  async updatePost(updateData: UpdatePostDto): Promise<boolean> {
     try {
       const { content, shortDescription, title, postId } = updateData;
 
@@ -87,7 +87,7 @@ export class PostsRepository {
     }
   }
 
-  async updateReactionType(reactionDto: ReactionPostDtoType) {
+  async updateReactionType(reactionDto: ReactionPostDto) {
     try {
       const {
         dislikesCount,
@@ -105,7 +105,7 @@ export class PostsRepository {
           user_login: userLogin,
           user: { id: userId },
           post: { id: postId },
-          reaction_type: inputStatus as likesStatus,
+          reaction_type: inputStatus as LikesStatuses,
         })
         .orUpdate(['reaction_type'], ['user_id', 'post_id'])
         .execute();
