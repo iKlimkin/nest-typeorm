@@ -1,16 +1,21 @@
 import { ConfigModule } from '@nestjs/config';
+import * as Joi from 'joi';
 import configuration from './config/configuration';
-// import Joi from 'joi'
 
 export const configModule = ConfigModule.forRoot({
-  // envFilePath: ['.env.local', '.env'] prioritize
   isGlobal: true,
   load: [configuration],
-  // cache: true,
-  // validationSchema: Joi.object({
-  //   PORT: Joi.number().valid(5000),
-  //   MONGO_URL: Joi.string().uri(),
-  //   DB_LOCAL: Joi.string().required(),
-  // }),
-  // expandVariables: true,
+  validationSchema: Joi.object({
+    PORT: Joi.number().port().default(5000),
+    ACCESS_TOKEN_SECRET: Joi.string().required(),
+    REFRESH_TOKEN_SECRET: Joi.string().required(),
+    BASIC_AUTH_USERNAME: Joi.string().required(),
+    BASIC_AUTH_PASSWORD: Joi.string().required(),
+    EMAIL_PASSWORD: Joi.string().required(),
+    EMAIL_USER: Joi.string().required(),
+    EMAIL_SERVICE: Joi.string().required(),
+    DATABASE_URL: Joi.string().uri().required(),
+    POSTGRES_PASSWORD: Joi.string().optional(),
+    ENV: Joi.string().required(),
+  }),
 });

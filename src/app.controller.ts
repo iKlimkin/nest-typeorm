@@ -20,8 +20,6 @@ export class AppController {
       console.log({env});
       console.log({jwt});
       console.log({basic});
-      
-   
   }
 
   @Post()

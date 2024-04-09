@@ -46,12 +46,12 @@ export class SABlogsController {
   constructor(
     private readonly blogsQueryRepo: BlogsQueryRepo,
     private readonly postsQueryRepo: PostsQueryRepo,
-    private readonly commandBus: CommandBus,
+    private readonly commandBus: CommandBus
   ) {}
 
   @Get()
   async getBlogs(
-    @Query() query: BlogsQueryFilter,
+    @Query() query: BlogsQueryFilter
   ): Promise<PaginationViewModel<BlogViewModelType>> {
     const result = await this.blogsQueryRepo.getAllBlogs(query);
 
@@ -75,7 +75,7 @@ export class SABlogsController {
     //@CurrentUserInfo() userInfo: UserInfoType,
     @CurrentUserId() userId: string,
     @Param('blogId') blogId: string,
-    @Query() query: PostsQueryFilter,
+    @Query() query: PostsQueryFilter
   ): Promise<PaginationViewModel<PostViewModelType>> {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
 
@@ -87,7 +87,7 @@ export class SABlogsController {
     const posts = await this.postsQueryRepo.getPostsByBlogId(
       blogId,
       query,
-      userId,
+      userId
       // userInfo.userId,
     );
 
@@ -99,7 +99,7 @@ export class SABlogsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createBlog(
-    @Body() data: CreateBlogInputDto,
+    @Body() data: CreateBlogInputDto
     //@CurrentUserInfo() userInfo: UserInfoType,
   ): Promise<BlogViewModelType> {
     const command = new CreateBlogCommand({
@@ -119,7 +119,7 @@ export class SABlogsController {
   @HttpCode(HttpStatus.CREATED)
   async createPost(
     @Param('id') blogId: string,
-    @Body() body: CreationPostDto,
+    @Body() body: CreationPostDto
     //@CurrentUserInfo() userInfo: UserInfoType,
   ): Promise<PostViewModelType> {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
@@ -160,7 +160,7 @@ export class SABlogsController {
   async updatePost(
     @Param('id') blogId: string,
     @Param('postId') postId: string,
-    @Body() data: CreationPostDtoByBlogId,
+    @Body() data: CreationPostDtoByBlogId
     //@CurrentUserInfo() userInfo: UserInfoType,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
@@ -184,7 +184,7 @@ export class SABlogsController {
   async updateBlog(
     @Param('id') blogId: string,
     //@CurrentUserInfo() userInfo: UserInfoType,
-    @Body() data: UpdateBlogInputDto,
+    @Body() data: UpdateBlogInputDto
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
 
@@ -212,7 +212,7 @@ export class SABlogsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteBlog(
-    @Param('id') blogId: string,
+    @Param('id') blogId: string
     //@CurrentUserInfo() userInfo: UserInfoType,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
@@ -233,7 +233,7 @@ export class SABlogsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deletePost(
     @Param('id') blogId: string,
-    @Param('postId') postId: string,
+    @Param('postId') postId: string
     //@CurrentUserInfo() userInfo: UserInfoType,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);

@@ -16,20 +16,21 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
     ) {
       console.log('dev');
       return this.createLocalConnection();
+    } else {
+      // make remote connection
     }
   }
 
   private createLocalConnection(): TypeOrmModuleOptions {
-    console.log('local connection postgres');
+    const dbConfig = this.configService.getOrThrow('pg', { infer: true });
 
     return {
+      url: dbConfig.url,
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
       logging: ['query', 'error'],
-      username: 'NodeJS',
-      password: 'NodeJS',
-      database: 'nest-typeorm',
+      username: dbConfig.username,
+      password: dbConfig.password,
+      database: dbConfig.typeormPostgresDbName,
       autoLoadEntities: true,
       synchronize: true,
     };

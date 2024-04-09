@@ -1,6 +1,6 @@
 const getConfig = (
   environmentVariables: EnvironmentVariable,
-  currentEnvironment: Environments,
+  currentEnvironment: Environments
 ) => ({
   Port: parseInt(process.env.PORT ?? '5000'),
   jwtSettings: {
@@ -17,10 +17,9 @@ const getConfig = (
     EMAIL_SERVICE: process.env.EMAIL_SERVICE,
   },
   pg: {
-    name: 'postgres',
     url: process.env.DATABASE_URL,
-    host: 'postgres',
-    db_name: 'nest-typeorm',
+    typeormPostgresDbName: process.env.typeormPostgresDbName,
+    studyDbName: process.env.studyDbName,
     port: process.env.POSTGRES_PORT,
     username: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
@@ -42,10 +41,9 @@ export enum Environments {
 export type EnvironmentVariable = { [key: string]: string | undefined };
 export type EnvironmentTypes = keyof typeof Environments;
 
-
 export default () => {
   const environmentVariables = process.env;
-
+  
   console.log('process.env.ENV =', environmentVariables.ENV);
   const currentEnvironment: Environments =
     environmentVariables.ENV as Environments;
