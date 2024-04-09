@@ -64,7 +64,7 @@ export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
       notice.addData({ userId: result.userId });
     }
 
-    const event = new EmailNotificationEvent(email, userDto.confirmation_code);
+    const event = new EmailNotificationEvent(email, user.confirmation_code);
 
     this.eventBus.publish(event);
 

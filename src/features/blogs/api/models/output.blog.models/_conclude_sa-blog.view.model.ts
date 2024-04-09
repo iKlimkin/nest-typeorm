@@ -1,13 +1,14 @@
 import { Blog } from '../../../domain/entities/blog.entity';
-import { BlogsSqlDbType } from './blog.models';
+import { BlogsRawDbType } from './blog.models';
 import { SABlogViewModelType } from './blog.view.model-type';
 
-export const getSABlogSqlViewModel = (
-  blog: BlogsSqlDbType,
+export const getSABlogsViewModel = (
+  blog: BlogsRawDbType
+  // | Blog,
 ): SABlogViewModelType => ({
   id: blog.id,
   ownerInfo: {
-    userId: blog.user_id ? blog.user_id : 'test'
+    userId: blog.user_id ? blog.user_id : 'test',
   },
   name: blog.title,
   description: blog.description,

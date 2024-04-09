@@ -1,9 +1,8 @@
 import { BlogViewModelType } from './blog.view.model-type';
-import { BlogsSqlDbType } from './blog.models';
 import { Blog } from '../../../domain/entities/blog.entity';
 
-export const getBlogSqlViewModel = (
-  blog: BlogsSqlDbType | Blog,
+export const getBlogsViewModel = (
+  blog: Blog,
 ): BlogViewModelType => ({
   id: blog.id,
   name: blog.title,

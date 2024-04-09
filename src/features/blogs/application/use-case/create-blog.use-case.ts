@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateBlogCommand } from './commands/create-blog.command';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
 import { BlogsRepository } from '../../infrastructure/blogs.repository';
-import { BlogCreationDto } from '../../api/models/dto/blog-dto.model';
+import { BlogCreationDto } from '../../api/models/dtos/blog-dto.model';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { OutputId } from '../../../../domain/output.models';
@@ -12,7 +12,7 @@ export class CreateBlogUseCase implements ICommandHandler<CreateBlogCommand> {
   constructor(private blogsRepo: BlogsRepository) {}
 
   async execute(
-    command: CreateBlogCommand,
+    command: CreateBlogCommand
   ): Promise<LayerNoticeInterceptor<OutputId | null>> {
     const notice = new LayerNoticeInterceptor<OutputId | null>();
 
@@ -22,7 +22,7 @@ export class CreateBlogUseCase implements ICommandHandler<CreateBlogCommand> {
       notice.addError(
         'incorrect model',
         'CreateBlogUseCase',
-        GetErrors.IncorrectModel,
+        GetErrors.IncorrectModel
       );
     }
 
@@ -36,7 +36,7 @@ export class CreateBlogUseCase implements ICommandHandler<CreateBlogCommand> {
       notice.addError(
         `blog not created `,
         'CreateBlogUseCase',
-        GetErrors.DatabaseFail,
+        GetErrors.DatabaseFail
       );
     } else {
       notice.addData(result);

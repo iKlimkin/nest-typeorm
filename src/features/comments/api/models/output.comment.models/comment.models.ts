@@ -1,10 +1,10 @@
 import {
   LikeUserType,
   LikesCountType,
-  ReactionsSqlCounter,
   LikesStatuses,
+  ReactionsCounterRaw,
 } from '../../../../../domain/reaction.models';
-import { UserPostReactionsType } from '../../../../posts/api/models/output.post.models/output.post.models';
+import { UserPostReactionsRawType } from '../../../../posts/api/models/output.post.models/output.post.models';
 
 export type CreateCommentType = Omit<
   CommentType,
@@ -55,22 +55,21 @@ export type CommentSqlDbType = {
   created_at: Date;
   likes_count: number | null;
   dislikes_count: number | null;
-  // reaction_type: LikesStatuses | null;
 };
 
-export type UserCommentReactionsType = Omit<
-  UserPostReactionsType,
+export type UserCommentReactionsRawType = Omit<
+  UserPostReactionsRawType,
   'post_id'
 > & { comment_id: string };
 
-export class CommentReactionCounter extends ReactionsSqlCounter {
+export class CommentReactionRawCounter extends ReactionsCounterRaw {
   dislikes_count: number;
   likes_count: number;
   comment_id: string;
 }
 
-export type CommentReactionsType = Pick<
-  UserCommentReactionsType,
+export type CommentReactionsRawType = Pick<
+  UserCommentReactionsRawType,
   'reaction_type'
 > & { comment_id: string };
 

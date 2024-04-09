@@ -1,9 +1,8 @@
 import { UserAccount } from '../../../../admin/domain/entities/user-account.entity';
-import { UsersResponseModel } from './auth-raw.output.models';
 import { UserAccountViewModel } from './auth.output.models';
 
 export const getUserAccountViewModel = (
-  user: UsersResponseModel | UserAccount,
+  user: UserAccount
 ): UserAccountViewModel => ({
   accountData: {
     id: user.id,

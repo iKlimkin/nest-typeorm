@@ -3,7 +3,7 @@ export class BlogCreationDto {
     public title: string,
     public description: string,
     public websiteUrl: string,
-    public isMembership: boolean = false,
+    public isMembership: boolean = false
   ) {}
 }
 

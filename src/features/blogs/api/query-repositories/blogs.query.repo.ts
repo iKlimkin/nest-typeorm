@@ -5,17 +5,17 @@ import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../infra/utils/get-pagination';
 import { Blog } from '../../domain/entities/blog.entity';
 import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
-import { getBlogSqlViewModel } from '../models/output.blog.models/blog-sql.view.model';
+import { getBlogsViewModel } from '../models/output.blog.models/getBlogs.view.model';
 import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
 
 @Injectable()
 export class BlogsQueryRepo {
   constructor(
-    @InjectRepository(Blog) private readonly blogs: Repository<Blog>,
+    @InjectRepository(Blog) private readonly blogs: Repository<Blog>
   ) {}
 
   async getAllBlogs(
-    queryOptions: BlogsQueryFilter,
+    queryOptions: BlogsQueryFilter
   ): Promise<PaginationViewModel<BlogViewModelType> | null> {
     try {
       const { searchNameTerm } = queryOptions;
@@ -29,7 +29,7 @@ export class BlogsQueryRepo {
         getPagination(
           queryOptions,
           paginationOptions.isMongo,
-          paginationOptions.isSql,
+          paginationOptions.isSql
         );
 
       const searchTerm = `%${searchNameTerm ? searchNameTerm : ''}%`;
@@ -44,7 +44,7 @@ export class BlogsQueryRepo {
             : sortBy === 'created_at'
               ? 'blogs.created_at'
               : `blogs.${sortBy}`,
-          sortDirection,
+          sortDirection
         )
         .skip(skip)
         .take(pageSize);
@@ -55,10 +55,10 @@ export class BlogsQueryRepo {
       const blogsCount = result[1];
 
       const blogsViewModel = new PaginationViewModel<BlogViewModelType>(
-        blogs.map(getBlogSqlViewModel),
+        blogs.map(getBlogsViewModel),
         pageNumber,
         pageSize,
-        blogsCount,
+        blogsCount
       );
 
       return blogsViewModel;
@@ -75,7 +75,7 @@ export class BlogsQueryRepo {
 
       if (!result) return null;
 
-      return getBlogSqlViewModel(result);
+      return getBlogsViewModel(result);
     } catch (error) {
       console.error(`Some troubles occurred during find blog by id${error}`);
       return null;

@@ -1,36 +1,35 @@
-import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { add } from 'date-fns';
-import { v4 as uuidv4 } from 'uuid';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { BcryptAdapter } from '../../../../infra/adapters/bcrypt-adapter';
 import {
   CreateUserErrors,
   GetErrors,
 } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
-import { CreateSACommand } from '../commands/create-sa.command';
-import { UserIdType } from '../../api/models/outputSA.models.ts/user-models';
-import { BcryptAdapter } from '../../../../infra/adapters/bcrypt-adapter';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
+import { UserIdType } from '../../api/models/outputSA.models.ts/user-models';
+import { UserAccount } from '../../domain/entities/user-account.entity';
 import { UsersRepository } from '../../infrastructure/users.repo';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CreateSACommand } from '../commands/create-sa.command';
 
 @CommandHandler(CreateSACommand)
 export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
   constructor(
     private bcryptAdapter: BcryptAdapter,
-    private usersRepo: UsersRepository,
+    private usersRepo: UsersRepository
   ) {}
 
   async execute(
-    command: CreateSACommand,
+    command: CreateSACommand
   ): Promise<LayerNoticeInterceptor<UserIdType>> {
     let notice = new LayerNoticeInterceptor<UserIdType>();
-    
+
     try {
       await validateOrRejectModel(command, CreateSACommand);
     } catch (error) {
       notice.addError(
         'Input data incorrect',
         'input',
-        GetErrors.IncorrectModel,
+        GetErrors.IncorrectModel
       );
       return notice;
     }
@@ -43,20 +42,19 @@ export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
     const saDto = {
       login,
       email,
-      password_salt: passwordSalt,
-      password_hash: passwordHash,
-      confirmation_code: uuidv4(),
-      confirmation_expiration_date: add(new Date(), { hours: 1, minutes: 15 }),
-      is_confirmed: true,
+      passwordSalt,
+      passwordHash,
     };
 
-    const userAdminId = await this.usersRepo.createUser(saDto);
+    const user = UserAccount.create(saDto);
+
+    const userAdminId = await this.usersRepo.save(user);
 
     if (!userAdminId) {
       notice.addError(
         'Could not create sa',
         'db',
-        CreateUserErrors.DatabaseFail,
+        CreateUserErrors.DatabaseFail
       );
     } else {
       notice.addData({ userId: userAdminId.userId });

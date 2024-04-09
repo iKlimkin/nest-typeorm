@@ -8,7 +8,7 @@ export type BlogType = {
 
 export type BlogsTypeWithId = BlogType & { id: string };
 
-export type BlogsSqlDbType = {
+export type BlogsRawDbType = {
   id: string;
   user_id: string;
   title: string;

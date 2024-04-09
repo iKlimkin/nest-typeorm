@@ -3,25 +3,25 @@ import {
   ReactionsCounter,
 } from '../../../../../domain/reaction.models';
 import {
-  CommentReactionCounter,
-  CommentReactionsType,
+  CommentReactionRawCounter,
+  CommentReactionsRawType,
   CommentSqlDbType,
 } from '../output.comment.models/comment.models';
 import { CommentsViewModel } from './comments.view-model.type';
 
 const calculateLikesDislikesCount = (
-  reactionCounters: CommentReactionCounter[],
-  commentId: string,
+  reactionCounters: CommentReactionRawCounter[],
+  commentId: string
 ): ReactionsCounter => {
   const likesCount = +reactionCounters
     .map((counter) =>
-      counter.comment_id === commentId ? counter.likes_count : 0,
+      counter.comment_id === commentId ? counter.likes_count : 0
     )
     .filter(Number);
 
   const dislikesCount = +reactionCounters
     .map((counter) =>
-      counter.comment_id === commentId ? counter.dislikes_count : 0,
+      counter.comment_id === commentId ? counter.dislikes_count : 0
     )
     .filter(Number);
 
@@ -32,8 +32,8 @@ const calculateLikesDislikesCount = (
 };
 
 const convertStatus = (
-  myReactions: CommentReactionsType[] | LikesStatuses,
-  commentId: string,
+  myReactions: CommentReactionsRawType[] | LikesStatuses,
+  commentId: string
 ): LikesStatuses => {
   if (Array.isArray(myReactions)) {
     if (!myReactions.length) return LikesStatuses.None;
@@ -47,14 +47,14 @@ const convertStatus = (
   return myReactions || LikesStatuses.None;
 };
 
-export const getCommentsSqlViewModel = (
+export const getCommentsRawViewModel = (
   comment: CommentSqlDbType,
-  reactionCounter: CommentReactionCounter[],
-  myReactions: CommentReactionsType[] | LikesStatuses = [],
+  reactionCounter: CommentReactionRawCounter[],
+  myReactions: CommentReactionsRawType[] | LikesStatuses = []
 ): CommentsViewModel => {
   const { likesCount, dislikesCount } = calculateLikesDislikesCount(
     reactionCounter,
-    comment.id,
+    comment.id
   );
 
   return {

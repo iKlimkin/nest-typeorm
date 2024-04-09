@@ -32,15 +32,15 @@ export type PostType = {
 //   post_id: string;
 // }
 
-// export type UserPostReactionsType = {
-//   liked_at: Date;
-//   user_login: string;
-//   user_id: string;
-//   post_id: string;
-//   reaction_type: LikesStatuses;
-// };
+export type UserPostReactionsRawType = {
+  liked_at: Date;
+  user_login: string;
+  user_id: string;
+  post_id: string;
+  reaction_type: LikesStatuses;
+};
 
-// export type UserReactionsOutType = Pick<
-//   UserPostReactionsType,
-//   'reaction_type'
-// > & { post_id: string };
+export type UserReactionsOutType = Pick<
+  UserPostReactionsRawType,
+  'reaction_type'
+> & { post_id: string };
