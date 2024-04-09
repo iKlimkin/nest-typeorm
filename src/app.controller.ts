@@ -1,6 +1,6 @@
 import { Controller, Get, Post } from '@nestjs/common';
-import { ConfigService, ConfigType } from '@nestjs/config';
-
+import { ConfigService } from '@nestjs/config';
+import getConfig from './settings/config/configuration'
 import { DataSource } from 'typeorm';
 import { seedAllData } from './infra/utils/seed-data';
 import { ConfigurationType } from './settings/config/configuration';
@@ -20,6 +20,9 @@ export class AppController {
       console.log({env});
       console.log({jwt});
       console.log({basic});
+
+      const environmentConfig = getConfig();
+      console.log({environmentConfig})
   }
 
   @Post()

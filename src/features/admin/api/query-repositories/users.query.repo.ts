@@ -5,7 +5,7 @@ import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../infra/utils/get-pagination';
 import { UserAccount } from '../../domain/entities/user-account.entity';
 import { SAQueryFilter } from '../models/outputSA.models.ts/sa-query.filter';
-import { getSAViewSQLModel } from '../models/userAdmin.view.models/saView.model';
+import { getSAViewModel } from '../models/userAdmin.view.models/saView.model';
 import { SAViewType } from '../models/userAdmin.view.models/userAdmin.view.model';
 
 @Injectable()
@@ -52,7 +52,7 @@ export class UsersQueryRepo {
     const usersCount = result[1];
 
     const userSAViewType = new PaginationViewModel<SAViewType>(
-      users.map(getSAViewSQLModel),
+      users.map(getSAViewModel),
       pageNumber,
       pageSize,
       usersCount,
@@ -73,7 +73,7 @@ export class UsersQueryRepo {
 
       if (!result) return null;
 
-      return getSAViewSQLModel(result);
+      return getSAViewModel(result);
     } catch (error) {
       console.error('Database fails operate with find user', error);
       return null;

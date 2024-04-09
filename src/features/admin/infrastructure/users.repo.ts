@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UsersSQLDto } from '../../auth/api/models/auth.output.models/auth-raw.output.models';
 import { UserAccount } from '../domain/entities/user-account.entity';
 import { UserIdType } from '../api/models/outputSA.models.ts/user-models';
 
@@ -9,10 +8,10 @@ import { UserIdType } from '../api/models/outputSA.models.ts/user-models';
 export class UsersRepository {
   constructor(
     @InjectRepository(UserAccount)
-    private readonly userAccounts: Repository<UserAccount>,
+    private readonly userAccounts: Repository<UserAccount>
   ) {}
 
-  async createUser(userDto: UsersSQLDto): Promise<UserIdType | null> {
+  async save(userDto: UserAccount): Promise<UserIdType | null> {
     try {
       const res = await this.userAccounts.save(userDto);
 

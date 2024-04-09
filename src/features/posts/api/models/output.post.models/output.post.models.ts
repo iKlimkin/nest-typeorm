@@ -2,7 +2,7 @@ import {
   LikesUserInfoType,
   LikesCountType,
   LikesStatuses,
-  ReactionsSqlCounter,
+  ReactionsCounter,
 } from '../../../../../domain/reaction.models';
 
 export type PostType = {
@@ -18,29 +18,29 @@ export type PostType = {
   likesCountInfo: LikesCountType;
 };
 
-export type PostsSqlDbType = {
-  id: string;
-  blog_id: string;
-  blog_title: string;
-  title: string;
-  short_description: string;
-  content: string;
-  created_at: Date;
-};
+// export type PostsSqlDbType = {
+//   id: string;
+//   blog_id: string;
+//   blog_title: string;
+//   title: string;
+//   short_description: string;
+//   content: string;
+//   created_at: Date;
+// };
 
-export class PostReactionCounter extends ReactionsSqlCounter {
-  post_id: string;
-}
+// export class PostReactionCounter extends ReactionsCounter {
+//   post_id: string;
+// }
 
-export type UserPostReactionsType = {
-  liked_at: Date;
-  user_login: string;
-  user_id: string;
-  post_id: string;
-  reaction_type: LikesStatuses;
-};
+// export type UserPostReactionsType = {
+//   liked_at: Date;
+//   user_login: string;
+//   user_id: string;
+//   post_id: string;
+//   reaction_type: LikesStatuses;
+// };
 
-export type UserReactionsOutType = Pick<
-  UserPostReactionsType,
-  'reaction_type'
-> & { post_id: string };
+// export type UserReactionsOutType = Pick<
+//   UserPostReactionsType,
+//   'reaction_type'
+// > & { post_id: string };

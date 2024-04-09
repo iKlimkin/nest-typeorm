@@ -17,7 +17,7 @@ export class TestDatabaseRepo {
       TRUNCATE TABLE comment CASCADE;
     `);
     } catch (error) {
-      console.error('Error executing SQL queries:', error);
+      console.error('Error executing queries:', error);
     }
   }
 }

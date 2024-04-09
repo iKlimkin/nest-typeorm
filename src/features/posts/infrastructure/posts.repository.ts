@@ -18,11 +18,11 @@ export class PostsRepository {
     @InjectRepository(Post) private readonly posts: Repository<Post>,
     @InjectRepository(PostReactionCounts)
     private readonly postReactions: Repository<PostReaction>,
-    @InjectDataSource() private dataSource: DataSource,
+    @InjectDataSource() private dataSource: DataSource
   ) {}
 
   async createPost(
-    postDto: Readonly<PostCreationDto>,
+    postDto: Readonly<PostCreationDto>
   ): Promise<OutputId | null> {
     try {
       const post = this.posts.create({
@@ -48,7 +48,7 @@ export class PostsRepository {
 
   async getUserReaction(
     userId: string,
-    postId: string,
+    postId: string
   ): Promise<LikesStatuses | null> {
     try {
       const result = await this.postReactions
@@ -63,7 +63,7 @@ export class PostsRepository {
       return result.reaction_type;
     } catch (error) {
       console.error(
-        `Database fails operate with find user's reactions on post`,
+        `Database fails operate with find user's reactions on post`
       );
       return null;
     }
@@ -77,7 +77,7 @@ export class PostsRepository {
         {
           id: postId,
         },
-        { title, content, short_description: shortDescription },
+        { title, content, short_description: shortDescription }
       );
 
       return result.affected !== 0;
@@ -142,7 +142,7 @@ export class PostsRepository {
       ]);
     } catch (error) {
       console.error(
-        `Database fails during create post reaction operate ${error}`,
+        `Database fails during create post reaction operate ${error}`
       );
     }
   }
