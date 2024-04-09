@@ -20,17 +20,8 @@ export class BlogsQueryRepo {
     try {
       const { searchNameTerm } = queryOptions;
 
-      const paginationOptions = {
-        isSql: true,
-        isMongo: false,
-      };
-
       const { pageNumber, pageSize, skip, sortBy, sortDirection } =
-        getPagination(
-          queryOptions,
-          paginationOptions.isMongo,
-          paginationOptions.isSql
-        );
+        getPagination(queryOptions);
 
       const searchTerm = `%${searchNameTerm ? searchNameTerm : ''}%`;
 

@@ -15,19 +15,18 @@ export class PostsQueryRepo {
   constructor(
     @InjectRepository(Post) private readonly posts: Repository<Post>,
     @InjectRepository(PostReaction)
-    private readonly postReactions: Repository<PostReaction>,
+    private readonly postReactions: Repository<PostReaction>
   ) {}
 
   async getAllPosts(
     queryOptions: PostsQueryFilter,
-    userId?: string,
+    userId?: string
   ): Promise<PaginationViewModel<PostViewModelType>> {
     try {
       const { searchContentTerm } = queryOptions;
-      const isSql = true;
 
       const { pageNumber, pageSize, skip, sortBy, sortDirection } =
-        getPagination(queryOptions, !!0, isSql);
+        getPagination(queryOptions);
 
       const searchTerm = `%${searchContentTerm ? searchContentTerm : ''}%`;
 
@@ -48,7 +47,7 @@ export class PostsQueryRepo {
             : sortBy === 'created_at'
               ? `posts.created_at`
               : `posts.${sortBy}`,
-          sortDirection,
+          sortDirection
         )
         .skip(skip)
         .take(pageSize);
@@ -85,17 +84,17 @@ export class PostsQueryRepo {
 
       const postsViewModel = new PaginationViewModel<PostViewModelType>(
         posts.map((post: Post) =>
-          getPostTORViewModel(post, latestReactions, myReactions),
+          getPostTORViewModel(post, latestReactions, myReactions)
         ),
         pageNumber,
         pageSize,
-        count,
+        count
       );
 
       return postsViewModel;
     } catch (error) {
       throw new InternalServerErrorException(
-        `Database fails operation with find all posts ${error}`,
+        `Database fails operation with find all posts ${error}`
       );
     }
   }
@@ -103,14 +102,13 @@ export class PostsQueryRepo {
   async getPostsByBlogId(
     blogId: string,
     queryOptions: PostsQueryFilter,
-    userId?: string,
+    userId?: string
   ): Promise<PaginationViewModel<PostViewModelType> | null> {
     try {
       const { searchContentTerm } = queryOptions;
-      const isSql = true;
-      const isMongo = true;
+
       const { pageNumber, pageSize, skip, sortBy, sortDirection } =
-        getPagination(queryOptions, !isMongo, isSql);
+        getPagination(queryOptions);
 
       const searchTerm = `%${searchContentTerm ? searchContentTerm : ''}%`;
 
@@ -132,7 +130,7 @@ export class PostsQueryRepo {
             : 'created_at'
               ? `posts.created_at`
               : `posts.${sortBy}`,
-          sortDirection,
+          sortDirection
         )
         .skip(skip)
         .take(pageSize);
@@ -178,11 +176,11 @@ export class PostsQueryRepo {
 
       const postsViewModel = new PaginationViewModel<PostViewModelType>(
         posts.map((post: Post) =>
-          getPostTORViewModel(post, latestReactions, myReactions),
+          getPostTORViewModel(post, latestReactions, myReactions)
         ),
         pageNumber,
         pageSize,
-        postsCount,
+        postsCount
       );
 
       return postsViewModel;
@@ -194,7 +192,7 @@ export class PostsQueryRepo {
 
   async getPostById(
     postId: string,
-    userId?: string,
+    userId?: string
   ): Promise<PostViewModelType | null> {
     try {
       let myReaction: LikesStatuses = LikesStatuses.None;
@@ -255,14 +253,13 @@ export class PostsQueryRepo {
   }
   async getPostsForTest(
     queryOptions: PostsQueryFilter,
-    userId?: string,
+    userId?: string
   ): Promise<PaginationViewModel<PostViewModelType>> {
     try {
       const { searchContentTerm } = queryOptions;
-      const isSql = true;
 
       const { pageNumber, pageSize, skip, sortBy, sortDirection } =
-        getPagination(queryOptions, !!0, isSql);
+        getPagination(queryOptions);
 
       const searchTerm = `%${searchContentTerm ? searchContentTerm : ''}%`;
 
@@ -277,7 +274,7 @@ export class PostsQueryRepo {
           sortBy !== 'created_at'
             ? `posts.${sortBy} COLLATE 'C'`
             : `posts.created_at`,
-          sortDirection,
+          sortDirection
         )
         .skip(skip)
         .take(pageSize);
@@ -317,17 +314,17 @@ export class PostsQueryRepo {
 
       const postsViewModel = new PaginationViewModel<PostViewModelType>(
         posts.map((post: Post) =>
-          getPostTORViewModel(post, latestReactions, myReactions),
+          getPostTORViewModel(post, latestReactions, myReactions)
         ),
         pageNumber,
         pageSize,
-        count,
+        count
       );
 
       return postsViewModel;
     } catch (error) {
       throw new InternalServerErrorException(
-        `Database fails operation with find all posts ${error}`,
+        `Database fails operation with find all posts ${error}`
       );
     }
   }

@@ -40,12 +40,12 @@ export class BlogsController {
   constructor(
     private readonly blogsQueryRepo: BlogsQueryRepo,
     private readonly postsQueryRepo: PostsQueryRepo,
-    private readonly commandBus: CommandBus,
+    private readonly commandBus: CommandBus
   ) {}
 
   @Get()
   async getBlogs(
-    @Query() query: BlogsQueryFilter,
+    @Query() query: BlogsQueryFilter
   ): Promise<PaginationViewModel<BlogViewModelType>> {
     const result = await this.blogsQueryRepo.getAllBlogs(query);
 
@@ -72,7 +72,7 @@ export class BlogsController {
   async getPosts(
     @CurrentUserId() userId: string,
     @Param('id') blogId: string,
-    @Query() query: PostsQueryFilter,
+    @Query() query: PostsQueryFilter
   ): Promise<PaginationViewModel<PostViewModelType>> {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
 
@@ -83,7 +83,7 @@ export class BlogsController {
     const posts = await this.postsQueryRepo.getPostsByBlogId(
       blogId,
       query,
-      userId,
+      userId
     );
 
     if (!posts) throw new Error();
@@ -95,12 +95,12 @@ export class BlogsController {
   @UseGuards(BasicSAAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async createBlog(
-    @Body() data: CreateBlogInputDto,
+    @Body() data: CreateBlogInputDto
   ): Promise<BlogViewModelType> {
     const command = new CreateBlogCommand(data);
 
     const blog = await this.commandBus.execute<CreateBlogCommand, OutputId>(
-      command,
+      command
     );
 
     const result = await this.blogsQueryRepo.getBlogById(blog.id);
@@ -139,7 +139,7 @@ export class BlogsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async updateBlog(
     @Param('id') blogId: string,
-    @Body() data: UpdateBlogInputDto,
+    @Body() data: UpdateBlogInputDto
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
 

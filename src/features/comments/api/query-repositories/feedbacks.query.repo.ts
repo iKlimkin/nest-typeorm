@@ -32,7 +32,7 @@ export class FeedbacksQueryRepo {
       const { searchContentTerm } = queryOptions;
 
       const { pageNumber, pageSize, sortBy, skip, sortDirection } =
-        getPagination(queryOptions, !!0, !0);
+        getPagination(queryOptions);
 
       const filter = `%${searchContentTerm ? searchContentTerm : ''}%`;
 
@@ -96,7 +96,7 @@ export class FeedbacksQueryRepo {
       const { searchContentTerm } = queryOptions;
 
       const { pageNumber, pageSize, sortBy, skip, sortDirection } =
-        getPagination(queryOptions, !!0, !0);
+        getPagination(queryOptions);
 
       const searchTerm = `%${searchContentTerm ? searchContentTerm : ''}%`;
 
@@ -209,7 +209,7 @@ export class FeedbacksQueryRepo {
   ): Promise<PaginationViewModel<CommentsViewModel>> {
     try {
       const { pageNumber, pageSize, sortBy, skip, sortDirection } =
-        getPagination(queryOptions, !!0, !0);
+        getPagination(queryOptions);
 
       const reactionsResult = await this.dataSource.query(
         `
