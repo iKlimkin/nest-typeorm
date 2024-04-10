@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import nodemailer, { SentMessageInfo } from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 import { EmailData, EmailEnvSettingTypes } from '../../domain/notification-model';
+import { SentMessageInfo } from 'nodemailer';
 
 @Injectable()
 export class EmailAdapter {

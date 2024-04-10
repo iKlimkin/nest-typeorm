@@ -112,14 +112,16 @@ export class SABlogsController {
       OutputId | null
     >(command);
 
-    return (await this.blogsQueryRepo.getBlogById(blog.id))!;
+    const newestBlog = await this.blogsQueryRepo.getBlogById(blog.id);
+
+    return newestBlog;
   }
 
   @Post(':id/posts')
   @HttpCode(HttpStatus.CREATED)
   async createPost(
     @Param('id') blogId: string,
-    @Body() body: CreationPostDto
+    @Body() body: CreationPostDtoByBlogId
     //@CurrentUserInfo() userInfo: UserInfoType,
   ): Promise<PostViewModelType> {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);

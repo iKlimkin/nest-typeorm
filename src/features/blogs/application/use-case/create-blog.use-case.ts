@@ -29,7 +29,7 @@ export class CreateBlogUseCase implements ICommandHandler<CreateBlogCommand> {
     const { description, name, websiteUrl } = command.createData;
 
     const blogDto = new BlogCreationDto(name, description, websiteUrl);
-
+    
     const result = await this.blogsRepo.createBlog(blogDto);
 
     if (!result) {

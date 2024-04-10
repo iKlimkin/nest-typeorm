@@ -110,30 +110,6 @@ export class BlogsController {
     return result;
   }
 
-  // @Post(':id/posts')
-  // @UseGuards(BasicSAAuthGuard)
-  // @HttpCode(HttpStatus.CREATED)
-  // async createPostForBlog(
-  //   @Param('id', ObjectIdPipe) blogId: string,
-  //   @Body() body: InputPostModelByBlogId,
-  // ): Promise<PostViewModelType> {
-  //   const command = new CreatePostSqlCommand({ ...body, blogId });
-
-  //   const post = await this.commandBus.execute<CreatePostSqlCommand, LayerNoticeInterceptor<OutputId | null>>(command);
-
-  //   if (post.hasError()) {
-  //     throw new InternalServerErrorException('Post not created');
-  //   }
-
-  //   const newlyCreatedPost = await this.postsSqlQueryRepo.getPostById(post.data!.id);
-
-  //   if (!newlyCreatedPost) {
-  //     throw new Error('Newest post not found');
-  //   }
-
-  //   return newlyCreatedPost;
-  // }
-
   @Put(':id')
   @UseGuards(BasicSAAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

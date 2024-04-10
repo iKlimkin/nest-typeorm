@@ -2,6 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 import { ConfigurationType } from './config/configuration';
+import { TemporaryUserAccount } from '../features/auth/domain/entities/temp-account.entity';
+import { Comment } from '../features/comments/domain/entities/comment.entity';
+import { Post } from '../features/posts/domain/entities/post.entity';
+import { Blog } from '../features/blogs/domain/entities/blog.entity';
+import { UserSession } from '../features/security/domain/entities/security.entity';
+import { PostReaction } from '../features/posts/domain/entities/post-reactions.entity';
+import { PostReactionCounts } from '../features/posts/domain/entities/post-reaction-counts.entity';
+import { CommentReaction } from '../features/comments/domain/entities/comment-reactions.entity';
+import { CommentReactionCounts } from '../features/comments/domain/entities/comment-reaction-counts.entity';
+import { UserAccount } from '../features/admin/domain/entities/user-account.entity';
 
 @Injectable()
 export class TypeOrmOptions implements TypeOrmOptionsFactory {
@@ -28,6 +38,22 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
       url: dbConfig.url,
       type: 'postgres',
       logging: ['query', 'error'],
+      entities: [
+        TemporaryUserAccount,
+        Comment,
+        Post,
+        Blog,
+        UserSession,
+        PostReaction,
+        PostReactionCounts,
+        CommentReaction,
+        CommentReactionCounts,
+        UserAccount,
+        UserSession,
+        TemporaryUserAccount,
+      ],
+      // entities: ['src/**/*.entity.ts'],
+      // entities: [__dirname + '/../**/*.entity.js'],
       username: dbConfig.username,
       password: dbConfig.password,
       database: dbConfig.typeormPostgresDbName,
