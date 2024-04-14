@@ -1,33 +1,27 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppModule } from '../../src/app.module';
-import { applyAppSettings } from '../../src/settings/apply-app.settings';
+import { DataSource } from 'typeorm';
 import {
-  blogValidationErrors,
   blogEqualTo,
+  blogValidationErrors,
 } from '../tools/helpers/blogs.helpers';
+import { BasicAuthorization } from '../tools/managers/BasicAuthManager';
 import { BlogsTestManager } from '../tools/managers/BlogsTestManager';
 import { aDescribe } from '../tools/utils/aDescribe';
-import { BasicAuthorization } from '../tools/managers/BasicAuthManager';
-import { skipSettings } from '../tools/utils/testsSettings';
 import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
 import { createExceptions } from '../tools/utils/exceptionHandlers';
+import { initSettings } from '../tools/utils/initSettings';
+import { skipSettings } from '../tools/utils/testsSettings';
 
 aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
   let app: INestApplication;
   let blogTestManager: BlogsTestManager;
   let basicAuthManager: BasicAuthorization;
+  let dataSource: DataSource;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    const { testingAppModule, app } = await initSettings();
 
-    app = moduleFixture.createNestApplication();
-
-    applyAppSettings(app);
-
-    await app.init();
+    dataSource = testingAppModule.get(DataSource);
 
     blogTestManager = new BlogsTestManager(app, 'blogs');
     basicAuthManager = new BasicAuthorization(app);
@@ -68,8 +62,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
       blogTestManager.assertBlogsMatch(newBlog, blogEqualTo);
       const expectLength = 1;
-   
-      
+
       await blogTestManager.checkStatusOptionId(newBlog.id);
       await blogTestManager.expectLength(expectLength);
     });
@@ -187,7 +180,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
     it.skip(`/blogs/:blogId/posts (POST) - shouldn't create post without basic auth`, async () => {
       const { blogPost } = expect.getState();
-      
+
       await basicAuthManager.testPostAuthorization(
         'blogs',
         blogPost.id,

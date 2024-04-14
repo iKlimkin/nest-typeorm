@@ -1,12 +1,12 @@
 export const skipSettings = {
   run_all_tests: false,
 
-  quiz: true,
+  quiz: false,
   userAuth: true,
   sa: true,
   sa_blogs: true,
   userAuthSql: true,
-  posts: false,
+  posts: true,
   appTests: true,
   blogs: true,
   security: true,

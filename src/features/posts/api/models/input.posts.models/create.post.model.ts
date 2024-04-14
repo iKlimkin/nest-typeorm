@@ -1,6 +1,6 @@
 import { IsOptional, IsString } from 'class-validator';
 import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-string';
-import { BlogIdIsExist } from '../../../../../infra/decorators/validate/valid-blogId';
+import { BlogIdIsExist } from '../../../../../infra/decorators/validate/is-valid-blogId';
 import {
   titleLength,
   frequentLength,

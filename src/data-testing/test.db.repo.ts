@@ -9,12 +9,15 @@ export class TestDatabaseRepo {
   async deleteAllData() {
     try {
       await this.dataSource.query(`
-      TRUNCATE TABLE temporary_user_account;
-      TRUNCATE TABLE user_session CASCADE;
       TRUNCATE TABLE user_account CASCADE;
+      TRUNCATE TABLE quiz_pair CASCADE;
+      TRUNCATE TABLE quiz_question CASCADE;
+      TRUNCATE TABLE quiz_answer;
+      TRUNCATE TABLE user_session;
       TRUNCATE TABLE post CASCADE;
       TRUNCATE TABLE blog CASCADE;
       TRUNCATE TABLE comment CASCADE;
+      TRUNCATE TABLE temporary_user_account;
     `);
     } catch (error) {
       console.error('Error executing queries:', error);

@@ -1,5 +1,6 @@
 export const contentLength = { min: 3, max: 1000 };
 export const descriptionLength = { min: 3, max: 500 };
+export const questionLength = { min: 10, max: 500 };
 export const urlLength = { min: 3, max: 100 };
 export const frequentLength = { min: 3, max: 100 };
 export const titleLength = { min: 3, max: 30 };

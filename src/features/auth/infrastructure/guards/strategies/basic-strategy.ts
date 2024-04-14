@@ -6,15 +6,15 @@ import { ConfigurationType } from '../../../../../settings/config/configuration'
 
 @Injectable()
 export class BasicSAStrategy extends PassportStrategy(BasicStrategy) {
-  constructor(private configService: ConfigService) {
+  constructor(private configService: ConfigService<ConfigurationType>) {
     super();
   }
 
   public validate = async (
     username: string,
-    password: string,
+    password: string
   ): Promise<boolean> => {
-    const config = this.configService.get<ConfigurationType>('basicAuth', {
+    const config = this.configService.get('basicAuth', {
       infer: true,
     });
 

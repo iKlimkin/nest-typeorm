@@ -8,7 +8,11 @@ import {
   PostReaction,
   PostReactionCounts,
   UserSession,
+  QuizPair,
+  QuizQuestion,
+  QuizAnswer,
 } from '.';
+
 
 export const entities = [
   TemporaryUserAccount,
@@ -20,4 +24,7 @@ export const entities = [
   PostReactionCounts,
   CommentReaction,
   CommentReactionCounts,
+  QuizPair,
+  QuizQuestion,
+  QuizAnswer
 ];

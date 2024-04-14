@@ -8,7 +8,8 @@ export const RouterPaths = {
   users: '/sa/users',
   auth: '/auth',
   security: '/security/devices',
-  quiz: 'sa/quiz/questions',
+  quizQuestions: '/sa/quiz/questions',
+  quizPairs: '/pair-game-quiz/pairs',
 
   test: '/testing/all-data',
 };

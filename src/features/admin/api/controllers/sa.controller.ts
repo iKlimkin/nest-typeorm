@@ -14,17 +14,16 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
-import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { CreateUserErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
-import { DeleteSACommand } from '../../application/commands/delete-sa.command';
-import { SAQueryFilter } from '../models/outputSA.models.ts/sa-query.filter';
-import { SAViewType } from '../models/userAdmin.view.models/userAdmin.view.model';
-import { UserIdType } from '../models/outputSA.models.ts/user-models';
-import { UsersQueryRepo } from '../query-repositories/users.query.repo';
-import { CreateUserDto } from '../models/create-user.model';
 import { CreateSACommand } from '../../application/commands/create-sa.command';
-import { seedAllData } from '../../../../infra/utils/seed-data';
+import { DeleteSACommand } from '../../application/commands/delete-sa.command';
+import { CreateUserDto } from '../models/create-user.model';
+import { SAQueryFilter } from '../models/outputSA.models.ts/sa-query.filter';
+import { UserIdType } from '../models/outputSA.models.ts/user-models';
+import { SAViewType } from '../models/userAdmin.view.models/userAdmin.view.model';
+import { UsersQueryRepo } from '../query-repositories/users.query.repo';
 
 @UseGuards(BasicSAAuthGuard)
 @Controller('sa/users')

@@ -6,6 +6,7 @@ import {
   CreateBlogUseCase,
   CreateCommentUseCase,
   CreatePostUseCase,
+  CreateQuestionUseCase,
   DeleteBlogUseCase,
   DeleteCommentUseCase,
   DeletePostUseCase,
@@ -13,6 +14,7 @@ import {
   FeedbacksRepository,
   PostsQueryRepo,
   PostsRepository,
+  QuizRepository,
   TestDatabaseRepo,
   UpdateBlogUseCase,
   UpdateCommentReactionUseCase,
@@ -20,6 +22,9 @@ import {
   UpdatePostReactionUseCase,
   UpdatePostUseCase,
 } from '.';
+import { QuizQueryRepo } from '../features/quiz/api/models/query-repositories/quiz.query.repo';
+import { IsValidAnswersConstraint } from '../infra/decorators/validate/is-valid-answers';
+import { UpdateQuestionUseCase } from '../features/quiz/application/use-cases/update-question.use-case';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -46,7 +51,12 @@ const useCases: Provider[] = [
   UpdateCommentUseCase,
   UpdateCommentReactionUseCase,
   DeleteCommentUseCase,
+
+  CreateQuestionUseCase,
+  UpdateQuestionUseCase
 ];
+
+const quizProviders = [QuizRepository, QuizQueryRepo];
 
 export const providers: Provider[] = [
   ...blogsProviders,
@@ -54,5 +64,7 @@ export const providers: Provider[] = [
   ...feedbacksProviders,
   ...useCases,
   ...testProviders,
+  ...quizProviders,
   BlogIdExistConstraint,
+  IsValidAnswersConstraint,
 ];

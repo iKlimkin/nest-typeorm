@@ -57,8 +57,8 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
       username: dbConfig.username,
       password: dbConfig.password,
       database: dbConfig.typeormPostgresDbName,
-      autoLoadEntities: false,
-      synchronize: false,
+      autoLoadEntities: true,
+      synchronize: true,
     };
   }
 }

@@ -68,6 +68,10 @@ export const authUseCases: Provider[] = [
   UpdateConfirmationCodeUseCase,
 ];
 
+const quizProviders = [
+  // QuizQueryRepo
+];
+
 export const securityUseCases: Provider[] = [
   DeleteActiveSessionUseCase,
   DeleteOtherUserSessionsUseCase,
@@ -89,4 +93,5 @@ export const providers = [
   ...securityUseCases,
   AuthService,
   ...usersProviders,
+  ...quizProviders,
 ];

@@ -26,6 +26,7 @@ export const sortingKeys = Object.keys(convertSortBy);
 
 export const sortingConstraints = {
   sa: ['id', 'login', 'email', 'createdAt'],
+  quizQuestions: ['body'],
   blogs: [
     'id',
     'name',
@@ -47,7 +48,7 @@ export const sortingConstraints = {
   default: sortingKeys,
 };
 
-type SortByType = typeof convertSortBy;
+export type SortByType = keyof typeof sortingConstraints;
 
 export enum SortDirections {
   Asc = 'asc',

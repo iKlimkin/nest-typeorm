@@ -1,7 +1,8 @@
-import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { RouterPaths } from '../helpers/routing';
+import { HttpServer } from '@nestjs/common';
 
-export const cleanDatabase = async (app: INestApplication) => {
-  await request(app.getHttpServer()).delete(`${RouterPaths.test}`);
+import { RouterPaths } from '../helpers/routing';
+import * as request from 'supertest';
+
+export const cleanDatabase = async (httpServer: HttpServer) => {
+  await request(httpServer).delete(RouterPaths.test);
 };

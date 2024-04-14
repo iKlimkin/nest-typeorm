@@ -6,8 +6,11 @@ export * from '../features/posts/api/controllers/posts.controller';
 export * from '../app.controller';
 
 export * from '../data-testing/test.db.repo';
-export * from '../infra/decorators/validate/valid-blogId';
+export * from '../infra/decorators/validate/is-valid-blogId';
 export * from '../features/blogs/api/query-repositories/blogs.query.repo';
+export * from '../features/quiz/infrastructure/quiz-question.repo';
+
+export * from '../features/quiz/application/use-cases/create-question.use-case';
 export * from '../features/blogs/application/use-case/create-blog.use-case';
 export * from '../features/blogs/application/use-case/delete-blog.use-case';
 export * from '../features/blogs/infrastructure/blogs.repository';
@@ -34,3 +37,6 @@ export * from '../features/posts/domain/entities/post-reaction-counts.entity';
 export * from '../features/posts/domain/entities/post-reactions.entity';
 export * from '../features/posts/domain/entities/post.entity';
 export * from '../features/security/domain/entities/security.entity';
+export * from '../features/quiz/domain/entities/quiz-pair.entity';
+export * from '../features/quiz/domain/entities/quiz-question.entity';
+export * from '../features/quiz/domain/entities/quiz-answer.entity';

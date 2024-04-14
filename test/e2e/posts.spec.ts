@@ -22,7 +22,6 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
   let testingAppModule: TestingModule;
   let postTestManager: PostsTestManager;
   let blogTestManager: BlogsTestManager;
-  let basicAuthManager: BasicAuthorization;
   let authManager: AuthManager;
   let saManager: SATestManager;
   let feedbacksTestManager: FeedbacksTestManager;
@@ -30,22 +29,15 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
   let dataBase: DataSource;
 
   beforeAll(async () => {
-    const result = await initSettings();
+    const { testingAppModule, usersTestManager, app } = await initSettings();
 
-    testingAppModule = result.testingAppModule;
-    usersTestManager = result.usersTestManager;
-
-    dataBase = testingAppModule.get<DataSource>(DataSource);
-    app = result.app;
+    dataBase = testingAppModule.get(DataSource);
 
     postTestManager = new PostsTestManager(app);
     blogTestManager = new BlogsTestManager(app, 'sa_blogs');
-    basicAuthManager = new BasicAuthorization(app);
     authManager = new AuthManager(app);
     saManager = new SATestManager(app);
     feedbacksTestManager = new FeedbacksTestManager(app);
-
-    await cleanDatabase(app);
   });
 
   afterAll(async () => {

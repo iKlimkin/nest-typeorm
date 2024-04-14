@@ -38,7 +38,7 @@ export const initSettings = async (
 
   const httpServer = app.getHttpServer();
 
-  await cleanDatabase(app);
+  await cleanDatabase(httpServer);
 
   return {
     app,

@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
 import type { Blog } from '../../../blogs/domain/entities/blog.entity';
 import type { CommentReaction } from '../../../comments/domain/entities/comment-reactions.entity';
 import type { Comment } from '../../../comments/domain/entities/comment.entity';
@@ -7,6 +7,7 @@ import type { UserSession } from '../../../security/domain/entities/security.ent
 import { BaseEntity } from '../../../../domain/base-entity';
 import { add } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import type { QuizPair } from '../../../quiz/domain/entities/quiz-pair.entity';
 
 type UserDataType = {
   login: string;
@@ -58,6 +59,12 @@ export class UserAccount extends BaseEntity {
 
   @OneToMany('CommentReaction', 'userAccount')
   commentReactions: CommentReaction[];
+
+  @OneToOne('QuizPair', 'firstPlayer', { cascade: true })
+  createdPairs: QuizPair;
+
+  @OneToOne('QuizPair', 'secondPlayer', { cascade: true })
+  joinedPairs: QuizPair;
 
   static create(userData: UserDataType): UserAccount {
     const { login, email, passwordSalt, passwordHash } = userData;

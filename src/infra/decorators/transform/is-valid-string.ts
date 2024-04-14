@@ -1,6 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
 import {
+  SortByType,
   SortDirections,
   convertSortBy,
   sortingConstraints,
@@ -27,7 +28,7 @@ export const iSValidField = ({ min, max }, regexOption?: RegExp) => {
 export const Trim = () =>
   Transform(({ value }: TransformFnParams) => value?.trim());
 
-export const ValidateSortBy = (entity: string = 'default') =>
+export const ValidateSortBy = (entity: SortByType = 'default') =>
   Transform(({ value }: TransformFnParams) => {
     const isValidValue = sortingConstraints[entity].includes(value);
 

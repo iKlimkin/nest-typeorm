@@ -38,4 +38,4 @@ export * from '../../../admin/domain/entities/user-account.entity';
 export * from '../../../security/domain/entities/security.entity';
 export * from '../../domain/entities/temp-account.entity';
 
-export * from '../../../../infra/decorators/validate/valid-blogId';
+export * from '../../../../infra/decorators/validate/is-valid-blogId';
