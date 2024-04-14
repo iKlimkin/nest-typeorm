@@ -13,3 +13,16 @@ export const RouterPaths = {
 
   test: '/testing/all-data',
 };
+
+export enum NavigationEnum {
+  comments = '/comments',
+  blogs = '/blogs',
+  sa_blogs = '/sa/blogs',
+  posts = '/posts',
+  users = '/sa/users',
+  auth = '/auth',
+  security = '/security/devices',
+  quizQuestions = '/sa/quiz/questions',
+  quizPairs = '/pair-game-quiz/pairs',
+  test = '/testing/all-data',
+}

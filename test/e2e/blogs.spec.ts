@@ -1,4 +1,4 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import {
   blogEqualTo,
@@ -17,11 +17,12 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
   let blogTestManager: BlogsTestManager;
   let basicAuthManager: BasicAuthorization;
   let dataSource: DataSource;
+  let httpsServer: HttpServer
 
   beforeAll(async () => {
-    const { testingAppModule, app } = await initSettings();
-
-    dataSource = testingAppModule.get(DataSource);
+    const result = await initSettings();
+    httpsServer = result.httpServer
+    dataSource = result.testingAppModule.get(DataSource);
 
     blogTestManager = new BlogsTestManager(app, 'blogs');
     basicAuthManager = new BasicAuthorization(app);
@@ -33,7 +34,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
   describe('createBlog', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpsServer);
     });
 
     it("/blogs (post) - shouldn't create blog without auth", async () => {
@@ -70,7 +71,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
   describe('testing update blog (PUT)', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpsServer);
     });
 
     it("/blogs (put) - shouldn't update blog without auth", async () => {
@@ -133,7 +134,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
   describe('testing delete blog (Delete)', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpsServer);
     });
 
     it('/blogs/:blogId (DELETE) - should not remove blog without auth', async () => {
@@ -163,7 +164,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
   describe(`testing create post by blogId (POST)`, () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpsServer);
     });
 
     beforeAll(async () => {

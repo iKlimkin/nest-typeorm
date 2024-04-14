@@ -31,6 +31,7 @@ import { QuizQuestionViewType } from '../models/view.models.ts/quiz-question.vie
 import { PaginationViewModelType } from '../../../../domain/pagination-view.model';
 import { UpdateQuestionData } from '../models/input.models/update-question.model';
 import { UpdateQuestionCommand } from '../../application/commands/update-question.command';
+import { DeleteQuestionCommand } from '../../application/commands/delete-question.command';
 
 @UseGuards(BasicSAAuthGuard)
 @Controller('sa/quiz/questions')
@@ -71,9 +72,6 @@ export class QuizQuestionsController {
     return foundQuizQuestion;
   }
 
-  @Delete(':id')
-  async deleteQuestion(@Param('id') questionId: string) {}
-
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async updateQuestion(
@@ -102,8 +100,30 @@ export class QuizQuestionsController {
   }
 
   @Put(':id/publish')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async publishQuestion(
     @Param('id') questionId: string,
     @Body() body: InputPublishData
   ) {}
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteQuestion(@Param('id') questionId: string) {
+    const question = await this.quizQueryRepo.getQuizQuestion(questionId);
+
+    if (!question) throw new NotFoundException();
+
+    const command = new DeleteQuestionCommand(questionId);
+
+    const result = await this.commandBus.execute<
+      DeleteQuestionCommand,
+      LayerNoticeInterceptor<boolean>
+    >(command);
+    console.log(result);
+    
+    if (result.hasError()) {
+      const errors = handleErrors(result.code, result.extensions[0]);
+      throw errors.error;
+    }
+  }
 }

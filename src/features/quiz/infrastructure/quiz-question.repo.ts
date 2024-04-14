@@ -48,14 +48,15 @@ export class QuizRepository {
     try {
       const { body, correctAnswers, questionId } = updateDto;
 
+      const formerAnswers = await this.quizAnswers
+        .createQueryBuilder('qa')
+        .where('question_id = :questionId', { questionId })
+        .getMany();
+      console.log({ formerAnswers });
+
       for (let i = 0; i < correctAnswers.length; i++) {
         const answerText = correctAnswers[i];
-        const formerAnswers = await this.quizAnswers
-          .createQueryBuilder('qa')
-          .where('question_id = :questionId', { questionId })
-          .getMany();
-
-        let formerAnswer = formerAnswers[i];
+        const formerAnswer = formerAnswers[i];
 
         if (formerAnswer) {
           await this.quizAnswers.update(formerAnswer.id, { answerText });
@@ -81,6 +82,22 @@ export class QuizRepository {
       return result.affected !== 0;
     } catch (error) {
       console.log(`updateQuestionAndAnswers: ${error}`);
+      return false;
+    }
+  }
+
+  async deleteQuestion(questionId: string): Promise<boolean> {
+    try {
+      const deleteAnswers = await this.quizAnswers.delete({ question: { id: questionId } });
+
+      const deleteQuestion = await this.quizQuestions.delete(questionId);
+
+    
+      return deleteQuestion.affected !== 0;
+    } catch (error) {
+      console.error(
+        `Database fails during delete quiz-question operation ${error}`
+      );
       return false;
     }
   }

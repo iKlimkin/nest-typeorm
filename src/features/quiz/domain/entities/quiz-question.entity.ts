@@ -11,7 +11,7 @@ export class QuizQuestion extends BaseEntity {
   @Column()
   body: string;
 
-  @OneToMany('QuizAnswer', 'question')
+  @OneToMany('QuizAnswer', 'question', { cascade: true } )
   correctAnswers: QuizAnswer[];
 
   @ManyToOne('QuizPair', 'questions')

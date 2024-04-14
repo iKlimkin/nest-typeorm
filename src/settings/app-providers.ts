@@ -25,6 +25,7 @@ import {
 import { QuizQueryRepo } from '../features/quiz/api/models/query-repositories/quiz.query.repo';
 import { IsValidAnswersConstraint } from '../infra/decorators/validate/is-valid-answers';
 import { UpdateQuestionUseCase } from '../features/quiz/application/use-cases/update-question.use-case';
+import { DeleteQuestionUseCase } from '../features/quiz/application/use-cases/delete-question.use-case';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -53,7 +54,8 @@ const useCases: Provider[] = [
   DeleteCommentUseCase,
 
   CreateQuestionUseCase,
-  UpdateQuestionUseCase
+  UpdateQuestionUseCase,
+  DeleteQuestionUseCase,
 ];
 
 const quizProviders = [QuizRepository, QuizQueryRepo];
