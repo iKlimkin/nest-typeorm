@@ -7,6 +7,10 @@ import {
   sortingConstraints,
 } from '../../../domain/sorting-base-filter';
 import { Transform, TransformFnParams } from 'class-transformer';
+import {
+  convertPublishedStatus,
+  publishedStatuses,
+} from '../../../features/quiz/api/models/input.models/statuses.model';
 
 export const iSValidField = ({ min, max }, regexOption?: RegExp) => {
   const decorators = [
@@ -18,7 +22,7 @@ export const iSValidField = ({ min, max }, regexOption?: RegExp) => {
 
   if (regexOption) {
     decorators.unshift(
-      Matches(regexOption, { message: "field doesn't match" }),
+      Matches(regexOption, { message: "field doesn't match" })
     );
   }
 
@@ -32,7 +36,9 @@ export const ValidateSortBy = (entity: SortByType = 'default') =>
   Transform(({ value }: TransformFnParams) => {
     const isValidValue = sortingConstraints[entity].includes(value);
 
-    return !isValidValue ? convertSortBy.createdAt : convertSortBy[value];
+    return !isValidValue
+      ? convertSortBy.createdAt
+      : convertSortBy[value] || value;
   });
 
 export const ValidSortDirection = () =>
@@ -43,4 +49,13 @@ export const ValidSortDirection = () =>
     return !value || !values.includes(lowerValue)
       ? SortDirections.Desc
       : lowerValue;
+  });
+
+export const ValidateAndConvertStatuses = () =>
+  Transform(({ value }: TransformFnParams) => {
+    const isValidStatus = publishedStatuses[value];
+    
+    return !isValidStatus
+      ? convertPublishedStatus.all
+      : convertPublishedStatus[value];
   });

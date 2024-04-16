@@ -2,6 +2,9 @@ import { UpdateQuestionData } from '../../api/models/input.models/update-questio
 
 export class UpdateQuestionCommand {
   constructor(
-    public readonly updateData: UpdateQuestionData & { published: boolean, questionId: string }
+    public readonly updateData: UpdateQuestionData & {
+      published: boolean;
+      questionId: string;
+    }
   ) {}
 }

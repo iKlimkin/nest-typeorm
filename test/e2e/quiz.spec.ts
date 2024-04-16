@@ -13,6 +13,10 @@ import { EmailManager } from '../../src/infra/managers/email-manager';
 import { EmailManagerMock } from '../tools/dummies/email.manager.mock';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { QuizTestManager } from '../tools/managers/QuizTestManager';
+import { bool } from 'joi';
+import { QuizQuestionsQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
+import { publishedStatuses } from '../../src/features/quiz/api/models/input.models/statuses.model';
+import { SortDirections } from '../../src/domain/sorting-base-filter';
 
 aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   let app: INestApplication;
@@ -21,8 +25,8 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   let httpServer: HttpServer;
   let quizQuestionRepository: Repository<QuizQuestion>;
   let quizAnswerRepository: Repository<QuizAnswer>;
-  let quizQuestionManager: QuizTestManager
-  let quizPairManager: QuizTestManager
+  let quizQuestionManager: QuizTestManager;
+  let quizPairManager: QuizTestManager;
 
   beforeAll(async () => {
     const result = await initSettings((moduleBuilder) =>
@@ -36,11 +40,14 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     quizQuestionRepository = app.get(getRepositoryToken(QuizQuestion));
     quizAnswerRepository = app.get(getRepositoryToken(QuizQuestion));
 
-    quizQuestionManager = new QuizTestManager(app, NavigationEnum.quizQuestions)
+    quizQuestionManager = new QuizTestManager(
+      app,
+      NavigationEnum.quizQuestions
+    );
   });
 
   afterAll(async () => {
-    await cleanDatabase(httpServer); 
+    await cleanDatabase(httpServer);
     await app.close();
   });
 
@@ -49,15 +56,22 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       await cleanDatabase(httpServer);
     });
 
-    it.skip('', async () => {
-      const response = await request(httpServer)
-        .get(RouterPaths.quizQuestions)
-        .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
-        .expect(HttpStatus.OK);
+    it('', async () => {
+      const filter: QuizQuestionsQueryFilter = {
+        bodySearchTerm: 'Question',
+        publishedStatus: publishedStatuses.all,
+        sortBy: 'createdAt',
+        sortDirection: SortDirections.Asc,
+        pageNumber: '1',
+        pageSize: '10',
+      };
+  
+      await quizQuestionManager.createQuestionsForFurtherTests(3)
 
-      console.log({ res: response.body });
+      const questions = await quizQuestionManager.getQuestions(filter)
 
-      expect(response.body).toBe(1);
+      console.log({questions});
+      
     });
   });
 
@@ -67,19 +81,18 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it(`Shouldn't create question without authorization, 400`, async () => {});
 
     it(`Should create question, 201`, async () => {
-      const questionBody = 'What is the capital of France?';
-      const correctAnswers = ['Paris', 'paris'];
+      const createdBody = {
+        body: 'What is the capital of France?',
+        correctAnswers: ['Paris', 'paris'],
+      };
 
-      const response = await request(httpServer)
-        .post(RouterPaths.quizQuestions)
-        .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
-        .send({ body: questionBody, correctAnswers })
-        .expect(HttpStatus.CREATED);
+      const question =
+        await quizQuestionManager.createQuestionWithAnswers(createdBody);
 
-      expect(response.body.body).toEqual(questionBody);
-      expect(response.body.correctAnswers).toEqual(correctAnswers);
+      expect(question.body).toEqual(createdBody.body);
+      expect(question.correctAnswers).toEqual(createdBody.correctAnswers);
 
-      expect.setState({ question: response.body });
+      expect.setState({ question });
     });
   });
 
@@ -96,16 +109,15 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         correctAnswers: ['Updated answer 1', 'Updated answer 2'],
       };
 
-      await request(httpServer)
-        .put(`${RouterPaths.quizQuestions}/${question.id}`)
-        .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
-        .send(updatedBody)
-        .expect(HttpStatus.NO_CONTENT);
+      await quizQuestionManager.updateQuestion(question.id, updatedBody);
 
-        const { answers, question: updatedQuestion } = await quizQuestionManager.getQuestionWithAnswers(question.id)
-    
-        expect(updatedQuestion.body).toBe(updatedBody.body);
-        expect(answers.map(answer => answer.answerText)).toEqual(updatedBody.correctAnswers);
+      const { answers, question: updatedQuestion } =
+        await quizQuestionManager.getQuestionWithAnswers(question.id);
+
+      expect(updatedQuestion.body).toBe(updatedBody.body);
+      expect(answers.map((answer) => answer.answerText)).toEqual(
+        updatedBody.correctAnswers
+      );
     });
 
     it('should return 404 if question not found', async () => {
@@ -150,20 +162,21 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
           body: 'Test question',
           correctAnswers: ['Answer 1', 'Answer 2'],
         });
-  
+
       const { id } = response.body;
-  
+
       await request(app.getHttpServer())
         .delete(`/sa/quiz/questions/${id}`)
         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
         .expect(HttpStatus.NO_CONTENT);
 
-      const { answers, question } = await quizQuestionManager.getQuestionWithAnswers(id);
+      const { answers, question } =
+        await quizQuestionManager.getQuestionWithAnswers(id);
 
-      expect(answers).toBeUndefined();
-      expect(question).toBeUndefined();
+      expect(answers.length).toBe(0);
+      expect(question).toBeNull();
     });
-  
+
     it('should return 404 if question does not exist', async () => {
       await request(app.getHttpServer())
         .delete(`/sa/quiz/questions/nonexistent-id`)
@@ -177,5 +190,58 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         .expect(HttpStatus.UNAUTHORIZED);
     });
   });
-  describe('PUT /sa/quiz/questions/id/publish', () => {});
+
+  describe('PUT /sa/quiz/questions/id/publish', () => {
+    beforeAll(async () => {
+      const createdBody = {
+        body: 'What is the capital of France?',
+        correctAnswers: ['Paris', 'paris'],
+      };
+
+      const question =
+        await quizQuestionManager.createQuestionWithAnswers(createdBody);
+
+      expect.setState({ question });
+    });
+
+    it('should throw bad request if input request published is false', async () => {
+      const { question } = expect.getState();
+      const body = { published: false };
+
+      await request(app.getHttpServer())
+        .put(`/sa/quiz/questions/${question.id}/publish`)
+        .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
+        .send(body)
+        .expect(HttpStatus.BAD_REQUEST);
+    });
+
+    it('should publish question successfully', async () => {
+      const { question } = expect.getState();
+      const body = { published: true };
+
+      await request(app.getHttpServer())
+        .put(`/sa/quiz/questions/${question.id}/publish`)
+        .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
+        .send(body)
+        .expect(HttpStatus.NO_CONTENT);
+    });
+
+    it('should throw bad request if the question is already published', async () => {
+      const { question } = expect.getState();
+      const body = { published: true };
+
+      await request(app.getHttpServer())
+        .put(`/sa/quiz/questions/${question.id}/publish`)
+        .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
+        .send(body)
+        .expect(HttpStatus.BAD_REQUEST);
+
+      // const publishedQuestionId = 'published-question-id';
+      // const publishedBody = { published: true };
+      // await request(app.getHttpServer())
+      //   .put(`/your-route/${publishedQuestionId}/publish`)
+      //   .send(publishedBody)
+      //   .expect(HttpStatus.BAD_REQUEST);
+    });
+  });
 });

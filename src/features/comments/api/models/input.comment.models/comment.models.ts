@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-string';
+import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-field';
 import { contentPostLength } from '../../../../../domain/validation.constants';
 import { LikesStatuses } from '../../../../../domain/reaction.models';
 

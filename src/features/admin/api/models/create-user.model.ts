@@ -1,4 +1,4 @@
-import { iSValidField } from '../../../../infra/decorators/transform/is-valid-string';
+import { iSValidField } from '../../../../infra/decorators/transform/is-valid-field';
 import {
   emailMatches,
   frequentLength,

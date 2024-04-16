@@ -1,6 +1,6 @@
 export * from '../../../../domain/sorting-base-filter';
 export * from '../../../../infra/decorators/current-user-id.decorator';
-export * from '../../../auth/api/models/auth-input.models.ts/security-user-session-info';
+export * from '../../../security/api/models/security-input.models/security-session-info.model';
 export * from '../../../auth/infrastructure/decorators/current-user-info.decorator';
 export * from '../../../auth/infrastructure/guards/accessToken.guard';
 export * from '../../../auth/infrastructure/guards/set-user-id.guard';

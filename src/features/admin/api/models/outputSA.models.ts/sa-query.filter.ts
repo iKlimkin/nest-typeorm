@@ -6,7 +6,7 @@ import {
 import {
   ValidateSortBy,
   ValidSortDirection,
-} from '../../../../../infra/decorators/transform/is-valid-string';
+} from '../../../../../infra/decorators/transform/is-valid-field';
 
 export class SAQueryFilter extends BaseFilter {
   pageNumber: string;

@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
-import { QuizRepository } from '../../infrastructure/quiz-question.repo';
+import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { UpdateQuestionCommand } from '../commands/update-question.command';
 
 @CommandHandler(UpdateQuestionCommand)

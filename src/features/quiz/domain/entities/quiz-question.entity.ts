@@ -1,6 +1,6 @@
 import { Entity, Column, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
-import type { QuizPair } from './quiz-pair.entity';
+import type { QuizGame } from './quiz-game.entity';
 import type { QuizAnswer } from './quiz-answer.entity';
 
 @Entity()
@@ -11,11 +11,11 @@ export class QuizQuestion extends BaseEntity {
   @Column()
   body: string;
 
-  @OneToMany('QuizAnswer', 'question', { cascade: true } )
+  @OneToMany('QuizAnswer', 'question', { onDelete: 'CASCADE' })
   correctAnswers: QuizAnswer[];
 
-  @ManyToOne('QuizPair', 'questions')
-  quizPair: QuizPair;
+  @ManyToOne('QuizGame', 'questions')
+  quizPair: QuizGame;
 
   @Column({ default: false })
   published: boolean;

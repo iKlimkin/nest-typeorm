@@ -5,7 +5,7 @@ import {
   urlLength,
   urlMatching,
 } from '../../../../../domain/validation.constants';
-import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-string';
+import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-field';
 
 export class CreateBlogInputDto {
   /**

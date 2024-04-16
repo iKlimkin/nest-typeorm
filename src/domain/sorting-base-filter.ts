@@ -20,13 +20,14 @@ export enum convertSortBy {
   email = 'email',
   login = 'login',
   userLogin = 'user_login',
+  updatedAt = 'updated_at',
 }
 
 export const sortingKeys = Object.keys(convertSortBy);
 
 export const sortingConstraints = {
   sa: ['id', 'login', 'email', 'createdAt'],
-  quizQuestions: ['body'],
+  quizQuestions: ['body', 'id', 'correctAnswers', 'published', 'updatedAt'],
   blogs: [
     'id',
     'name',
@@ -79,19 +80,19 @@ export abstract class BaseFilter {
 
   @IsOptional()
   @IsString()
-  searchNameTerm: string;
+  searchNameTerm?: string;
 
   @IsOptional()
   @IsString()
-  searchEmailTerm: string;
+  searchEmailTerm?: string;
 
   @IsOptional()
   @IsString()
-  searchLoginTerm: string;
+  searchLoginTerm?: string;
 
   @IsOptional()
   @IsString()
-  searchContentTerm: string;
+  searchContentTerm?: string;
 }
 
 export class PaginationViewModel<P> {

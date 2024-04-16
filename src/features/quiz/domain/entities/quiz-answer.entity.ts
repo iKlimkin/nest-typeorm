@@ -1,6 +1,8 @@
-import { Entity, ManyToOne, Column, JoinColumn } from 'typeorm';
+import { Entity, ManyToOne, Column, JoinColumn, OneToMany } from 'typeorm';
 import type { QuizQuestion } from './quiz-question.entity';
 import { BaseEntity } from '../../../../domain/base-entity';
+import type { PlayerProgress } from './quiz-player-progress.entity';
+import { AnswerStatus } from '../../api/models/input.models/statuses.model';
 
 @Entity()
 export class QuizAnswer extends BaseEntity {
@@ -13,6 +15,13 @@ export class QuizAnswer extends BaseEntity {
 
   @Column({ default: false })
   isCorrect: boolean;
+
+  @Column({ type: 'enum', enum: AnswerStatus })
+  answerStatus: AnswerStatus;
+
+  @OneToMany('PlayerProgress', 'answers')
+  @JoinColumn()
+  playerProgress: PlayerProgress;
 
   static create(correctAnswers: string[]): QuizAnswer[] {
     const answers: QuizAnswer[] = [];

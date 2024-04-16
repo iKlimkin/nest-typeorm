@@ -1,32 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { QuizPair } from '../domain/entities/quiz-pair.entity';
+import { QuizGame } from '../domain/entities/quiz-game.entity';
 import { QuizQuestion } from '../domain/entities/quiz-question.entity';
 import { QuizAnswer } from '../domain/entities/quiz-answer.entity';
-import { getQuestionViewModel } from '../api/models/view.models.ts/quiz-question.view-model';
+import { getQuestionViewModel } from '../api/models/output.models.ts/view.models.ts/quiz-question.view-model';
 import { QuestionId } from '../api/models/output.models.ts/output.types';
 import { UpdateQuestionData } from '../api/models/input.models/update-question.model';
+import { PlayerProgress } from '../domain/entities/quiz-player-progress.entity';
+import { OutputId } from '../../../domain/output.models';
 
 @Injectable()
 export class QuizRepository {
   constructor(
-    // @InjectRepository(QuizPair)
-    // private readonly quizPairs: Repository<QuizPair>,
+    @InjectRepository(QuizGame)
+    private readonly quizPairs: Repository<QuizGame>,
     @InjectRepository(QuizQuestion)
     private readonly quizQuestions: Repository<QuizQuestion>,
     @InjectRepository(QuizAnswer)
-    private readonly quizAnswers: Repository<QuizAnswer>
+    private readonly quizAnswers: Repository<QuizAnswer>,
+    @InjectRepository(PlayerProgress)
+    private readonly playerProgress: Repository<PlayerProgress>
   ) {}
 
-  async createQuestionAndAnswers(
+  async saveQuestionAndAnswers(
     quizQuestion: QuizQuestion,
     quizAnswers: QuizAnswer[]
   ): Promise<QuestionId | null> {
     try {
       const savedQuestion = await this.quizQuestions.save(quizQuestion);
 
-      const savedAnswers = await Promise.all(
+      await Promise.all(
         quizAnswers.map(async (answer) => {
           answer.question = savedQuestion;
           return await this.quizAnswers.save(answer);
@@ -38,6 +42,34 @@ export class QuizRepository {
       };
     } catch (error) {
       console.log(error);
+      return null;
+    }
+  }
+
+  async saveGame(
+    quizGameDto: QuizGame,
+    firstPlayer: PlayerProgress
+  ): Promise<OutputId | null> {
+    try {
+      const savedFirstPlayer = await this.playerProgress.save(firstPlayer);
+
+      const createdQuizGame = this.quizPairs.create({
+        firstPlayer: savedFirstPlayer,
+        status: quizGameDto.status,
+      });
+
+      const savedQuizGame = await this.quizPairs.save(createdQuizGame);
+
+      await this.playerProgress.update(
+        { id: savedFirstPlayer.id },
+        { game: savedQuizGame }
+      );
+
+      return {
+        id: savedQuizGame.id,
+      };
+    } catch (error) {
+      console.log(`saveGame finished with errors: ${error}`);
       return null;
     }
   }
@@ -88,12 +120,28 @@ export class QuizRepository {
 
   async deleteQuestion(questionId: string): Promise<boolean> {
     try {
-      const deleteAnswers = await this.quizAnswers.delete({ question: { id: questionId } });
+      // const deleteAnswers = await this.quizAnswers.delete({
+      //   question: { id: questionId },
+      // });
 
       const deleteQuestion = await this.quizQuestions.delete(questionId);
 
-    
       return deleteQuestion.affected !== 0;
+    } catch (error) {
+      console.error(
+        `Database fails during delete quiz-question operation ${error}`
+      );
+      return false;
+    }
+  }
+
+  async publishQuestion(questionId: string): Promise<boolean> {
+    try {
+      const result = await this.quizQuestions.update(questionId, {
+        published: true,
+      });
+
+      return result.affected !== 0;
     } catch (error) {
       console.error(
         `Database fails during delete quiz-question operation ${error}`

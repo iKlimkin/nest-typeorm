@@ -5,21 +5,18 @@ import {
 } from '../../../../../domain/sorting-base-filter';
 import {
   ValidSortDirection,
+  ValidateAndConvertStatuses,
   ValidateSortBy,
-} from '../../../../../infra/decorators/transform/is-valid-string';
-
-enum publishedStatuses {
-  all = 'all',
-  published = 'published',
-  unpublished = 'unpublished',
-}
+} from '../../../../../infra/decorators/transform/is-valid-field';
+import { publishedStatuses } from './statuses.model';
 
 export class QuizQuestionsQueryFilter extends BaseFilter {
   @IsOptional()
   bodySearchTerm: string;
 
   @IsOptional()
-  @IsEnum(publishedStatuses)
+  @ValidateAndConvertStatuses()
+  // @IsEnum(publishedStatuses)
   publishedStatus: publishedStatuses;
 
   @IsOptional()

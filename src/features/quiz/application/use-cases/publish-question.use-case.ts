@@ -1,28 +1,28 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
-import { LayerNoticeInterceptor } from '../../../auth/api/controllers';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { QuizRepository } from '../../infrastructure/quiz-game.repo';
-import { DeleteQuestionCommand } from '../commands/delete-question.command';
+import { PublishQuestionCommand } from '../commands/publish-question.command';
 
-@CommandHandler(DeleteQuestionCommand)
-export class DeleteQuestionUseCase
-  implements ICommandHandler<DeleteQuestionCommand>
+@CommandHandler(PublishQuestionCommand)
+export class PublishQuestionUseCase
+  implements ICommandHandler<PublishQuestionCommand>
 {
   constructor(private readonly quizRepo: QuizRepository) {}
 
   async execute(
-    command: DeleteQuestionCommand
+    command: PublishQuestionCommand
   ): Promise<LayerNoticeInterceptor<boolean | null>> {
     const notice = new LayerNoticeInterceptor<boolean>();
 
     const { questionId } = command;
 
-    const result = await this.quizRepo.deleteQuestion(questionId);
+    const result = await this.quizRepo.publishQuestion(questionId);
 
     if (!result) {
       notice.addError(
-        'Question not deleted',
-        'DeleteQuestionUseCase',
+        'Question not published',
+        'PublishQuestionUseCase',
         GetErrors.DatabaseFail
       );
     } else {

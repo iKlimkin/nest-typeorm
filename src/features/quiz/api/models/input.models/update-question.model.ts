@@ -1,6 +1,6 @@
 import { IsArray } from 'class-validator';
 import { questionLength } from '../../../../../domain/validation.constants';
-import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-string';
+import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-field';
 import { IsValidAnswers } from '../../../../../infra/decorators/validate/is-valid-answers';
 
 export class UpdateQuestionData {

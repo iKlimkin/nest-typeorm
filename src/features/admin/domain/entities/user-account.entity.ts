@@ -7,7 +7,7 @@ import type { UserSession } from '../../../security/domain/entities/security.ent
 import { BaseEntity } from '../../../../domain/base-entity';
 import { add } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
-import type { QuizPair } from '../../../quiz/domain/entities/quiz-pair.entity';
+import type { QuizGame } from '../../../quiz/domain/entities/quiz-game.entity';
 
 type UserDataType = {
   login: string;
@@ -59,12 +59,6 @@ export class UserAccount extends BaseEntity {
 
   @OneToMany('CommentReaction', 'userAccount')
   commentReactions: CommentReaction[];
-
-  @OneToOne('QuizPair', 'firstPlayer', { cascade: true })
-  createdPairs: QuizPair;
-
-  @OneToOne('QuizPair', 'secondPlayer', { cascade: true })
-  joinedPairs: QuizPair;
 
   static create(userData: UserDataType): UserAccount {
     const { login, email, passwordSalt, passwordHash } = userData;

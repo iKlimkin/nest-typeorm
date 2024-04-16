@@ -1,21 +1,25 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Or, And, Repository } from 'typeorm';
 import { QuizAnswer } from '../../../domain/entities/quiz-answer.entity';
-import { QuizPair } from '../../../domain/entities/quiz-pair.entity';
+import { QuizGame } from '../../../domain/entities/quiz-game.entity';
 import { QuizQuestion } from '../../../domain/entities/quiz-question.entity';
-import { getQuestionViewModel } from '../view.models.ts/quiz-question.view-model';
-import { QuizQuestionViewType } from '../view.models.ts/quiz-question.view-type';
+import { getQuestionViewModel } from '../output.models.ts/view.models.ts/quiz-question.view-model';
+import { QuizQuestionViewType } from '../output.models.ts/view.models.ts/quiz-question.view-type';
 import { QuizQuestionsQueryFilter } from '../input.models/quiz-questions-query.filter';
 import { getPagination } from '../../../../../infra/utils/get-pagination';
 import { PaginationViewModel } from '../../../../../domain/sorting-base-filter';
-import { getQuestionsViewModel } from '../view.models.ts/quiz-questions.view-model';
+import { getQuestionsViewModel } from '../output.models.ts/view.models.ts/quiz-questions.view-model';
+import { GameStatus } from '../input.models/statuses.model';
+import { getQuizPairViewModel } from '../output.models.ts/view.models.ts/quiz-pair.view-model';
+import { get } from 'http';
+import { QuizPairViewType } from '../output.models.ts/view.models.ts/quiz-game.view-type';
 
 @Injectable()
 export class QuizQueryRepo {
   constructor(
-    @InjectRepository(QuizPair)
-    private readonly quizPairs: Repository<QuizPair>,
+    @InjectRepository(QuizGame)
+    private readonly quizPairs: Repository<QuizGame>,
     @InjectRepository(QuizQuestion)
     private readonly quizQuestions: Repository<QuizQuestion>,
     @InjectRepository(QuizAnswer)
@@ -25,11 +29,45 @@ export class QuizQueryRepo {
     queryOptions: QuizQuestionsQueryFilter
   ): Promise<PaginationViewModel<QuizQuestionViewType>> {
     try {
-      const { bodySearchTerm } = queryOptions;
+      const { bodySearchTerm, publishedStatus } = queryOptions;
 
       const filter = `%${bodySearchTerm ? bodySearchTerm : ''}%`;
       const { pageNumber, pageSize, sortBy, skip, sortDirection } =
         getPagination(queryOptions);
+
+      // const pagination = getPagination(queryOptions)
+      // console.log({publishedStatus, pagination});
+
+      // const testCreate = async (numberOfQuestions: number) => {
+      //   const questionsAndAnswers = [];
+      //   for (let i = 0; i < numberOfQuestions; i++) {
+      //     const question = this.quizQuestions.create({
+      //       body: `Question ${i + 1}`,
+      //       published: i % 3 === 0 ? true : false,
+      //     });
+
+      //     const savedQuestion = await this.quizQuestions.save(question);
+
+      //     const answers: QuizAnswer[] = [];
+
+      //     for (let j = 0; j < 2; j++) {
+      //       const answer = this.quizAnswers.create({
+      //         answerText: `Answer ${j + 1} for question ${i + 1}`,
+      //         isCorrect: j === 0 ? true : false,
+      //         question: { id: savedQuestion.id },
+      //       });
+
+      //       await this.quizAnswers.save(answer);
+
+      //       answers.push(answer);
+      //     }
+      //     questionsAndAnswers.push({ question, answers });
+      //   }
+
+      //   return questionsAndAnswers;
+      // }
+
+      // testCreate(3)
 
       const queryBuilder = this.quizQuestions.createQueryBuilder('q');
 
@@ -44,8 +82,13 @@ export class QuizQueryRepo {
         .skip(skip)
         .take(pageSize);
 
+      if (publishedStatus && publishedStatus !== 'all') {
+        queryBuilder.andWhere('q.published = :publishedStatus', {
+          publishedStatus,
+        });
+      }
+
       const [questions, count] = await queryBuilder.getManyAndCount();
-      console.log(questions);
 
       const questionViewModel = new PaginationViewModel<QuizQuestionViewType>(
         questions.map(getQuestionsViewModel),
@@ -73,6 +116,48 @@ export class QuizQueryRepo {
     } catch (error) {
       console.log(`getQuizQuestion: ${error}`);
       return null;
+    }
+  }
+
+  async isUserInGame(userId: string): Promise<Boolean> {
+    try {
+      const result = await this.quizPairs.findOne({
+        where: [
+          { firstPlayer: { id: userId }, status: GameStatus.Active },
+          { secondPlayer: { id: userId }, status: GameStatus.Active },
+        ],
+      });
+
+      return !!result;
+    } catch (error) {
+      console.log(`isUserInGame: ${error}`);
+      return false;
+    }
+  }
+
+  async getPendingPairs(): Promise<QuizPairViewType[]> {
+    try {
+      const pendingPairs = await this.quizPairs.find({
+        where: { status: GameStatus.PendingSecondPlayer },
+      });
+      
+      return pendingPairs.map(getQuizPairViewModel);
+    } catch (error) {
+      throw new InternalServerErrorException(`getPendingPairs: ${error}`);
+    }
+  }
+
+  async getPairInformation(gameId: string): Promise<QuizPairViewType> {
+    try {
+      const result = await this.quizPairs.findOne({ where: {
+        id: gameId
+      },
+      relations: ['firstPlayer', 'secondPlayer']
+     });
+      
+      return getQuizPairViewModel(result)
+    } catch (error) {
+      throw new InternalServerErrorException(`getPairInformation finished with errors: ${error}`);
     }
   }
 }

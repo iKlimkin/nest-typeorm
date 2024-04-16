@@ -1,6 +1,6 @@
 import { IsUUID } from 'class-validator';
 
-export class SecurityInfoDto {
+export class SecurityDeviceInfoDto {
   @IsUUID(4)
   deviceId: string;
 }

@@ -12,6 +12,10 @@ import { PostReactionCounts } from '../features/posts/domain/entities/post-react
 import { CommentReaction } from '../features/comments/domain/entities/comment-reactions.entity';
 import { CommentReactionCounts } from '../features/comments/domain/entities/comment-reaction-counts.entity';
 import { UserAccount } from '../features/admin/domain/entities/user-account.entity';
+import { QuizAnswer } from '../features/quiz/domain/entities/quiz-answer.entity';
+import { QuizGame } from '../features/quiz/domain/entities/quiz-game.entity';
+import { QuizQuestion } from '../features/quiz/domain/entities/quiz-question.entity';
+import { PlayerProgress } from '../features/quiz/domain/entities/quiz-player-progress.entity';
 
 @Injectable()
 export class TypeOrmOptions implements TypeOrmOptionsFactory {
@@ -37,7 +41,7 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
     return {
       url: dbConfig.url,
       type: 'postgres',
-      logging: ['query', 'error'],
+      // logging: ['query', 'error'],
       entities: [
         TemporaryUserAccount,
         Comment,
@@ -51,6 +55,10 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
         UserAccount,
         UserSession,
         TemporaryUserAccount,
+        QuizAnswer,
+        QuizGame,
+        QuizQuestion,
+        PlayerProgress,
       ],
       // entities: ['src/**/*.entity.ts'],
       // entities: [__dirname + '/../**/*.entity.js'],

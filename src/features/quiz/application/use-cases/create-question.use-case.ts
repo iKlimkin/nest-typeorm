@@ -4,7 +4,7 @@ import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-h
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
 import { QuizAnswer } from '../../domain/entities/quiz-answer.entity';
 import { QuizQuestion } from '../../domain/entities/quiz-question.entity';
-import { QuizRepository } from '../../infrastructure/quiz-question.repo';
+import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { CreateQuestionCommand } from '../commands/create-question.command';
 import { QuestionId } from '../../api/models/output.models.ts/output.types';
 
@@ -27,12 +27,12 @@ export class CreateQuestionUseCase
 
     const { body, correctAnswers } = command.createData;
 
-    const quizQuestion = QuizQuestion.create(body);
-    const quizAnswers = QuizAnswer.create(correctAnswers);
+    const quizQuestionDto = QuizQuestion.create(body);
+    const quizAnswersDto = QuizAnswer.create(correctAnswers);
 
-    const result = await this.quizRepo.createQuestionAndAnswers(
-      quizQuestion,
-      quizAnswers
+    const result = await this.quizRepo.saveQuestionAndAnswers(
+      quizQuestionDto,
+      quizAnswersDto
     );
 
     if (!result) {

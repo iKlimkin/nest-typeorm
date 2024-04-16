@@ -1,4 +1,4 @@
-import { UserSessionDto } from "../../../../auth/api/models/auth-input.models.ts/security-user-session-info";
+import { UserSessionDto } from '../../../api/models/security-input.models/security-session-info.model';
 
 export class DeleteActiveSessionCommand {
   constructor(public deleteData: UserSessionDto) {}

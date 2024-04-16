@@ -18,7 +18,6 @@ import {
   SecurityInterface,
   SecurityViewDeviceModel,
   SecurityQueryRepo,
-  SecurityInfoDto,
   DeleteActiveSessionCommand,
   DeleteOtherUserSessionsCommand,
 } from './index';
@@ -28,12 +27,12 @@ import {
 export class SecurityController implements SecurityInterface {
   constructor(
     private securityQueryRepo: SecurityQueryRepo,
-    private commandBus: CommandBus,
+    private commandBus: CommandBus
   ) {}
 
   @Get()
   async getUserActiveSessions(
-    @CurrentUserInfo() userInfo: UserSessionDto,
+    @CurrentUserInfo() userInfo: UserSessionDto
   ): Promise<SecurityViewDeviceModel[]> {
     const { userId } = userInfo;
 
@@ -50,7 +49,7 @@ export class SecurityController implements SecurityInterface {
   @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
   async terminateOtherUserSessions(
-    @CurrentUserInfo() userInfo: UserSessionDto,
+    @CurrentUserInfo() userInfo: UserSessionDto
   ) {
     const command = new DeleteOtherUserSessionsCommand(userInfo.deviceId);
     await this.commandBus.execute(command);
@@ -59,26 +58,25 @@ export class SecurityController implements SecurityInterface {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async terminateSpecificSession(
-    @Param('id') data: SecurityInfoDto,
-    @CurrentUserInfo() userInfo: UserSessionDto,
+    @Param('id') deviceId: string,
+    @CurrentUserInfo() userInfo: UserSessionDto
   ) {
-    const sessionExistence = await this.securityQueryRepo.getUserSession(
-      data.deviceId,
-    );
+    const sessionExistence =
+      await this.securityQueryRepo.getUserSession(deviceId);
 
     if (!sessionExistence) {
       throw new NotFoundException('Session not found');
     }
 
     const sessions = await this.securityQueryRepo.getUserActiveSessions(
-      userInfo.userId,
+      userInfo.userId
     );
 
-    if (!sessions!.some((s) => s.deviceId === data.deviceId)) {
+    if (!sessions!.some((s) => s.deviceId === deviceId)) {
       throw new ForbiddenException('do not have permission');
     }
 
-    const command = new DeleteActiveSessionCommand(data);
+    const command = new DeleteActiveSessionCommand(userInfo);
 
     await this.commandBus.execute(command);
   }

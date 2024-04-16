@@ -20,8 +20,8 @@ export const controllers = [
 
   AppController,
 
-  // PairGameQuizController,
   QuizQuestionsController,
+  PairGameQuizController,
 
   TestDatabaseController,
 ];

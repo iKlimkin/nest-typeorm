@@ -23,7 +23,7 @@ export * from '../models/auth-input.models.ts/password-recovery.types';
 export * from '../models/auth-input.models.ts/recovery.model';
 export * from '../models/auth-input.models.ts/registration-code.model';
 export * from '../models/auth-input.models.ts/user-registration.model';
-export * from '../models/auth-input.models.ts/security-user-session-info';
+export * from '../../../security/api/models/security-input.models/security-session-info.model';
 export * from '../models/auth.output.models/auth.output.models';
 export * from '../query-repositories/auth.query.repo';
 export * from '../../../security/application/use-cases/commands/create-session.command';

@@ -6,7 +6,7 @@ import {
   Payload,
   JwtTokens,
 } from '../api/models/auth-input.models.ts/jwt.types';
-import { UserSessionDto } from '../api/models/auth-input.models.ts/security-user-session-info';
+import { UserSessionDto } from '../../security/api/models/security-input.models/security-session-info.model';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ConfigurationType } from '../../../settings/config/configuration';
@@ -15,7 +15,7 @@ import { ConfigurationType } from '../../../settings/config/configuration';
 export class AuthService {
   constructor(
     private jwtService: JwtService,
-    private configService: ConfigService<ConfigurationType>,
+    private configService: ConfigService<ConfigurationType>
   ) {}
 
   async getTokens(userId: string): Promise<JwtTokens> {
@@ -30,7 +30,7 @@ export class AuthService {
   }
 
   async getUserInfoByToken(
-    inputToken: VerifyTokensType,
+    inputToken: VerifyTokensType
   ): Promise<TokensMeta | null> {
     try {
       const decodedData = await this.jwtService.verifyAsync(inputToken.token, {
@@ -63,7 +63,7 @@ export class AuthService {
   }
 
   private async createNewTokens(
-    payload: UserSessionDto,
+    payload: UserSessionDto
   ): Promise<[accessToken: string, refreshToken: string]> {
     const jwtConfig = this.configService.get('jwtSettings', {
       infer: true,

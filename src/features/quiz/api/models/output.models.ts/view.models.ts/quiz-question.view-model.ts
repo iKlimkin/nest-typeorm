@@ -1,9 +1,9 @@
-import { QuizAnswer } from '../../../domain/entities/quiz-answer.entity';
-import { QuizQuestion } from '../../../domain/entities/quiz-question.entity';
+import { QuizAnswer } from '../../../../domain/entities/quiz-answer.entity';
+import { QuizQuestion } from '../../../../domain/entities/quiz-question.entity';
 import { QuizQuestionViewType } from './quiz-question.view-type';
 
 export const getQuestionViewModel = (
-  question: QuizQuestion,
+  question: QuizQuestion
 ): QuizQuestionViewType => ({
   id: question.id,
   body: question.body,

@@ -1,7 +1,10 @@
 import { IsArray } from 'class-validator';
 import { questionLength } from '../../../../../domain/validation.constants';
-import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-string';
-import { IsValidAnswers, IsValidAnswersConstraint } from '../../../../../infra/decorators/validate/is-valid-answers';
+import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-field';
+import {
+  IsValidAnswers,
+  IsValidAnswersConstraint,
+} from '../../../../../infra/decorators/validate/is-valid-answers';
 
 export class CreateQuestionData {
   /**
