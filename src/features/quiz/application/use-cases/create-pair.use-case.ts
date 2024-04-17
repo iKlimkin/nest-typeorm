@@ -33,14 +33,16 @@ export class CreatePairUseCase implements ICommandHandler<CreatePairCommand> {
       return notice;
     }
 
-    const { login, id } = await this.usersRepo.getUserById(userId);
+    const user = await this.usersRepo.getUserById(userId);
 
-    const firstPlayerDto = PlayerProgress.create(login, id);
+    const firstPlayerProgressDto = PlayerProgress.create(user.login, user.id);
+    firstPlayerProgressDto.player = user
 
     const quizGameDto = new QuizGame();
     quizGameDto.status = GameStatus.PendingSecondPlayer;
+    quizGameDto.firstPlayer = user;
 
-    const result = await this.quizRepo.saveGame(quizGameDto, firstPlayerDto);
+    const result = await this.quizRepo.saveGame(quizGameDto, firstPlayerProgressDto);
 
     if (!result) {
       notice.addError(

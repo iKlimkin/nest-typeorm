@@ -1,4 +1,4 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { BasicAuthorization } from '../tools/managers/BasicAuthManager';
@@ -26,13 +26,15 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
   let saManager: SATestManager;
   let feedbacksTestManager: FeedbacksTestManager;
   let usersTestManager: UsersTestManager;
+  let httpsServer: HttpServer
   let dataBase: DataSource;
 
   beforeAll(async () => {
-    const { testingAppModule, usersTestManager, app } = await initSettings();
+    const settings = await initSettings();
 
-    dataBase = testingAppModule.get(DataSource);
-
+    dataBase = settings.testingAppModule.get(DataSource);
+    httpsServer = settings.httpServer;
+    
     postTestManager = new PostsTestManager(app);
     blogTestManager = new BlogsTestManager(app, 'sa_blogs');
     authManager = new AuthManager(app);
@@ -46,7 +48,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
 
   describe('POST posts/:postId/comments', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpsServer);
     });
 
     beforeAll(async () => {
@@ -71,7 +73,6 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
       const inputPostData = blogTestManager.createPostInputData({});
 
       const post = await blogTestManager.createPost(inputPostData, blog);
-      console.log({ post });
 
       expect.setState({
         post,

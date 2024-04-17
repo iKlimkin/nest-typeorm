@@ -11,7 +11,7 @@ export const getQuizPairViewModel = (quizPair: QuizGame): QuizPairViewType => ({
       id: quizPair.firstPlayer?.id,
       login: quizPair.firstPlayer?.login,
     },
-    score: quizPair.firstPlayer?.score,
+    score: quizPair.firstPlayer?.gameProgress?.score || 0,
   },
   secondPlayerProgress: {
     answers: [],
@@ -19,7 +19,7 @@ export const getQuizPairViewModel = (quizPair: QuizGame): QuizPairViewType => ({
       id: quizPair.secondPlayer?.id,
       login: quizPair.secondPlayer?.login,
     },
-    score: quizPair.secondPlayer?.score || 0,
+    score: quizPair.secondPlayer?.gameProgress?.score || 0,
   },
   status: quizPair.status,
   questions: quizPair.questions,

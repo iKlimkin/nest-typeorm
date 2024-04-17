@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { QuizGame } from '../domain/entities/quiz-game.entity';
@@ -9,6 +9,8 @@ import { QuestionId } from '../api/models/output.models.ts/output.types';
 import { UpdateQuestionData } from '../api/models/input.models/update-question.model';
 import { PlayerProgress } from '../domain/entities/quiz-player-progress.entity';
 import { OutputId } from '../../../domain/output.models';
+import { GameStatus } from '../api/models/input.models/statuses.model';
+import { UserAccount } from '../../auth/infrastructure/settings';
 
 @Injectable()
 export class QuizRepository {
@@ -51,25 +53,58 @@ export class QuizRepository {
     firstPlayer: PlayerProgress
   ): Promise<OutputId | null> {
     try {
-      const savedFirstPlayer = await this.playerProgress.save(firstPlayer);
+      const savedProgress = await this.playerProgress.save(firstPlayer);
 
       const createdQuizGame = this.quizPairs.create({
-        firstPlayer: savedFirstPlayer,
+        firstPlayer: quizGameDto.firstPlayer,
         status: quizGameDto.status,
       });
-
+      createdQuizGame.firstPlayer.gameProgress = savedProgress;
+      
+debugger
       const savedQuizGame = await this.quizPairs.save(createdQuizGame);
 
-      await this.playerProgress.update(
-        { id: savedFirstPlayer.id },
-        { game: savedQuizGame }
-      );
+      // await this.playerProgress.update(
+      //   { id: savedFirstPlayer.id },
+      //   { game: savedQuizGame }
+      // );
 
       return {
         id: savedQuizGame.id,
       };
     } catch (error) {
       console.log(`saveGame finished with errors: ${error}`);
+      return null;
+    }
+  }
+
+  async connect(
+    secondPlayer: UserAccount,
+    secondPlayerDto: PlayerProgress,
+    pairsToConnect: QuizGame[]
+  ): Promise<OutputId | null> {
+    try {
+      const savedSecondPlayerProgress =
+        await this.playerProgress.save(secondPlayerDto);
+      const firstPairToConnect = pairsToConnect[0];
+      debugger
+      firstPairToConnect.secondPlayer = secondPlayer;
+      firstPairToConnect.secondPlayer.gameProgress = savedSecondPlayerProgress;
+      firstPairToConnect.status = GameStatus.Active;
+      firstPairToConnect.startGameDate = new Date();
+
+      const updatedPair = await this.quizPairs.save(firstPairToConnect);
+
+      // await this.playerProgress.update(
+      //   { id: savedSecondPlayerProgress.id },
+      //   { user: secondPlayer }
+      // );
+
+      return {
+        id: updatedPair.id,
+      };
+    } catch (error) {
+      console.log(`connect finished with errors: ${error}`);
       return null;
     }
   }
@@ -84,7 +119,6 @@ export class QuizRepository {
         .createQueryBuilder('qa')
         .where('question_id = :questionId', { questionId })
         .getMany();
-      console.log({ formerAnswers });
 
       for (let i = 0; i < correctAnswers.length; i++) {
         const answerText = correctAnswers[i];
@@ -147,6 +181,18 @@ export class QuizRepository {
         `Database fails during delete quiz-question operation ${error}`
       );
       return false;
+    }
+  }
+
+  async getPendingPairs(): Promise<QuizGame[]> {
+    try {
+      const pendingPairs = await this.quizPairs.find({
+        where: { status: GameStatus.PendingSecondPlayer },
+      });
+
+      return pendingPairs;
+    } catch (error) {
+      throw new InternalServerErrorException(`getPendingPairs: ${error}`);
     }
   }
 }

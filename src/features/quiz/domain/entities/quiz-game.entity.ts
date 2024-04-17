@@ -1,22 +1,18 @@
 import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
-import type { PlayerProgress } from './quiz-player-progress.entity';
-import type { QuizQuestion } from './quiz-question.entity';
+import type { UserAccount } from '../../../auth/infrastructure/settings';
 import { GameStatus } from '../../api/models/input.models/statuses.model';
+import type { QuizQuestion } from './quiz-question.entity';
 
 @Entity()
 export class QuizGame extends BaseEntity {
-  @OneToOne('PlayerProgress', 'game')
+  @OneToOne('UserAccount', 'quizGame')
   @JoinColumn()
-  firstPlayer: PlayerProgress;
-  // @Column()
-  // firstPlayerId: string
+  firstPlayer: UserAccount;
 
-  @OneToOne('PlayerProgress', 'game', { nullable: true })
+  @OneToOne('UserAccount', 'quizGame', { nullable: true })
   @JoinColumn()
-  secondPlayer: PlayerProgress | null;
-  // @Column({ nullable: true })
-  // secondPlayerId: string
+  secondPlayer: UserAccount | null;
 
   @OneToMany('QuizQuestion', 'quizPair', { eager: true })
   @JoinColumn()

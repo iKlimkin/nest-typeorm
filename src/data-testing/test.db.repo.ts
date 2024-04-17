@@ -10,7 +10,7 @@ export class TestDatabaseRepo {
     try {
       await this.dataSource.query(`
       TRUNCATE TABLE user_account CASCADE;
-      TRUNCATE TABLE quiz_pair CASCADE;
+      TRUNCATE TABLE quiz_game CASCADE;
       TRUNCATE TABLE quiz_question CASCADE;
       TRUNCATE TABLE quiz_answer;
       TRUNCATE TABLE user_session;

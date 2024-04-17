@@ -6,13 +6,13 @@ import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 
 import { OutputId } from '../../../../domain/output.models';
 import { UsersRepository } from '../../../admin/infrastructure/users.repo';
-import { GameStatus } from '../../api/models/input.models/statuses.model';
-import { QuizGame } from '../../domain/entities/quiz-game.entity';
-import { ConnectPlayerCommand } from '../commands/connect-player.command';
 import { PlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
+import { ConnectPlayerCommand } from '../commands/connect-player.command';
 
 @CommandHandler(ConnectPlayerCommand)
-export class ConnectPlayerUseCase implements ICommandHandler<ConnectPlayerCommand> {
+export class ConnectPlayerUseCase
+  implements ICommandHandler<ConnectPlayerCommand>
+{
   constructor(
     private readonly quizRepo: QuizRepository,
     private readonly usersRepo: UsersRepository
@@ -32,19 +32,15 @@ export class ConnectPlayerUseCase implements ICommandHandler<ConnectPlayerComman
     }
 
     const user = await this.usersRepo.getUserById(userId);
+    const pairsToConnect = await this.quizRepo.getPendingPairs();
 
-    const quizGame = new QuizGame();
-    // quizGame.status = GameStatus.PendingSecondPlayer;
-    // // quizGame.firstPlayer.playerId = userId,
-    // // quizGame.firstPlayer.login = user.login
+    const secondPlayerProgress = PlayerProgress.create(user.login, userId);
 
-    const playerProgress = new PlayerProgress();
-    // playerProgress.playerId = userId, 
-    // playerProgress.login = user.login
-    // playerProgress.game.id = quizGame.id
-    // console.log({quizGame, playerProgress});
-    
-    const result = await this.quizRepo.saveGame(quizGame, playerProgress);
+    const result = await this.quizRepo.connect(
+      user,
+      secondPlayerProgress,
+      pairsToConnect
+    );
 
     if (!result) {
       notice.addError(

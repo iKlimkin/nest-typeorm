@@ -41,7 +41,7 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
     return {
       url: dbConfig.url,
       type: 'postgres',
-      // logging: ['query', 'error'],
+      logging: ['query', 'error'],
       entities: [
         TemporaryUserAccount,
         Comment,

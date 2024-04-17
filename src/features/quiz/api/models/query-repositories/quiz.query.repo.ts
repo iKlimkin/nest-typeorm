@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Or, And, Repository } from 'typeorm';
+import { Or, And, Repository, createQueryBuilder } from 'typeorm';
 import { QuizAnswer } from '../../../domain/entities/quiz-answer.entity';
 import { QuizGame } from '../../../domain/entities/quiz-game.entity';
 import { QuizQuestion } from '../../../domain/entities/quiz-question.entity';
@@ -14,6 +14,7 @@ import { GameStatus } from '../input.models/statuses.model';
 import { getQuizPairViewModel } from '../output.models.ts/view.models.ts/quiz-pair.view-model';
 import { get } from 'http';
 import { QuizPairViewType } from '../output.models.ts/view.models.ts/quiz-game.view-type';
+import { relative } from 'path';
 
 @Injectable()
 export class QuizQueryRepo {
@@ -21,9 +22,9 @@ export class QuizQueryRepo {
     @InjectRepository(QuizGame)
     private readonly quizPairs: Repository<QuizGame>,
     @InjectRepository(QuizQuestion)
-    private readonly quizQuestions: Repository<QuizQuestion>,
-    @InjectRepository(QuizAnswer)
-    private readonly quizAnswers: Repository<QuizAnswer>
+    private readonly quizQuestions: Repository<QuizQuestion>
+    // @InjectRepository(QuizAnswer)
+    // private readonly quizAnswers: Repository<QuizAnswer>
   ) {}
   async getQuizQuestions(
     queryOptions: QuizQuestionsQueryFilter
@@ -121,12 +122,12 @@ export class QuizQueryRepo {
 
   async isUserInGame(userId: string): Promise<Boolean> {
     try {
-      const result = await this.quizPairs.findOne({
-        where: [
-          { firstPlayer: { id: userId }, status: GameStatus.Active },
-          { secondPlayer: { id: userId }, status: GameStatus.Active },
-        ],
-      });
+      const result = await this.quizPairs
+        .createQueryBuilder('game')
+        .leftJoin('game.firstPlayer', 'fP')
+        .leftJoin('game.secondPlayer', 'sP')
+        .where('(fP.id = :userId OR sP.id = :userId)', { userId })
+        .getCount();
 
       return !!result;
     } catch (error) {
@@ -140,7 +141,7 @@ export class QuizQueryRepo {
       const pendingPairs = await this.quizPairs.find({
         where: { status: GameStatus.PendingSecondPlayer },
       });
-      
+
       return pendingPairs.map(getQuizPairViewModel);
     } catch (error) {
       throw new InternalServerErrorException(`getPendingPairs: ${error}`);
@@ -149,15 +150,31 @@ export class QuizQueryRepo {
 
   async getPairInformation(gameId: string): Promise<QuizPairViewType> {
     try {
-      const result = await this.quizPairs.findOne({ where: {
-        id: gameId
-      },
-      relations: ['firstPlayer', 'secondPlayer']
-     });
-      
-      return getQuizPairViewModel(result)
+      const result = await this.quizPairs
+        .createQueryBuilder('game')
+        .select([
+          'game.id',
+          'game.status',
+          'game.startGameDate',
+          'game.finishGameDate',
+          'game.created_at',
+        ])
+        .leftJoin('game.firstPlayer', 'firstPlayer')
+        .addSelect(['firstPlayer.id', 'firstPlayer.login'])
+        .leftJoin('game.secondPlayer', 'secondPlayer')
+        .addSelect(['secondPlayer.id', 'secondPlayer.login'])
+        .leftJoin('firstPlayer.gameProgress', 'firstPlayerProgress')
+        .addSelect('firstPlayerProgress.score')
+        .leftJoin('secondPlayer.gameProgress', 'secondPlayerProgress')
+        .addSelect('secondPlayerProgress.score')
+        .where('game.id = :gameId', { gameId })
+        .getOne();
+
+      return getQuizPairViewModel(result);
     } catch (error) {
-      throw new InternalServerErrorException(`getPairInformation finished with errors: ${error}`);
+      throw new InternalServerErrorException(
+        `getPairInformation finished with errors: ${error}`
+      );
     }
   }
 }

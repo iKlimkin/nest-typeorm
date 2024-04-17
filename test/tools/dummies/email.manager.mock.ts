@@ -1,13 +1,3 @@
-// export const EmailServiceMockObject = {
-//   sendEmailConfirmationMessage: jest.fn().mockImplementation(async () => {
-//     console.log('Call mock method sendPasswordRecoveryMail / MailService');
-//     return true;
-//   }),
-//   sendEmailRecoveryMessage: jest.fn().mockImplementation(async () => {
-//     console.log('Call mock method sendPasswordRecoveryMail / MailService');
-//     return true;
-//   }),
-// };
 
 import { EmailManager } from '../../../src/features/auth/infrastructure/settings';
 

@@ -47,25 +47,28 @@ export class PairGameQuizController {
   @HttpCode(HttpStatus.OK)
   async connectOrCreatePair(@CurrentUserInfo() userInfo: UserSessionDto) {
     const userInGame = await this.quizQueryRepo.isUserInGame(userInfo.userId);
-
+    // const gameId = '0ebaa186-428a-4f59-8631-b52678d275fe'
+    // const testGetPar = await this.quizQueryRepo.getPairInformation(gameId)
+    
     if (userInGame) throw new ForbiddenException('User already in game');
 
-    // const pendingPairs = await this.quizQueryRepo.getPendingPairs();
+    const pendingPairs = await this.quizQueryRepo.getPendingPairs();
 
-    // if (pendingPairs.length) {
-    //   const command = new ConnectPlayerCommand(userInfo);
-    //   const result = await this.commandBus.execute<
-    //     ConnectPlayerCommand,
-    //     LayerNoticeInterceptor<OutputId | null>
-    //   >(command);
+    if (pendingPairs.length) {
+      const command = new ConnectPlayerCommand(userInfo);
 
-    //   if (result.hasError()) {
-    //     const errors = handleErrors(result.code, result.extensions[0]);
-    //     throw errors.error;
-    //   }
-    //   return;
-    //   // return this.quizQueryRepo.getPairInformation(result.data.id);
-    // }
+      const result = await this.commandBus.execute<
+        ConnectPlayerCommand, 
+        LayerNoticeInterceptor<OutputId | null>
+      >(command);
+
+      if (result.hasError()) {
+        const errors = handleErrors(result.code, result.extensions[0]);
+        throw errors.error;
+      }
+
+      return this.quizQueryRepo.getPairInformation(result.data.id);
+    }
 
     const command = new CreatePairCommand(userInfo);
     const result = await this.commandBus.execute<

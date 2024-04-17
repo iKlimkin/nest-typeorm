@@ -135,7 +135,6 @@ export class QuizQuestionsController {
       DeleteQuestionCommand,
       LayerNoticeInterceptor<boolean>
     >(command);
-    console.log(result);
 
     if (result.hasError()) {
       const errors = handleErrors(result.code, result.extensions[0]);

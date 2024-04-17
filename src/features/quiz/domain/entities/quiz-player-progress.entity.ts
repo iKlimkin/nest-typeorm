@@ -1,18 +1,19 @@
-import { Entity, ManyToOne, Column, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
+import type { UserAccount } from '../../../auth/infrastructure/settings';
 import type { QuizAnswer } from './quiz-answer.entity';
-import type { QuizGame } from './quiz-game.entity';
 
 @Entity()
 export class PlayerProgress extends BaseEntity {
-  @ManyToOne('QuizGame', { nullable: true, onDelete: 'CASCADE' })
-  game: QuizGame;
+  @OneToOne('UserAccount', 'gameProgress', { nullable: false, onDelete: 'CASCADE' })
+  @JoinColumn()
+  player: UserAccount;
 
   @Column({ nullable: false })
   login: string;
 
-  @Column({ nullable: false })
-  playerId: string;
+  // @Column({ nullable: false })
+  // playerId: string;
 
   @OneToMany('QuizAnswer', 'playerProgress', { nullable: true })
   answers: QuizAnswer[];
@@ -23,7 +24,6 @@ export class PlayerProgress extends BaseEntity {
   static create(login: string, userId: string) {
     const playerProgress = new PlayerProgress();
     playerProgress.login = login;
-    playerProgress.playerId = userId;
 
     return playerProgress;
   }
