@@ -1,11 +1,11 @@
 import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
 import { LikesStatuses } from '../../../../domain/reaction.models';
-import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
-import { Comment } from './comment.entity';
+import type { UserAccount } from '../../../admin/domain/entities/user-account.entity';
+import type { Comment } from './comment.entity';
 
 @Entity()
-@Unique(['userAccount', 'comment'])
+// @Unique(['userAccount', 'comment'])
 export class CommentReaction extends BaseEntity {
   @Column()
   reaction_type: LikesStatuses;

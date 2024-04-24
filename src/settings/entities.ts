@@ -11,7 +11,9 @@ import {
   QuizGame,
   QuizQuestion,
   QuizAnswer,
-  PlayerProgress,
+  QuizPlayerProgress,
+  CurrentGameQuestion,
+  QuizCorrectAnswer,
 } from '.';
 
 export const entities = [
@@ -24,8 +26,10 @@ export const entities = [
   PostReactionCounts,
   CommentReaction,
   CommentReactionCounts,
+  QuizAnswer,
   QuizGame,
   QuizQuestion,
-  QuizAnswer,
-  PlayerProgress,
+  QuizPlayerProgress,
+  QuizCorrectAnswer,
+  CurrentGameQuestion,
 ];

@@ -26,7 +26,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
   let saManager: SATestManager;
   let feedbacksTestManager: FeedbacksTestManager;
   let usersTestManager: UsersTestManager;
-  let httpsServer: HttpServer
+  let httpsServer: HttpServer;
   let dataBase: DataSource;
 
   beforeAll(async () => {
@@ -34,12 +34,13 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
 
     dataBase = settings.testingAppModule.get(DataSource);
     httpsServer = settings.httpServer;
-    
+
     postTestManager = new PostsTestManager(app);
     blogTestManager = new BlogsTestManager(app, 'sa_blogs');
     authManager = new AuthManager(app);
     saManager = new SATestManager(app);
     feedbacksTestManager = new FeedbacksTestManager(app);
+    usersTestManager = settings.usersTestManager;
   });
 
   afterAll(async () => {
@@ -153,7 +154,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
       const numberOfPosts = 3;
 
       const { users, accessTokens } =
-        await usersTestManager.createUAdminsAndTokens(numberOfUsers);
+        await usersTestManager.createUsers(numberOfUsers);
 
       const inputBlogData = blogTestManager.createInputData({});
       const blog = await blogTestManager.createBlog(inputBlogData);

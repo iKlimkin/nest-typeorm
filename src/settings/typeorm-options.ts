@@ -14,8 +14,9 @@ import { CommentReactionCounts } from '../features/comments/domain/entities/comm
 import { UserAccount } from '../features/admin/domain/entities/user-account.entity';
 import { QuizAnswer } from '../features/quiz/domain/entities/quiz-answer.entity';
 import { QuizGame } from '../features/quiz/domain/entities/quiz-game.entity';
-import { QuizQuestion } from '../features/quiz/domain/entities/quiz-question.entity';
-import { PlayerProgress } from '../features/quiz/domain/entities/quiz-player-progress.entity';
+import { QuizQuestion } from '../features/quiz/domain/entities/quiz-questions.entity';
+import { QuizPlayerProgress } from '../features/quiz/domain/entities/quiz-player-progress.entity';
+import { CurrentGameQuestion, QuizCorrectAnswer } from '.';
 
 @Injectable()
 export class TypeOrmOptions implements TypeOrmOptionsFactory {
@@ -58,7 +59,9 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
         QuizAnswer,
         QuizGame,
         QuizQuestion,
-        PlayerProgress,
+        QuizPlayerProgress,
+        QuizCorrectAnswer,
+        CurrentGameQuestion,
       ],
       // entities: ['src/**/*.entity.ts'],
       // entities: [__dirname + '/../**/*.entity.js'],

@@ -3,10 +3,11 @@ import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/err
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
 import { QuizAnswer } from '../../domain/entities/quiz-answer.entity';
-import { QuizQuestion } from '../../domain/entities/quiz-question.entity';
+import { QuizQuestion } from '../../domain/entities/quiz-questions.entity';
 import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { CreateQuestionCommand } from '../commands/create-question.command';
 import { QuestionId } from '../../api/models/output.models.ts/output.types';
+import { QuizCorrectAnswer } from '../../domain/entities/quiz-correct-answers.entity';
 
 @CommandHandler(CreateQuestionCommand)
 export class CreateQuestionUseCase
@@ -28,7 +29,7 @@ export class CreateQuestionUseCase
     const { body, correctAnswers } = command.createData;
 
     const quizQuestionDto = QuizQuestion.create(body);
-    const quizAnswersDto = QuizAnswer.create(correctAnswers);
+    const quizAnswersDto = QuizCorrectAnswer.create(correctAnswers); 
 
     const result = await this.quizRepo.saveQuestionAndAnswers(
       quizQuestionDto,

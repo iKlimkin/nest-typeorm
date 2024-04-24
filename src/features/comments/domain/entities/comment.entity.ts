@@ -15,7 +15,7 @@ import { BaseEntity } from '../../../../domain/base-entity';
 @Entity()
 export class Comment extends BaseEntity {
   @Column()
-  user_login: string;
+  userLogin: string;
 
   @Column()
   content: string;
@@ -26,7 +26,7 @@ export class Comment extends BaseEntity {
 
   @ManyToOne('UserAccount', 'comments')
   @JoinColumn({ name: 'user_id' })
-  userAccount: UserAccount;
+  user: UserAccount;
 
   @OneToMany('CommentReaction', 'comment')
   commentReactions: CommentReaction[];

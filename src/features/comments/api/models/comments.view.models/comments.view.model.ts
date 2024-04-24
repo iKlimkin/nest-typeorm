@@ -5,7 +5,7 @@ import { CommentsViewModel } from './comments.view-model.type';
 
 const convertStatus = (
   myReactions: CommentReaction[] | LikesStatuses,
-  commentId: string,
+  commentId: string
 ): LikesStatuses => {
   if (Array.isArray(myReactions)) {
     if (!myReactions.length) return LikesStatuses.None;
@@ -21,20 +21,18 @@ const convertStatus = (
 
 export const getCommentsViewModel = (
   comment: Comment,
-  myReactions: CommentReaction[] | LikesStatuses,
-): CommentsViewModel => {
-  return {
-    id: comment.id,
-    content: comment.content,
-    commentatorInfo: {
-      userId: comment.userAccount.id,
-      userLogin: comment.user_login,
-    },
-    createdAt: comment.created_at.toISOString(),
-    likesInfo: {
-      likesCount: comment.commentReactionCounts?.likes_count || 0,
-      dislikesCount: comment.commentReactionCounts?.dislikes_count || 0,
-      myStatus: convertStatus(myReactions, comment.id),
-    },
-  };
-};
+  myReactions: CommentReaction[] | LikesStatuses
+): CommentsViewModel => ({
+  id: comment.id,
+  content: comment.content,
+  commentatorInfo: {
+    userId: comment.user.id,
+    userLogin: comment.userLogin,
+  },
+  createdAt: comment.created_at.toISOString(),
+  likesInfo: {
+    likesCount: comment.commentReactionCounts?.likes_count || 0,
+    dislikesCount: comment.commentReactionCounts?.dislikes_count || 0,
+    myStatus: convertStatus(myReactions, comment.id),
+  },
+});

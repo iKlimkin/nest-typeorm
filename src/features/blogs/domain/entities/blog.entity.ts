@@ -9,6 +9,7 @@ import {
 import type { UserAccount } from '../../../admin/domain/entities/user-account.entity';
 import type { Post } from '../../../posts/domain/entities/post.entity';
 import { BaseEntity } from '../../../../domain/base-entity';
+import { IsFQDN } from 'class-validator';
 
 @Entity()
 export class Blog extends BaseEntity {
@@ -20,14 +21,14 @@ export class Blog extends BaseEntity {
   description: string;
 
   @Column()
+  @IsFQDN()
   website_url: string;
 
   @Column()
   is_membership: boolean;
 
   @ManyToOne('UserAccount', 'blogs')
-  @JoinColumn({ name: 'user_id' })
-  userAccount: UserAccount;
+  user: UserAccount;
 
   @OneToMany('Post', 'blog')
   posts: Post[];

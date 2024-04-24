@@ -1,5 +1,5 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import request from 'supertest';
+import * as request from 'supertest';
 import { JwtTokens } from '../../../src/features/auth/api/models/auth-input.models.ts/jwt.types';
 import { UserProfileType } from '../../../src/features/auth/api/models/auth.output.models/auth.output.models';
 import { AuthUserType } from '../../../src/features/auth/api/models/auth.output.models/auth.user.types';
@@ -43,7 +43,7 @@ export class UsersTestManager {
     return result.body;
   }
 
-  async createUAdminsAndTokens(
+  async createUsers(
     numberOfUsers: number
   ): Promise<{ users: AuthUserType[]; accessTokens: string[] }> {
     const users: AuthUserType[] = [];

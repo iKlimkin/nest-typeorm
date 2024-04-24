@@ -8,7 +8,8 @@ import { BaseEntity } from '../../../../domain/base-entity';
 import { add } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import type { QuizGame } from '../../../quiz/domain/entities/quiz-game.entity';
-import { PlayerProgress } from '../../../quiz/domain/entities/quiz-player-progress.entity';
+import type { QuizPlayerProgress } from '../../../quiz/domain/entities/quiz-player-progress.entity';
+import type { Post } from '../../../posts/domain/entities/post.entity';
 
 type UserDataType = {
   login: string;
@@ -46,28 +47,26 @@ export class UserAccount extends BaseEntity {
   @Column({ nullable: true })
   password_recovery_expiration_date: Date;
 
-  @OneToMany('Blog', 'userAccount')
-  blogs: Blog[];
-
-  @OneToMany('Comment', 'userAccount')
-  comments: Comment[];
-
-  @OneToMany('UserSession', 'userAccount')
+  @OneToMany('UserSession', 'userAccount', { nullable: true })
   userSessions: UserSession[];
 
-  @OneToMany('PostReaction', 'user')
+  @OneToMany('Blog', 'user', { nullable: true })
+  blogs: Blog[];
+
+  @OneToMany('Post', 'user', { nullable: true })
+  posts: Post[];
+
+  @OneToMany('Comment', 'user', { nullable: true })
+  comments: Comment[];
+
+  @OneToMany('PostReaction', 'user', { nullable: true })
   postReactions: PostReaction[];
 
-  @OneToMany('CommentReaction', 'userAccount')
+  @OneToMany('CommentReaction', 'userAccount', { nullable: true })
   commentReactions: CommentReaction[];
 
-  @OneToOne('PlayerProgress', 'player', { nullable: true })
-  // @JoinColumn()
-  gameProgress: PlayerProgress;
-
-  @OneToOne('QuizGame', { nullable: true, onDelete: 'CASCADE' })
-  // @JoinColumn()
-  quizGame: QuizGame;
+  @OneToOne('QuizPlayerProgress', 'player', { nullable: true })
+  gameProgress: QuizPlayerProgress;
 
   static create(userData: UserDataType): UserAccount {
     const { login, email, passwordSalt, passwordHash } = userData;

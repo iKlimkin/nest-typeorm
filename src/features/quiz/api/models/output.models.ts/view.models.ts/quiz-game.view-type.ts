@@ -30,3 +30,9 @@ export interface QuizPairViewType {
   startGameDate?: string;
   finishGameDate?: string;
 }
+
+export interface AnswerResultViewType {
+  questionId: string;
+  answerStatus: AnswerStatus;
+  addedAt: string;
+}

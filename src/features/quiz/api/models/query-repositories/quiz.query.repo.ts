@@ -1,9 +1,9 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Or, And, Repository, createQueryBuilder } from 'typeorm';
+import { Or, And, Repository } from 'typeorm';
 import { QuizAnswer } from '../../../domain/entities/quiz-answer.entity';
 import { QuizGame } from '../../../domain/entities/quiz-game.entity';
-import { QuizQuestion } from '../../../domain/entities/quiz-question.entity';
+import { QuizQuestion } from '../../../domain/entities/quiz-questions.entity';
 import { getQuestionViewModel } from '../output.models.ts/view.models.ts/quiz-question.view-model';
 import { QuizQuestionViewType } from '../output.models.ts/view.models.ts/quiz-question.view-type';
 import { QuizQuestionsQueryFilter } from '../input.models/quiz-questions-query.filter';
@@ -11,20 +11,29 @@ import { getPagination } from '../../../../../infra/utils/get-pagination';
 import { PaginationViewModel } from '../../../../../domain/sorting-base-filter';
 import { getQuestionsViewModel } from '../output.models.ts/view.models.ts/quiz-questions.view-model';
 import { GameStatus } from '../input.models/statuses.model';
-import { getQuizPairViewModel } from '../output.models.ts/view.models.ts/quiz-pair.view-model';
+import {
+  getQuizPairPendingViewModel,
+  getQuizPairViewModel,
+} from '../output.models.ts/view.models.ts/quiz-pair.view-model';
 import { get } from 'http';
 import { QuizPairViewType } from '../output.models.ts/view.models.ts/quiz-game.view-type';
 import { relative } from 'path';
+import { QuizPlayerProgress } from '../../../domain/entities/quiz-player-progress.entity';
+import { UserSession } from '../../../../../settings';
+import { UserSessionDto } from '../../../../security/api';
+import { UserAccount } from '../../../../auth/infrastructure/settings';
 
 @Injectable()
 export class QuizQueryRepo {
   constructor(
     @InjectRepository(QuizGame)
     private readonly quizPairs: Repository<QuizGame>,
+
     @InjectRepository(QuizQuestion)
-    private readonly quizQuestions: Repository<QuizQuestion>
-    // @InjectRepository(QuizAnswer)
-    // private readonly quizAnswers: Repository<QuizAnswer>
+    private readonly quizQuestions: Repository<QuizQuestion>,
+
+    @InjectRepository(QuizPlayerProgress)
+    private readonly playerProgresses: Repository<QuizPlayerProgress>
   ) {}
   async getQuizQuestions(
     queryOptions: QuizQuestionsQueryFilter
@@ -124,9 +133,9 @@ export class QuizQueryRepo {
     try {
       const result = await this.quizPairs
         .createQueryBuilder('game')
-        .leftJoin('game.firstPlayer', 'fP')
-        .leftJoin('game.secondPlayer', 'sP')
-        .where('(fP.id = :userId OR sP.id = :userId)', { userId })
+        .leftJoin('game.firstPlayerProgress', 'fP')
+        .leftJoin('game.secondPlayerProgress', 'sP')
+        .where('(fP.playerId = :userId OR sP.playerId = :userId)', { userId })
         .getCount();
 
       return !!result;
@@ -136,13 +145,40 @@ export class QuizQueryRepo {
     }
   }
 
-  async getPendingPairs(): Promise<QuizPairViewType[]> {
+  async getPendingPair(): Promise<QuizPairViewType | null> {
     try {
-      const pendingPairs = await this.quizPairs.find({
-        where: { status: GameStatus.PendingSecondPlayer },
+      const result = await this.quizPairs.findOne({
+        where: {
+          status: GameStatus.PendingSecondPlayer,
+        },
       });
 
-      return pendingPairs.map(getQuizPairViewModel);
+      if (!result) return null;
+
+      return getQuizPairPendingViewModel(result);
+    } catch (error) {
+      throw new InternalServerErrorException(`getPendingPairs: ${error}`);
+    }
+  }
+
+  async getCurrentUnfinishedGame(
+    userId: string
+  ): Promise<QuizPairViewType | null> {
+    try {
+      const result = await this.quizPairs.findOne({
+        where: [{ firstPlayerId: userId }, { secondPlayerId: userId }],
+        relations: {
+          questions: {
+            question: true,
+          },
+          firstPlayerProgress: true,
+          secondPlayerProgress: true,
+        },
+      });
+      
+      if (!result) return null;
+
+      return getQuizPairViewModel(result);
     } catch (error) {
       throw new InternalServerErrorException(`getPendingPairs: ${error}`);
     }
@@ -158,15 +194,20 @@ export class QuizQueryRepo {
           'game.startGameDate',
           'game.finishGameDate',
           'game.created_at',
+          'game.firstPlayerId',
+          'game.secondPlayerId',
         ])
-        .leftJoin('game.firstPlayer', 'firstPlayer')
-        .addSelect(['firstPlayer.id', 'firstPlayer.login'])
-        .leftJoin('game.secondPlayer', 'secondPlayer')
-        .addSelect(['secondPlayer.id', 'secondPlayer.login'])
-        .leftJoin('firstPlayer.gameProgress', 'firstPlayerProgress')
-        .addSelect('firstPlayerProgress.score')
-        .leftJoin('secondPlayer.gameProgress', 'secondPlayerProgress')
-        .addSelect('secondPlayerProgress.score')
+        .leftJoin('game.firstPlayerProgress', 'firstPlayerProgress')
+        .addSelect(['firstPlayerProgress.login', 'firstPlayerProgress.score'])
+        .leftJoin('game.secondPlayerProgress', 'secondPlayerProgress')
+        .addSelect(['secondPlayerProgress.login', 'secondPlayerProgress.score'])
+        .leftJoin('game.questions', 'questions')
+        .leftJoin('questions.question', 'allQuestions')
+        .addSelect([
+          'questions.questionId',
+          'allQuestions.id',
+          'allQuestions.body',
+        ])
         .where('game.id = :gameId', { gameId })
         .getOne();
 
@@ -175,6 +216,40 @@ export class QuizQueryRepo {
       throw new InternalServerErrorException(
         `getPairInformation finished with errors: ${error}`
       );
+    }
+  }
+
+  async test(user: UserAccount): Promise<any> {
+    try {
+      const gameId = '46362b94-6dde-4bc1-8245-0167e72205af';
+
+      const result = await this.quizPairs
+        .createQueryBuilder('game')
+        .select([
+          'game.id',
+          'game.status',
+          'game.startGameDate',
+          'game.finishGameDate',
+          'game.created_at',
+          'game.firstPlayerId',
+          'game.secondPlayerId',
+        ])
+        .leftJoin('game.firstPlayer', 'firstPlayer')
+        // .leftJoinAndMapOne((qb) => {
+        //   qb.from(QuizPlayerProgress, 'progress')
+        //     .where('progress.gameId = :gameId')
+        //     .andWhere('progress.userId = :userId');
+        // })
+        .addSelect(['firstPlayer.login', 'firstPlayer.score'])
+        .leftJoin('game.secondPlayer', 'secondPlayer')
+        .addSelect(['secondPlayer.login', 'secondPlayer.score'])
+        .leftJoin('game.questions', 'questions')
+        .where('game.id = :gameId', { gameId })
+        .getOne();
+
+      console.log(result);
+    } catch (error) {
+      console.error(`TESTING: ${error}`);
     }
   }
 }

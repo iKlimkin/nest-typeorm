@@ -15,9 +15,7 @@ export class PublishQuestionUseCase
   ): Promise<LayerNoticeInterceptor<boolean | null>> {
     const notice = new LayerNoticeInterceptor<boolean>();
 
-    const { questionId } = command;
-
-    const result = await this.quizRepo.publishQuestion(questionId);
+    const result = await this.quizRepo.publishQuestion(command.questionId);
 
     if (!result) {
       notice.addError(

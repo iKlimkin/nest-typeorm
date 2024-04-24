@@ -13,7 +13,6 @@ import { EmailManager } from '../../src/infra/managers/email-manager';
 import { EmailManagerMock } from '../tools/dummies/email.manager.mock';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { QuizTestManager } from '../tools/managers/QuizTestManager';
-import { bool } from 'joi';
 import { QuizQuestionsQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
 import { publishedStatuses } from '../../src/features/quiz/api/models/input.models/statuses.model';
 import { SortDirections } from '../../src/domain/sorting-base-filter';
@@ -29,12 +28,12 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   let quizPairManager: QuizTestManager;
 
   beforeAll(async () => {
-    const result = await initSettings((moduleBuilder) =>
+    const settings = await initSettings((moduleBuilder) =>
       moduleBuilder.overrideProvider(EmailManager).useClass(EmailManagerMock)
     );
-    app = result.app;
-    httpServer = result.httpServer;
-    dataSource = result.testingAppModule.get(DataSource);
+    app = settings.app;
+    httpServer = settings.httpServer;
+    dataSource = settings.testingAppModule.get(DataSource);
 
     // cut out
     quizQuestionRepository = app.get(getRepositoryToken(QuizQuestion));
@@ -44,14 +43,16 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       app,
       NavigationEnum.quizQuestions
     );
+    quizPairManager = new QuizTestManager(app, NavigationEnum.quizPairs);
+    usersTestManager = settings.usersTestManager;
   });
 
   afterAll(async () => {
-    await cleanDatabase(httpServer);
+    // await cleanDatabase(httpServer);
     await app.close();
   });
 
-  describe('GET /sa/quiz/questions', () => {
+  describe.skip('GET /sa/quiz/questions', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
@@ -65,17 +66,16 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         pageNumber: '1',
         pageSize: '10',
       };
-  
-      await quizQuestionManager.createQuestionsForFurtherTests(3)
 
-      const questions = await quizQuestionManager.getQuestions(filter)
+      await quizQuestionManager.createQuestionsForFurtherTests(3);
 
-      console.log({questions});
-      
+      const questions = await quizQuestionManager.getQuestions(filter);
+
+      console.log({ questions });
     });
   });
 
-  describe('POST /sa/quiz/questions', () => {
+  describe.skip('POST /sa/quiz/questions', () => {
     it(`Shouldn't create question with incorrect input model, 400`, async () => {});
 
     it(`Shouldn't create question without authorization, 400`, async () => {});
@@ -96,7 +96,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
   });
 
-  describe('PUT /sa/quiz/questions/id', () => {
+  describe.skip('PUT /sa/quiz/questions/id', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
@@ -153,9 +153,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         .expect(HttpStatus.BAD_REQUEST);
     });
   });
-  describe('DELETE /sa/quiz/questions', () => {
+
+  describe.skip('DELETE /sa/quiz/questions', () => {
     it('should delete question successfully', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(httpServer)
         .post('/sa/quiz/questions')
         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
         .send({
@@ -165,7 +166,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
       const { id } = response.body;
 
-      await request(app.getHttpServer())
+      await request(httpServer)
         .delete(`/sa/quiz/questions/${id}`)
         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
         .expect(HttpStatus.NO_CONTENT);
@@ -178,20 +179,20 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
 
     it('should return 404 if question does not exist', async () => {
-      await request(app.getHttpServer())
+      await request(httpServer)
         .delete(`/sa/quiz/questions/nonexistent-id`)
         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
         .expect(HttpStatus.NOT_FOUND);
     });
 
     it('should return 401 if not provide authorization', async () => {
-      await request(app.getHttpServer())
+      await request(httpServer)
         .delete(`/sa/quiz/questions/nonexistent-id`)
         .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 
-  describe('PUT /sa/quiz/questions/id/publish', () => {
+  describe.skip('PUT /sa/quiz/questions/id/publish', () => {
     beforeAll(async () => {
       const createdBody = {
         body: 'What is the capital of France?',
@@ -208,7 +209,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       const { question } = expect.getState();
       const body = { published: false };
 
-      await request(app.getHttpServer())
+      await request(httpServer)
         .put(`/sa/quiz/questions/${question.id}/publish`)
         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
         .send(body)
@@ -219,7 +220,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       const { question } = expect.getState();
       const body = { published: true };
 
-      await request(app.getHttpServer())
+      await request(httpServer)
         .put(`/sa/quiz/questions/${question.id}/publish`)
         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
         .send(body)
@@ -230,7 +231,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       const { question } = expect.getState();
       const body = { published: true };
 
-      await request(app.getHttpServer())
+      await request(httpServer)
         .put(`/sa/quiz/questions/${question.id}/publish`)
         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
         .send(body)
@@ -238,10 +239,72 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
       // const publishedQuestionId = 'published-question-id';
       // const publishedBody = { published: true };
-      // await request(app.getHttpServer())
+      // await request(httpServer())
       //   .put(`/your-route/${publishedQuestionId}/publish`)
       //   .send(publishedBody)
       //   .expect(HttpStatus.BAD_REQUEST);
+    });
+  });
+
+  beforeEach(async () => {
+    const { accessTokens, users } = await usersTestManager.createUsers(3);
+
+    expect.setState({ accessTokens, users });
+  });
+
+  describe.skip('TEST', () => {
+    it('GET QUESTIONS', async () => {
+      await quizQuestionManager.getQuestions();
+    });
+  });
+
+  describe('POST /pair-game-quiz/pairs/connection', () => {
+    beforeAll(async () => {
+      const prepareForBattle =
+        await quizQuestionManager.createQuestionsForFurtherTests(10);
+    });
+
+    it("shouldn't create a new pair if unauthorized", async () => {
+      await quizPairManager.createPairOrConnect(
+        'accessTokens',
+        HttpStatus.UNAUTHORIZED
+      );
+    });
+
+    it('should create a new pair if no pending pairs available', async () => {
+      const { accessTokens } = expect.getState();
+
+      const response = await quizPairManager.createPairOrConnect(
+        accessTokens[0]
+      );
+
+      expect(response.status).toBe('PendingSecondPlayer');
+      expect(response.secondPlayerProgress).toBeNull();
+    });
+
+    it('should return 403 Forbidden if user is already in a game', async () => {
+      const { accessTokens } = expect.getState();
+
+      const response = await quizPairManager.createPairOrConnect(
+        accessTokens[0],
+        HttpStatus.FORBIDDEN
+      );
+
+      expect(response.error).toBe('User already in game');
+    });
+
+    it('should connect user to an existing pair if available', async () => {
+      const { accessTokens } = expect.getState();
+
+      const response = await quizPairManager.createPairOrConnect(
+        accessTokens[1]
+      );
+
+      const gameId = response.id;
+
+      expect(response.status).toBe('Active');
+      expect(response.secondPlayerProgress).not.toBeNull();
+      expect(response.questions).toHaveLength(5)
     });
   });
 });

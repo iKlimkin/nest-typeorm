@@ -29,8 +29,8 @@ export class FeedbacksRepository {
         post: {
           id: postId,
         },
-        user_login: userLogin,
-        userAccount: {
+        userLogin: userLogin,
+        user: {
           id: userId,
         },
         content,

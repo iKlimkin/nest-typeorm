@@ -1,7 +1,8 @@
-import { Entity, Column, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
+import type { QuizCorrectAnswer } from './quiz-correct-answers.entity';
 import type { QuizGame } from './quiz-game.entity';
-import type { QuizAnswer } from './quiz-answer.entity';
+import type { CurrentGameQuestion } from './current-game-questions.entity';
 
 @Entity()
 export class QuizQuestion extends BaseEntity {
@@ -11,11 +12,12 @@ export class QuizQuestion extends BaseEntity {
   @Column()
   body: string;
 
-  @OneToMany('QuizAnswer', 'question', { onDelete: 'CASCADE' })
-  correctAnswers: QuizAnswer[];
+  @OneToMany('QuizCorrectAnswer', 'question', { onDelete: 'CASCADE' })
+  @JoinColumn()
+  correctAnswers: QuizCorrectAnswer[];
 
-  @ManyToOne('QuizGame', 'questions')
-  quizPair: QuizGame;
+  @OneToMany('CurrentGameQuestion', 'question')
+  gameQuestions: CurrentGameQuestion[];
 
   @Column({ default: false })
   published: boolean;
@@ -26,7 +28,6 @@ export class QuizQuestion extends BaseEntity {
   static create(questionData: string): QuizQuestion {
     const quizQuestion = new QuizQuestion();
     quizQuestion.body = questionData;
-    quizQuestion.updated_at = new Date();
 
     return quizQuestion;
   }

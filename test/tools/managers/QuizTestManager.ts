@@ -7,7 +7,11 @@ import { CreateQuestionData } from '../../../src/features/quiz/api/models/input.
 import { QuizQuestionsQueryFilter } from '../../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
 import { UpdateQuestionData } from '../../../src/features/quiz/api/models/input.models/update-question.model';
 import { QuizQuestionViewType } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
-import { QuizAnswer, QuizQuestion } from '../../../src/settings';
+import {
+  QuizAnswer,
+  QuizCorrectAnswer,
+  QuizQuestion,
+} from '../../../src/settings';
 import { NavigationEnum } from '../helpers/routing';
 
 export class QuizTestManager {
@@ -19,9 +23,9 @@ export class QuizTestManager {
   private quizQuestionRepository = this.app.get<Repository<QuizQuestion>>(
     getRepositoryToken(QuizQuestion)
   );
-  private quizAnswerRepository = this.app.get<Repository<QuizAnswer>>(
-    getRepositoryToken(QuizAnswer)
-  );
+  private quizCorrectAnswersRepository = this.app.get<
+    Repository<QuizCorrectAnswer>
+  >(getRepositoryToken(QuizCorrectAnswer));
 
   createQuestion(field?: any) {
     if (!field) {
@@ -36,16 +40,24 @@ export class QuizTestManager {
       };
     }
   }
+  async createPairOrConnect(accessToken: string, expectStatus = HttpStatus.OK) {
+    const response = await request(this.application)
+      .post(`${this.routing}/connection`)
+      .auth(accessToken, { type: 'bearer' })
+      .expect(expectStatus);
+
+    return response.body;
+  }
 
   async getQuestionWithAnswers(questionId: string): Promise<{
     question: QuizQuestion;
-    answers: QuizAnswer[];
+    answers: QuizCorrectAnswer[];
   }> {
     const question = await this.quizQuestionRepository.findOne({
       where: { id: questionId },
     });
 
-    const answers = await this.quizAnswerRepository.find({
+    const answers = await this.quizCorrectAnswersRepository.find({
       where: {
         question: {
           id: questionId,
@@ -83,21 +95,20 @@ export class QuizTestManager {
     for (let i = 0; i < numberOfQuestions; i++) {
       const question = this.quizQuestionRepository.create({
         body: `Question ${i + 1}`,
-        published: i % 3 === 0 ? true : false,
+        published: i < 4 ? false : true,
       });
 
       const savedQuestion = await this.quizQuestionRepository.save(question);
 
-      const answers: QuizAnswer[] = [];
+      const answers: QuizCorrectAnswer[] = [];
 
       for (let j = 0; j < 2; j++) {
-        const answer = this.quizAnswerRepository.create({
+        const answer = this.quizCorrectAnswersRepository.create({
           answerText: `Answer ${j + 1} for question ${i + 1}`,
-          isCorrect: j === 0 ? true : false,
           question: { id: savedQuestion.id },
         });
 
-        await this.quizAnswerRepository.save(answer);
+        await this.quizCorrectAnswersRepository.save(answer);
 
         answers.push(answer);
       }
@@ -108,7 +119,7 @@ export class QuizTestManager {
   }
 
   async getQuestions(
-    query: QuizQuestionsQueryFilter
+    query?: QuizQuestionsQueryFilter
   ): Promise<PaginationViewModelType<QuizQuestionViewType>> {
     const response = await request(this.application)
       .get(this.routing)

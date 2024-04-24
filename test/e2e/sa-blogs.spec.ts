@@ -1,4 +1,4 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { LikesStatuses } from '../../src/domain/reaction.models';
 import {
@@ -19,12 +19,13 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
   let blogTestManager: BlogsTestManager;
   let basicAuthManager: BasicAuthorization;
   let dataSource: DataSource;
+  let httpServer: HttpServer;
 
   beforeAll(async () => {
     const result = await initSettings();
 
     app = result.app;
-
+    httpServer = result.httpServer;
     dataSource = result.testingAppModule.get<DataSource>(DataSource);
     blogTestManager = new BlogsTestManager(app, 'sa_blogs');
     basicAuthManager = new BasicAuthorization(app);
@@ -36,7 +37,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
 
   describe('createBlog', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpServer);
     });
 
     it("/blogs (post) - shouldn't create blog without auth", async () => {
@@ -73,7 +74,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
 
   describe('testing update blog (PUT)', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpServer);
     });
 
     it("/blogs (put) - shouldn't update blog without auth", async () => {
@@ -136,7 +137,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
 
   describe('testing delete blog (Delete)', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpServer);
     });
 
     it('/blogs/:blogId (DELETE) - should not remove blog without auth', async () => {
@@ -343,7 +344,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
 
   describe('testing delete post', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpServer);
     });
 
     it('sa/blogs/:blogId/:postId - should not remove post without token, 401', async () => {

@@ -29,6 +29,8 @@ import { DeleteQuestionUseCase } from '../features/quiz/application/use-cases/de
 import { PublishQuestionUseCase } from '../features/quiz/application/use-cases/publish-question.use-case';
 import { ConnectPlayerUseCase } from '../features/quiz/application/use-cases/connect-player.use-case';
 import { CreatePairUseCase } from '../features/quiz/application/use-cases/create-pair.use-case';
+import { SetPlayerAnswerUseCase } from '../features/quiz/application/use-cases/set-player-answer.use-case';
+import { QuizService } from '../features/quiz/application/quiz.service';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -63,6 +65,7 @@ const useCases: Provider[] = [
 
   CreatePairUseCase,
   ConnectPlayerUseCase,
+  SetPlayerAnswerUseCase,
 ];
 
 const quizProviders = [QuizRepository, QuizQueryRepo];
@@ -72,6 +75,7 @@ export const providers: Provider[] = [
   ...postsProviders,
   ...feedbacksProviders,
   ...useCases,
+  QuizService,
   ...testProviders,
   ...quizProviders,
   BlogIdExistConstraint,

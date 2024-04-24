@@ -11,6 +11,7 @@ import type { PostReaction } from './post-reactions.entity';
 import type { Comment } from '../../../comments/domain/entities/comment.entity';
 import { BaseEntity } from '../../../../domain/base-entity';
 import type { PostReactionCounts } from './post-reaction-counts.entity';
+import type { UserAccount } from '../../../auth/infrastructure/settings';
 
 @Entity()
 export class Post extends BaseEntity {
@@ -29,6 +30,9 @@ export class Post extends BaseEntity {
   @ManyToOne('Blog', 'posts')
   @JoinColumn({ name: 'blog_id' })
   blog: Blog;
+
+  @ManyToOne('UserAccount', 'posts')
+  user: UserAccount;
 
   @OneToMany('Comment', 'post')
   comments: Comment[];

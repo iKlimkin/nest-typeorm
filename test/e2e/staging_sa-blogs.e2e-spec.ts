@@ -1,4 +1,4 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { BlogViewModelType } from '../../src/features/blogs/api/controllers';
@@ -33,6 +33,7 @@ interface IBlogsPagination {
 }
 aDescribe(skipSettings.for('staging'))('SABlogsController (e2e)', () => {
   let app: INestApplication;
+  let httpServer: HttpServer
   let testingAppModule: TestingModule;
   let postTestManager: PostsTestManager;
   let blogTestManager: BlogsTestManager;
@@ -49,7 +50,7 @@ aDescribe(skipSettings.for('staging'))('SABlogsController (e2e)', () => {
 
     dataBase = testingAppModule.get<DataSource>(DataSource);
     app = result.app;
-
+    httpServer = result.httpServer
     postTestManager = new PostsTestManager(app);
     blogTestManager = new BlogsTestManager(app, 'sa_blogs');
     basicAuthManager = new BasicAuthorization(app);
@@ -58,7 +59,7 @@ aDescribe(skipSettings.for('staging'))('SABlogsController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await cleanDatabase(app);
+    await cleanDatabase(httpServer);
     await app.close();
   });
 
@@ -109,7 +110,7 @@ aDescribe(skipSettings.for('staging'))('SABlogsController (e2e)', () => {
 
   describe.skip('testing create blog', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpServer);
     });
 
     it('/sa/blogs (GET)', async () => {
@@ -270,7 +271,7 @@ aDescribe(skipSettings.for('staging'))('SABlogsController (e2e)', () => {
 
   describe.skip('testing update blog', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpServer);
     });
     it("/sa/blogs (put) - shouldn't update blog without auth", async () => {
       const { accessToken, blog, blog2 } = expect.getState();
@@ -385,7 +386,7 @@ aDescribe(skipSettings.for('staging'))('SABlogsController (e2e)', () => {
 
   describe.skip('testing delete blog', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpServer);
     });
     it('sa/blogs/:blogId - should not remove blog without auth, 401', async () => {
       const { blog } = expect.getState();
@@ -422,7 +423,7 @@ aDescribe(skipSettings.for('staging'))('SABlogsController (e2e)', () => {
 
   describe.skip('testing create post', () => {
     // afterAll(async () => {
-    //   await cleanDatabase(app);
+    //   await cleanDatabase(httpServer);
     // });
     it(`sa/blogs/:blogId/posts (POST) - shouldn't create post without auth, 401`, async () => {
       const { blog } = expect.getState();
@@ -684,7 +685,7 @@ aDescribe(skipSettings.for('staging'))('SABlogsController (e2e)', () => {
 
   describe.skip('testing delete post', () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpServer);
     });
 
     it('sa/blogs/:blogId/:postId - should not remove post without token, 401', async () => {
@@ -731,7 +732,7 @@ aDescribe(skipSettings.for('staging'))('SABlogsController (e2e)', () => {
 
   describe.skip(`testing blog pagination`, () => {
     afterAll(async () => {
-      await cleanDatabase(app);
+      await cleanDatabase(httpServer);
     });
 
     beforeEach(async () => {

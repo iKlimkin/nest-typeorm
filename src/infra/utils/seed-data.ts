@@ -236,7 +236,7 @@ const seedComments = async (dataSource: DataSource) => {
   const postRepo = dataSource.getRepository('Post');
   const commentReactions = dataSource.getRepository('CommentReaction');
   const commentReactionCounts = dataSource.getRepository(
-    'CommentReactionCounts',
+    'CommentReactionCounts'
   );
   const commentRepo = dataSource.getRepository('Comment');
   const userRepo = dataSource.getRepository('UserAccount');
@@ -251,8 +251,8 @@ const seedComments = async (dataSource: DataSource) => {
   const comment1 = new Comment();
   comment1.content = 'content1';
   comment1.post = post.id;
-  comment1.user_login = user1.login;
-  comment1.userAccount = user1.id;
+  comment1.userLogin = user1.login;
+  comment1.user = user1.id;
 
   await commentRepo.save(comment1);
 
