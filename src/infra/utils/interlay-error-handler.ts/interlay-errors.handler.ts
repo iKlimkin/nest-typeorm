@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,13 +9,15 @@ import { GetErrors } from './error-constants';
 
 export const handleErrors = (
   code: number,
-  extension: LayerInterceptorExtension,
+  extension: LayerInterceptorExtension
 ) => {
   switch (code) {
     case GetErrors.DatabaseFail:
       return {
         message: extension.message,
-        error: new InternalServerErrorException(`Error occurred in ${extension.key}`),
+        error: new InternalServerErrorException(
+          `Error occurred in ${extension.key}`
+        ),
       };
     case GetErrors.NotFound:
       return {
@@ -25,6 +28,12 @@ export const handleErrors = (
       return {
         message: extension.message,
         error: new BadRequestException(extension.key),
+      };
+
+    case GetErrors.Forbidden:
+      return {
+        message: extension.message,
+        error: new ForbiddenException(extension.key),
       };
     default:
       return {

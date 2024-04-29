@@ -1,8 +1,7 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
-import type { QuizCorrectAnswer } from './quiz-correct-answers.entity';
-import type { QuizGame } from './quiz-game.entity';
 import type { CurrentGameQuestion } from './current-game-questions.entity';
+import type { QuizCorrectAnswer } from './quiz-correct-answers.entity';
 
 @Entity()
 export class QuizQuestion extends BaseEntity {
@@ -12,7 +11,7 @@ export class QuizQuestion extends BaseEntity {
   @Column()
   body: string;
 
-  @OneToMany('QuizCorrectAnswer', 'question', { onDelete: 'CASCADE' })
+  @OneToMany('QuizCorrectAnswer', 'question')
   @JoinColumn()
   correctAnswers: QuizCorrectAnswer[];
 

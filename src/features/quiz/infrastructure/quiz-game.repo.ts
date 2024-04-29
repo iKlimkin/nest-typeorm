@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { QuizGame } from '../domain/entities/quiz-game.entity';
 import { QuizQuestion } from '../domain/entities/quiz-questions.entity';
 import { QuizAnswer } from '../domain/entities/quiz-answer.entity';
@@ -13,6 +13,7 @@ import { GameStatus } from '../api/models/input.models/statuses.model';
 import { UserAccount } from '../../auth/infrastructure/settings';
 import { QuizCorrectAnswer } from '../domain/entities/quiz-correct-answers.entity';
 import { CurrentGameQuestion } from '../domain/entities/current-game-questions.entity';
+import { DatabaseError } from 'pg';
 
 @Injectable()
 export class QuizRepository {
@@ -85,6 +86,14 @@ export class QuizRepository {
       await this.playerProgress.save(currentPlayerProgress);
     } catch (error) {
       console.log(`savePlayerProgress finished with errors: ${error}`);
+    }
+  }
+
+  async saveAnswer(answerDto: QuizAnswer): Promise<QuizAnswer> {
+    try {
+      return this.quizAnswers.save(answerDto);
+    } catch (error) {
+      console.log(`saveAnswer finished with errors: ${error}`);
     }
   }
 
@@ -193,48 +202,36 @@ export class QuizRepository {
     }
   }
 
-  async getInformationOnPlayerProgress(
-    firstPlayerId: string,
-    secondPlayerId: string
-  ): Promise<{
-    firstPlayerProgress: QuizPlayerProgress;
-    secondPlayerProgress: QuizPlayerProgress;
-  } | null> {
-    try {
-      const firstPlayerProgress = await this.playerProgress.findOneBy({
-        id: firstPlayerId,
-      });
-
-      const secondPlayerProgress = await this.playerProgress.findOneBy({
-        id: secondPlayerId,
-      });
-
-      return { firstPlayerProgress, secondPlayerProgress };
-    } catch (errors) {
-      console.error(
-        `Database fails during getPlayerProgressesInfo operation: ${errors}`
-      );
-      return null;
-    }
-  }
-
-  // async grantBonusForEarlyCompletion(
-  //   gameId: string,
-  //   userId: string
-  // ): Promise<boolean> {
+  // async getInformationOnPlayerProgress(
+  //   firstPlayerId: string,
+  //   secondPlayerId: string
+  // ): Promise<{
+  //   firstPlayerProgress: QuizPlayerProgress;
+  //   progressOfSecondPlayer: QuizPlayerProgress;
+  // } | null> {
   //   try {
-  //   } catch (error) {
+  //     const firstPlayerProgress = await this.playerProgress.findOneBy({
+  //       id: firstPlayerId,
+  //     });
+
+  //     const progressOfSecondPlayer = await this.playerProgress.findOneBy({
+  //       id: secondPlayerId,
+  //     });
+
+  //     return { firstPlayerProgress, progressOfSecondPlayer };
+  //   } catch (errors) {
   //     console.error(
-  //       `Database fails during delete quiz-question operation ${error}`
+  //       `Database fails during getPlayerProgressesInfo operation: ${errors}`
   //     );
-  //     return false;
+  //     return null;
   //   }
   // }
 
-  async getPlayerById(playerId: string): Promise<QuizPlayerProgress> {
+  async getPlayerProgressById(playerId: string): Promise<QuizPlayerProgress> {
     try {
       return this.playerProgress.findOne({
         where: { id: playerId },
+        relations: ['answers'],
       });
     } catch (error) {
       throw new InternalServerErrorException(`getPlayerById: ${error}`);
@@ -256,7 +253,7 @@ export class QuizRepository {
     }
   }
 
-  async getNextQuestion(
+  async getCurrentGameQuestion(
     gameId: string,
     order: number
   ): Promise<CurrentGameQuestion> {
@@ -326,16 +323,39 @@ export class QuizRepository {
     }
   }
 
-  async getCurrentGameByUserId(userId: string): Promise<QuizGame> {
+  async getCurrentGameByUserId(
+    userId: string,
+    manager: EntityManager
+  ): Promise<QuizGame | null> {
     try {
+      // const result = await manager
+      //   .createQueryBuilder(QuizGame, 'game')
+      //   .select()
+      //   .leftJoinAndSelect('game.firstPlayerProgress', 'firstPlayerProgress')
+      //   .leftJoinAndSelect('game.secondPlayerProgress', 'secondPlayerProgress')
+      //   .leftJoinAndSelect('game.questions', 'questions')
+      //   .where(
+      //     '(game.firstPlayerId = :userId OR game.secondPlayerId = :userId)',
+      //     {
+      //       userId,
+      //     }
+      //   )
+      //   .getOne();
+
+      //   await manager.query('COMMIT');
+
       const result = await this.quizPairs
         .createQueryBuilder('game')
-        .select('game.id, firstPlayer.id, secondPlayer.id')
-        .leftJoin('game.firstPlayerProgress', 'firstPlayer')
-        .leftJoin('game.secondPlayerProgress', 'secondPlayer')
-        .where('(firstPlayer.id = :userId OR secondPlayer.id = :userId)', {
-          userId,
-        })
+        .select()
+        .leftJoinAndSelect('game.firstPlayerProgress', 'firstPlayerProgress')
+        .leftJoinAndSelect('game.secondPlayerProgress', 'secondPlayerProgress')
+        .leftJoinAndSelect('game.questions', 'questions')
+        .where(
+          '(game.firstPlayerId = :userId OR game.secondPlayerId = :userId)',
+          {
+            userId,
+          }
+        )
         .getOne();
 
       return result;
@@ -352,7 +372,10 @@ export class QuizRepository {
   ): Promise<QuizAnswer> {
     try {
       return this.quizAnswers.findOne({
-        where: { answerText, playerProgress: { id: playerId } },
+        where: {
+          answerText,
+          playerProgress: { id: playerId },
+        },
       });
     } catch (error) {
       console.error(`findAnswerByText: ${error}`);

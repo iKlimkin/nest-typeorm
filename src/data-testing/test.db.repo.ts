@@ -14,13 +14,15 @@ export class TestDatabaseRepo {
       const usersRepo = this.dataSource.getRepository(UserAccount)
       // usersRepo.clear()
       // this.manager.clear(UserAccount)
+
+      // TRUNCATE TABLE quiz_question CASCADE;
+      // TRUNCATE TABLE quiz_player_progress CASCADE;
+      // TRUNCATE TABLE quiz_answer;
       await this.dataSource.query(`
       TRUNCATE TABLE user_account CASCADE;
       TRUNCATE TABLE quiz_game CASCADE;
       TRUNCATE TABLE quiz_question CASCADE;
-      TRUNCATE TABLE quiz_player_progress CASCADE;
       TRUNCATE TABLE quiz_correct_answer CASCADE;
-      TRUNCATE TABLE quiz_answer;
       TRUNCATE TABLE user_session;
       TRUNCATE TABLE post CASCADE;
       TRUNCATE TABLE blog CASCADE;

@@ -2,18 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserSession } from '../../domain/entities/security.entity';
-import { getTORSessionViewModel } from '../models/security.view.models/security.sql-view.models';
+import { getSessionViewModel } from '../models/security.view.models/security.view.model';
 import { SecurityViewDeviceModel } from '../models/security.view.models/security.view.types';
 
 @Injectable()
 export class SecurityQueryRepo {
   constructor(
     @InjectRepository(UserSession)
-    private readonly userSessions: Repository<UserSession>,
+    private readonly userSessions: Repository<UserSession>
   ) {}
 
   async getUserActiveSessions(
-    userId: string,
+    userId: string
   ): Promise<SecurityViewDeviceModel[] | null> {
     try {
       const sessions = await this.userSessions.find({
@@ -24,7 +24,7 @@ export class SecurityQueryRepo {
 
       if (!sessions) return null;
 
-      return sessions.map(getTORSessionViewModel);
+      return sessions.map(getSessionViewModel);
     } catch (error) {
       console.error(`Database fails operate with find user sessions ${error}`);
       return null;
@@ -32,7 +32,7 @@ export class SecurityQueryRepo {
   }
 
   async getUserSession(
-    deviceId: string,
+    deviceId: string
   ): Promise<SecurityViewDeviceModel | null> {
     try {
       const sessions = await this.userSessions.find({
@@ -43,7 +43,7 @@ export class SecurityQueryRepo {
 
       if (!sessions) return null;
 
-      return getTORSessionViewModel(sessions[0]);
+      return getSessionViewModel(sessions[0]);
     } catch (error) {
       console.error(`Database fails operate with find user session ${error}`);
       return null;

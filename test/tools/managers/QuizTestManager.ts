@@ -5,14 +5,24 @@ import { Repository } from 'typeorm';
 import { PaginationViewModelType } from '../../../src/domain/pagination-view.model';
 import { CreateQuestionData } from '../../../src/features/quiz/api/models/input.models/create-question.model';
 import { QuizQuestionsQueryFilter } from '../../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
+import { GameStatus } from '../../../src/features/quiz/api/models/input.models/statuses.model';
 import { UpdateQuestionData } from '../../../src/features/quiz/api/models/input.models/update-question.model';
+import { QuizPairViewType } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game.view-type';
 import { QuizQuestionViewType } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
 import {
+  CurrentGameQuestion,
   QuizAnswer,
   QuizCorrectAnswer,
+  QuizGame,
+  QuizPlayerProgress,
   QuizQuestion,
 } from '../../../src/settings';
 import { NavigationEnum } from '../helpers/routing';
+
+export type QuestionsAndAnswersDB = {
+  savedQuestion: QuizQuestion;
+  answers: QuizCorrectAnswer[];
+}[];
 
 export class QuizTestManager {
   constructor(
@@ -22,6 +32,15 @@ export class QuizTestManager {
   private application = this.app.getHttpServer();
   private quizQuestionRepository = this.app.get<Repository<QuizQuestion>>(
     getRepositoryToken(QuizQuestion)
+  );
+  private quizGames = this.app.get<Repository<QuizGame>>(
+    getRepositoryToken(QuizGame)
+  );
+  private quizGameQuestions = this.app.get<Repository<CurrentGameQuestion>>(
+    getRepositoryToken(CurrentGameQuestion)
+  );
+  private quizPlayerProgresses = this.app.get<Repository<QuizPlayerProgress>>(
+    getRepositoryToken(QuizPlayerProgress)
   );
   private quizCorrectAnswersRepository = this.app.get<
     Repository<QuizCorrectAnswer>
@@ -47,6 +66,61 @@ export class QuizTestManager {
       .expect(expectStatus);
 
     return response.body;
+  }
+
+  async sendAnswer(
+    accessToken: string,
+    answer: string,
+    expectStatus = HttpStatus.OK
+  ) {
+    const response = await request(this.application)
+      .post(`${this.routing}/my-current/answers`)
+      .auth(accessToken, { type: 'bearer' })
+      .send({ answer })
+      .expect(expectStatus);
+
+    return response.body;
+  }
+
+  async getCurrentGameById(
+    accessToken: string,
+    gameId: string,
+    expectStatus = HttpStatus.OK
+  ) {
+    const response = await request(this.application)
+      .get(`${this.routing}/${gameId}`)
+      .auth(accessToken, { type: 'bearer' })
+      .expect(expectStatus);
+
+    return response.body;
+  }
+
+  async getCurrentGameByUserId(
+    accessToken: string,
+    expectStatus = HttpStatus.OK
+  ): Promise<QuizPairViewType> {
+    const response = await request(this.application)
+      .get(`${this.routing}/my-current`)
+      .auth(accessToken, { type: 'bearer' })
+      .expect(expectStatus);
+
+    return response.body;
+  }
+
+  async getCurrentGameQuestions(
+    gameId: string
+  ): Promise<CurrentGameQuestion[]> {
+    const questions = await this.quizGameQuestions.findBy({
+      quizPair: { id: gameId },
+    });
+    return questions;
+  }
+
+  async getCurrentGameAnswers(gameId: string): Promise<QuizAnswer[]> {
+    const questions = await this.quizGameQuestions.findBy({
+      quizPair: { id: gameId },
+    });
+    return;
   }
 
   async getQuestionWithAnswers(questionId: string): Promise<{
@@ -90,7 +164,9 @@ export class QuizTestManager {
       .expect(HttpStatus.NO_CONTENT);
   }
 
-  async createQuestionsForFurtherTests(numberOfQuestions: number) {
+  async createQuestionsForFurtherTests(
+    numberOfQuestions: number
+  ): Promise<QuestionsAndAnswersDB> {
     const questionsAndAnswers = [];
     for (let i = 0; i < numberOfQuestions; i++) {
       const question = this.quizQuestionRepository.create({
@@ -108,11 +184,12 @@ export class QuizTestManager {
           question: { id: savedQuestion.id },
         });
 
-        await this.quizCorrectAnswersRepository.save(answer);
+        const savedAnswer =
+          await this.quizCorrectAnswersRepository.save(answer);
 
-        answers.push(answer);
+        answers.push(savedAnswer);
       }
-      questionsAndAnswers.push({ question, answers });
+      questionsAndAnswers.push({ savedQuestion, answers });
     }
 
     return questionsAndAnswers;
@@ -128,5 +205,70 @@ export class QuizTestManager {
       .expect(HttpStatus.OK);
 
     return response.body;
+  }
+
+  async restoreGameProgress(gameId: string) {
+    await this.quizGames
+      .createQueryBuilder()
+      .delete()
+      .from(QuizAnswer)
+      .execute();
+
+    const currentPair = await this.quizGames.findOne({
+      where: { id: gameId },
+      relations: ['firstPlayerProgress', 'secondPlayerProgress'],
+    });
+
+    currentPair.version = 0;
+    currentPair.firstPlayerProgress.score = 0;
+    currentPair.firstPlayerProgress.questCompletionDate = null;
+    currentPair.secondPlayerProgress.score = 0;
+    currentPair.firstPlayerProgress.answersCount = 0;
+    currentPair.secondPlayerProgress.questCompletionDate = null;
+    currentPair.secondPlayerProgress.answersCount = 0;
+    currentPair.finishGameDate = null;
+    currentPair.status = GameStatus.Active;
+
+    await this.quizGames.save(currentPair);
+    await this.quizPlayerProgresses.save([
+      currentPair.firstPlayerProgress,
+      currentPair.secondPlayerProgress,
+    ]);
+  }
+
+  async prepareForBattle(
+    firstPlayerToken: string,
+    secondPlayerToken: string,
+    questionsAndAnswers: QuestionsAndAnswersDB
+  ): Promise<{
+    gameId: string;
+    correctAnswersForCurrentGame: string[];
+  }> {
+    const response = await this.createPairOrConnect(firstPlayerToken);
+
+    await this.createPairOrConnect(secondPlayerToken);
+
+    const gameId = response.id;
+
+    const gameQuestions = await this.getCurrentGameQuestions(gameId);
+    expect(gameQuestions).toHaveLength(5);
+
+    const correctAnswersForCurrentGame: string[] = [];
+
+    gameQuestions.forEach((gameQuestion) => {
+      const matchingQuestion = questionsAndAnswers.find(
+        (qa) => qa.savedQuestion.id === gameQuestion.questionId
+      );
+      if (matchingQuestion) {
+        matchingQuestion.answers.forEach((answer) => {
+          correctAnswersForCurrentGame.push(answer.answerText);
+        });
+      }
+    });
+
+    return {
+      gameId,
+      correctAnswersForCurrentGame,
+    };
   }
 }

@@ -54,6 +54,13 @@ export class PairGameQuizController {
       throw new NotFoundException('Game not found');
     }
 
+    if (
+      result.firstPlayerProgress.player.id !== userInfo.userId &&
+      result.secondPlayerProgress.player.id !== userInfo.userId
+    ) {
+      throw new ForbiddenException('Current user is not a participant');
+    }
+
     return result;
   }
 
@@ -130,6 +137,7 @@ export class PairGameQuizController {
   }
 
   @Post('my-current/answers')
+  @HttpCode(HttpStatus.OK)
   async sendAnswer(
     @CurrentUserInfo() userInfo: UserSessionDto,
     @Body() body: InputAnswerModel
@@ -156,7 +164,7 @@ export class PairGameQuizController {
     }
   }
 
-  @Get('test')
+  @Get('test/test')
   async testComprehension(@CurrentUserInfo() userInfo: UserSessionDto) {
     return this.quizService.testComprehension(userInfo);
   }

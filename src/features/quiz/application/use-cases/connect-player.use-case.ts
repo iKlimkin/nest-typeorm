@@ -1,17 +1,15 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { DataSource } from 'typeorm';
+import { OutputId } from '../../../../domain/output.models';
+import { runInTransaction } from '../../../../domain/transaction-wrapper';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
-import { QuizRepository } from '../../infrastructure/quiz-game.repo';
-
-import { OutputId } from '../../../../domain/output.models';
 import { UsersRepository } from '../../../admin/infrastructure/users.repo';
-import { QuizPlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
-import { ConnectPlayerCommand } from '../commands/connect-player.command';
-import { runInTransaction } from '../../../../domain/transaction-wrapper';
-import { DataSource } from 'typeorm';
 import { CurrentGameQuestion } from '../../domain/entities/current-game-questions.entity';
-import { QuizCorrectAnswer } from '../../domain/entities/quiz-correct-answers.entity';
+import { QuizPlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
+import { QuizRepository } from '../../infrastructure/quiz-game.repo';
+import { ConnectPlayerCommand } from '../commands/connect-player.command';
 
 @CommandHandler(ConnectPlayerCommand)
 export class ConnectPlayerUseCase
@@ -59,18 +57,19 @@ export class ConnectPlayerUseCase
           secondPlayerProgress,
           pairToConnect
         );
-        
+
         const questions = await this.quizRepo.getFiveRandomQuestions();
 
-        const currentGameQuestions = questions.map((q) => {
+        const currentGameQuestions = questions.map((q, i) => {
           const currentGameQuestion = new CurrentGameQuestion();
           currentGameQuestion.quizPair = result;
-          currentGameQuestion.questionId = q.id
-          
+          currentGameQuestion.questionId = q.id;
+          currentGameQuestion.order = i + 1;
+
           return currentGameQuestion;
         });
 
-        await this.quizRepo.saveCurrentGameQuestions(currentGameQuestions)
+        await this.quizRepo.saveCurrentGameQuestions(currentGameQuestions);
 
         if (!result) {
           notice.addError(

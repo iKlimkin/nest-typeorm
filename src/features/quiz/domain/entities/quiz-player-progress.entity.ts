@@ -40,4 +40,18 @@ export class QuizPlayerProgress extends BaseEntity {
 
     return playerProgress;
   }
+
+  incrementAnswersCount() {
+    this.answersCount += 1;
+  }
+
+  incrementScore() {
+    this.score += 1;
+  }
+
+  deservesBonusUser(isFinishedEarly: boolean) {
+    if (isFinishedEarly && this.score > 0) {
+      return true;
+    }
+  }
 }

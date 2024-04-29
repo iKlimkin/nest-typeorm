@@ -7,7 +7,7 @@ export class QuizCorrectAnswer extends BaseEntity {
   @Column()
   answerText: string;
 
-  @ManyToOne('QuizQuestion', 'correctAnswers')
+  @ManyToOne('QuizQuestion', 'correctAnswers', { onDelete: 'CASCADE' })
   @JoinColumn()
   question: QuizQuestion;
 

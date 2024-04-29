@@ -16,7 +16,7 @@ export class QuizService {
   async testComprehension(userInfo: UserSessionDto) {
     const { userId } = userInfo
     const user = await this.usersRepo.getUserById(userId);
-
+    
     return this.quizQueryRepo.test(user)
   }
 }

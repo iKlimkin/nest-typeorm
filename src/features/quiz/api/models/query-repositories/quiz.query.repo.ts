@@ -171,11 +171,15 @@ export class QuizQueryRepo {
           questions: {
             question: true,
           },
-          firstPlayerProgress: true,
-          secondPlayerProgress: true,
+          firstPlayerProgress: {
+            answers: true,
+          },
+          secondPlayerProgress: {
+            answers: true,
+          },
         },
       });
-      
+
       if (!result) return null;
 
       return getQuizPairViewModel(result);
@@ -184,7 +188,7 @@ export class QuizQueryRepo {
     }
   }
 
-  async getPairInformation(gameId: string): Promise<QuizPairViewType> {
+  async getPairInformation(gameId: string): Promise<QuizPairViewType | null> {
     try {
       const result = await this.quizPairs
         .createQueryBuilder('game')
@@ -208,20 +212,33 @@ export class QuizQueryRepo {
           'allQuestions.id',
           'allQuestions.body',
         ])
+        .leftJoinAndSelect('firstPlayerProgress.answers', 'fpAnswers')
+        .leftJoinAndSelect('secondPlayerProgress.answers', 'spAnswers')
+        .orderBy('questions.order', 'ASC')
+        .orderBy('fpAnswers.created_at', 'DESC')
+        .orderBy('spAnswers.created_at', 'DESC')
         .where('game.id = :gameId', { gameId })
         .getOne();
 
       return getQuizPairViewModel(result);
     } catch (error) {
-      throw new InternalServerErrorException(
-        `getPairInformation finished with errors: ${error}`
-      );
+      console.error(`getPairInformation finished with errors: ${error}`);
+      return null;
     }
   }
 
   async test(user: UserAccount): Promise<any> {
     try {
-      const gameId = '46362b94-6dde-4bc1-8245-0167e72205af';
+      // const result = await this.quizPairs
+      //   .createQueryBuilder()
+      //   .delete()
+      //   .from(QuizPlayerProgress)
+      //   // .from(QuizAnswer)
+      //   .execute()
+
+      // console.log(result);
+
+      const gameId = '8b31539d-eb2a-48c4-b338-e8d7d0c2a7f1';
 
       const result = await this.quizPairs
         .createQueryBuilder('game')
@@ -234,20 +251,26 @@ export class QuizQueryRepo {
           'game.firstPlayerId',
           'game.secondPlayerId',
         ])
-        .leftJoin('game.firstPlayer', 'firstPlayer')
-        // .leftJoinAndMapOne((qb) => {
-        //   qb.from(QuizPlayerProgress, 'progress')
-        //     .where('progress.gameId = :gameId')
-        //     .andWhere('progress.userId = :userId');
-        // })
-        .addSelect(['firstPlayer.login', 'firstPlayer.score'])
-        .leftJoin('game.secondPlayer', 'secondPlayer')
-        .addSelect(['secondPlayer.login', 'secondPlayer.score'])
+        .leftJoin('game.firstPlayerProgress', 'firstPlayerProgress')
+        .addSelect(['firstPlayerProgress.login', 'firstPlayerProgress.score'])
+        .leftJoin('game.secondPlayerProgress', 'secondPlayerProgress')
+        .addSelect(['secondPlayerProgress.login', 'secondPlayerProgress.score'])
         .leftJoin('game.questions', 'questions')
+        .leftJoin('questions.question', 'allQuestions')
+        .addSelect([
+          'questions.questionId',
+          'allQuestions.id',
+          'allQuestions.body',
+        ])
+        .leftJoinAndSelect('firstPlayerProgress.answers', 'fpAnswers')
+        .leftJoinAndSelect('secondPlayerProgress.answers', 'spAnswers')
+        .orderBy('questions.order', 'ASC')
+        .orderBy('fpAnswers.created_at', 'DESC')
+        .orderBy('spAnswers.created_at', 'DESC')
         .where('game.id = :gameId', { gameId })
         .getOne();
 
-      console.log(result);
+      return getQuizPairViewModel(result);
     } catch (error) {
       console.error(`TESTING: ${error}`);
     }

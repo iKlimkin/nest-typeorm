@@ -1,15 +1,15 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { DataSource } from 'typeorm';
+import { runInTransaction } from '../../../../domain/transaction-wrapper';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
+import { AnswerStatus } from '../../api/models/input.models/statuses.model';
+import { AnswerResultViewType } from '../../api/models/output.models.ts/view.models.ts/quiz-game.view-type';
 import { QuizAnswer } from '../../domain/entities/quiz-answer.entity';
-import { QuizQuestion } from '../../domain/entities/quiz-questions.entity';
+import { QuizPlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
 import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { SetPlayerAnswerCommand } from '../commands/set-player-answer.command';
-import { AnswerResultViewType } from '../../api/models/output.models.ts/view.models.ts/quiz-game.view-type';
-import { DataSource } from 'typeorm';
-import { runInTransaction } from '../../../../domain/transaction-wrapper';
-import { AnswerStatus } from '../../api/models/input.models/statuses.model';
 
 @CommandHandler(SetPlayerAnswerCommand)
 export class SetPlayerAnswerUseCase
@@ -24,6 +24,7 @@ export class SetPlayerAnswerUseCase
     command: SetPlayerAnswerCommand
   ): Promise<LayerNoticeInterceptor<AnswerResultViewType | null>> {
     const quizRepo = this.quizRepo;
+    const lastPoint = 5;
     const notice = new LayerNoticeInterceptor<AnswerResultViewType>();
     const { answer, userId } = command.inputData;
     try {
@@ -34,31 +35,109 @@ export class SetPlayerAnswerUseCase
     }
 
     try {
-      return runInTransaction(this.dataSource, async (queryRunner) => {
-        const currentGame = await quizRepo.getCurrentGameByUserId(userId);
+      return runInTransaction(this.dataSource, async (manager) => {
+        let { firstPlayerProgress, secondPlayerProgress, id, firstPlayerId } =
+          await quizRepo.getCurrentGameByUserId(userId, manager);
 
-        const currentPlayer = await quizRepo.getPlayerById(
-          currentGame.firstPlayerProgress.id
-        );
+        let currentPlayerProgress: QuizPlayerProgress;
+        let otherPlayerProgress: QuizPlayerProgress;
 
-        const secondPlayer = await quizRepo.getPlayerById(
-          currentGame.secondPlayerProgress.id
-        );
+        debugger;
+        firstPlayerId === userId
+          ? (currentPlayerProgress = firstPlayerProgress) &&
+            (otherPlayerProgress = secondPlayerProgress)
+          : (currentPlayerProgress = secondPlayerProgress) &&
+            (otherPlayerProgress = firstPlayerProgress);
 
-        if (currentPlayer.answersCount >= 5) {
+        if (currentPlayerProgress.answersCount >= lastPoint) {
           notice.addError(
-            'first player answers limit',
+            'player answers limit',
             'validator',
             GetErrors.Forbidden
           );
           return notice;
         }
 
-        ++currentPlayer.answersCount;
+        currentPlayerProgress.incrementAnswersCount();
 
-        const question = await quizRepo.getNextQuestion(
-          currentGame.id,
-          currentPlayer.answersCount
+        if (currentPlayerProgress.answersCount === lastPoint) {
+          currentPlayerProgress.questCompletionDate = new Date();
+
+          const lastQuestion = await quizRepo.getCurrentGameQuestion(
+            id,
+            lastPoint
+          );
+
+          const isCorrectAnswer = await quizRepo.checkAnswer(
+            answer,
+            lastQuestion.questionId
+          );
+
+          const playerAnswer = QuizAnswer.create({
+            answerText: answer,
+            isCorrect: isCorrectAnswer,
+            questionId: lastQuestion.questionId,
+            playerProgress: currentPlayerProgress,
+          });
+
+          const savedPlayerAnswer = await quizRepo.saveAnswer(playerAnswer);
+
+          if (playerAnswer.answerStatus === AnswerStatus.Correct) {
+            currentPlayerProgress.incrementScore();
+          }
+
+          if (
+            currentPlayerProgress.answersCount > 4 &&
+            otherPlayerProgress.answersCount > 4
+          ) {
+            await quizRepo.finishGame(id);
+
+            const isFirstPlayerFinishedEarly =
+              currentPlayerProgress.questCompletionDate.getTime() <
+              otherPlayerProgress.questCompletionDate.getTime();
+
+            if (
+              currentPlayerProgress.deservesBonusUser(
+                isFirstPlayerFinishedEarly
+              )
+            ) {
+              currentPlayerProgress.incrementScore();
+            } else if (
+              otherPlayerProgress.deservesBonusUser(!isFirstPlayerFinishedEarly)
+            ) {
+              otherPlayerProgress.incrementScore();
+              await quizRepo.savePlayerProgress(otherPlayerProgress);
+            }
+          }
+
+          await quizRepo.savePlayerProgress(currentPlayerProgress);
+
+          const { created_at, answerStatus, questionId } = savedPlayerAnswer;
+
+          const responseData = {
+            addedAt: created_at.toISOString(),
+            answerStatus,
+            questionId,
+          };
+
+          if (!savedPlayerAnswer) {
+            notice.addError(
+              'Answer not realized',
+              'SetPlayerAnswer',
+              GetErrors.DatabaseFail
+            );
+          } else {
+            notice.addData(responseData);
+          }
+
+          return notice;
+        }
+
+        // const questionOrder = currentPlayerProgress.answersCount + 1;
+
+        const question = await quizRepo.getCurrentGameQuestion(
+          id,
+          currentPlayerProgress.answersCount
         );
 
         if (!question) {
@@ -66,63 +145,35 @@ export class SetPlayerAnswerUseCase
           return notice;
         }
 
-        const isCorrectAnswer = quizRepo.checkAnswer(answer, question.id);
+        const isCorrectAnswer = await quizRepo.checkAnswer(
+          answer,
+          question.questionId
+        );
 
-        currentPlayer.answers.forEach((ans) => {
-          ans.answerText = answer;
-          ans.answerStatus = isCorrectAnswer
-            ? AnswerStatus.Correct
-            : AnswerStatus.Incorrect;
-          if (isCorrectAnswer) {
-            currentPlayer.score++;
-          }
+        const playerAnswer = QuizAnswer.create({
+          answerText: answer,
+          isCorrect: isCorrectAnswer,
+          questionId: question.questionId,
+          playerProgress: currentPlayerProgress,
         });
 
-        await quizRepo.savePlayerProgress(currentPlayer);
+        const savedPlayerAnswer = await quizRepo.saveAnswer(playerAnswer);
 
-        if (currentPlayer.answersCount === 5) {
-          currentPlayer.questCompletionDate = new Date();
-          await quizRepo.savePlayerProgress(currentPlayer);
+        if (playerAnswer.isCorrectAnswer(playerAnswer.answerStatus)) {
+          currentPlayerProgress.incrementScore();
         }
 
-        if (
-          currentPlayer.answersCount === 5 &&
-          secondPlayer.answersCount === 5
-        ) {
-          await quizRepo.finishGame(currentGame.id);
-        }
+        await quizRepo.savePlayerProgress(currentPlayerProgress);
 
-        const { firstPlayerProgress, secondPlayerProgress } =
-          await quizRepo.getInformationOnPlayerProgress(
-            currentPlayer.id,
-            secondPlayer.id
-          );
+        const { created_at, answerStatus, questionId } = savedPlayerAnswer;
 
-        const isFirstPlayerFinishedEarly =
-          firstPlayerProgress.questCompletionDate.getTime() <
-          secondPlayerProgress.questCompletionDate.getTime();
+        const responseData = {
+          addedAt: created_at.toISOString(),
+          answerStatus,
+          questionId,
+        };
 
-        if (isFirstPlayerFinishedEarly && firstPlayerProgress.score > 0) {
-          currentPlayer.score++;
-          await quizRepo.savePlayerProgress(currentPlayer);
-        } else if (
-          !isFirstPlayerFinishedEarly &&
-          secondPlayerProgress.score > 0
-        ) {
-          secondPlayer.score++;
-          await quizRepo.savePlayerProgress(secondPlayer);
-        }
-
-        const result = await quizRepo.findAnswerByText(
-          answer,
-          currentPlayer.id
-        );
-        let addedAt = result.created_at.toISOString();
-        let answerStatus = result.answerStatus;
-        let questionId = question.id;
-        const responseData = { addedAt, answerStatus, questionId };
-
-        if (!result) {
+        if (!savedPlayerAnswer) {
           notice.addError(
             'Answer not realized',
             'SetPlayerAnswer',

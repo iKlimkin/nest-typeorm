@@ -4,6 +4,13 @@ import { BaseEntity } from '../../../../domain/base-entity';
 import type { QuizPlayerProgress } from './quiz-player-progress.entity';
 import { AnswerStatus } from '../../api/models/input.models/statuses.model';
 
+interface CreateAnswerData {
+  answerText: string;
+  isCorrect: boolean;
+  questionId: string;
+  playerProgress: QuizPlayerProgress;
+}
+
 @Entity()
 export class QuizAnswer extends BaseEntity {
   @Column()
@@ -15,11 +22,27 @@ export class QuizAnswer extends BaseEntity {
   @Column({ type: 'enum', enum: AnswerStatus })
   answerStatus: AnswerStatus;
 
-  @ManyToOne('QuizPlayerProgress', 'answers')
+  @ManyToOne('QuizPlayerProgress', 'answers', { onDelete: 'CASCADE' })
   @JoinColumn()
   playerProgress: QuizPlayerProgress;
 
-  static createAnswer() {
-    const answerInfo = new QuizAnswer();
+  static create(createAnswerDto: CreateAnswerData) {
+    const { answerText, isCorrect, questionId, playerProgress } =
+      createAnswerDto;
+
+    const answerStatus = isCorrect;
+    const playerAnswer = new QuizAnswer();
+    playerAnswer.answerText = answerText;
+    playerAnswer.answerStatus = answerStatus
+      ? AnswerStatus.Correct
+      : AnswerStatus.Incorrect;
+    playerAnswer.questionId = questionId;
+    playerAnswer.playerProgress = playerProgress;
+
+    return playerAnswer;
+  }
+
+  isCorrectAnswer(answerStatus: AnswerStatus) {
+    return answerStatus === AnswerStatus.Correct;
   }
 }

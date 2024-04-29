@@ -16,7 +16,7 @@ export class CurrentGameQuestion extends BaseEntity {
   @JoinColumn()
   quizPair: QuizGame;
 
-  @Column({ type: 'int2', default: 1 })
+  @Column({ type: 'int2' })
   order: number;
 
   static create() {}

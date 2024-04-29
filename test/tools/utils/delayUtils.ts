@@ -1,2 +1,2 @@
-export const wait = (sec: number): Promise<boolean> =>
-  new Promise((res) => setTimeout(() => res(true), sec * 1000));
+export const wait = (sec: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(() => resolve(), sec  * 1000));
