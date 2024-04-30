@@ -10,6 +10,8 @@ import { QuizAnswer } from '../../domain/entities/quiz-answer.entity';
 import { QuizPlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
 import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { SetPlayerAnswerCommand } from '../commands/set-player-answer.command';
+import { CurrentGameQuestion } from '../../domain/entities/current-game-questions.entity';
+import { ForbiddenException } from '@nestjs/common';
 
 @CommandHandler(SetPlayerAnswerCommand)
 export class SetPlayerAnswerUseCase
@@ -36,8 +38,12 @@ export class SetPlayerAnswerUseCase
 
     try {
       return runInTransaction(this.dataSource, async (manager) => {
-        let { firstPlayerProgress, secondPlayerProgress, id, firstPlayerId } =
-          await quizRepo.getCurrentGameByUserId(userId, manager);
+        let {
+          firstPlayerProgress,
+          secondPlayerProgress,
+          id: gameId,
+          firstPlayerId,
+        } = await quizRepo.getCurrentGameByUserId(userId, manager);
 
         let currentPlayerProgress: QuizPlayerProgress;
         let otherPlayerProgress: QuizPlayerProgress;
@@ -63,24 +69,12 @@ export class SetPlayerAnswerUseCase
         if (currentPlayerProgress.answersCount === lastPoint) {
           currentPlayerProgress.questCompletionDate = new Date();
 
-          const lastQuestion = await quizRepo.getCurrentGameQuestion(
-            id,
-            lastPoint
-          );
-
-          const isCorrectAnswer = await quizRepo.checkAnswer(
-            answer,
-            lastQuestion.questionId
-          );
-
-          const playerAnswer = QuizAnswer.create({
-            answerText: answer,
-            isCorrect: isCorrectAnswer,
-            questionId: lastQuestion.questionId,
-            playerProgress: currentPlayerProgress,
-          });
-
-          const savedPlayerAnswer = await quizRepo.saveAnswer(playerAnswer);
+          const { playerAnswer, savedPlayerAnswer } =
+            await this.checkAndCreateAnswer(
+              answer,
+              gameId,
+              currentPlayerProgress
+            );
 
           if (playerAnswer.answerStatus === AnswerStatus.Correct) {
             currentPlayerProgress.incrementScore();
@@ -90,7 +84,7 @@ export class SetPlayerAnswerUseCase
             currentPlayerProgress.answersCount > 4 &&
             otherPlayerProgress.answersCount > 4
           ) {
-            await quizRepo.finishGame(id);
+            await quizRepo.finishGame(gameId);
 
             const isFirstPlayerFinishedEarly =
               currentPlayerProgress.questCompletionDate.getTime() <
@@ -133,31 +127,12 @@ export class SetPlayerAnswerUseCase
           return notice;
         }
 
-        // const questionOrder = currentPlayerProgress.answersCount + 1;
-
-        const question = await quizRepo.getCurrentGameQuestion(
-          id,
-          currentPlayerProgress.answersCount
-        );
-
-        if (!question) {
-          notice.addError('no questions', 'validator', GetErrors.Forbidden);
-          return notice;
-        }
-
-        const isCorrectAnswer = await quizRepo.checkAnswer(
-          answer,
-          question.questionId
-        );
-
-        const playerAnswer = QuizAnswer.create({
-          answerText: answer,
-          isCorrect: isCorrectAnswer,
-          questionId: question.questionId,
-          playerProgress: currentPlayerProgress,
-        });
-
-        const savedPlayerAnswer = await quizRepo.saveAnswer(playerAnswer);
+        const { playerAnswer, savedPlayerAnswer } =
+          await this.checkAndCreateAnswer(
+            answer,
+            gameId,
+            currentPlayerProgress
+          );
 
         if (playerAnswer.isCorrectAnswer(playerAnswer.answerStatus)) {
           currentPlayerProgress.incrementScore();
@@ -188,6 +163,42 @@ export class SetPlayerAnswerUseCase
     } catch (error) {
       notice.addError('transaction error', 'database', GetErrors.DatabaseFail);
       return notice;
+    }
+  }
+
+  private async checkAndCreateAnswer(
+    answer: string,
+    gameId: string,
+    currentPlayerProgress: QuizPlayerProgress
+  ): Promise<{ playerAnswer: QuizAnswer; savedPlayerAnswer: QuizAnswer }> {
+    try {
+      const question = await this.quizRepo.getCurrentGameQuestion(
+        gameId,
+        currentPlayerProgress.answersCount
+      );
+
+      if (!question.questionId) {
+        throw new ForbiddenException('Question not found')
+      }
+
+      const isCorrectAnswer = await this.quizRepo.checkAnswer(
+        answer,
+        question.questionId
+      );
+
+      const playerAnswer = QuizAnswer.create({
+        answerText: answer,
+        isCorrect: isCorrectAnswer,
+        questionId: question.questionId,
+        playerProgress: currentPlayerProgress,
+      });
+
+      const savedPlayerAnswer = await this.quizRepo.saveAnswer(playerAnswer);
+
+      return { playerAnswer, savedPlayerAnswer };
+    } catch (error) {
+      console.error(error);
+      return null
     }
   }
 }

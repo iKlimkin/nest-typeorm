@@ -32,6 +32,7 @@ import {
 import { InputAnswerModel } from '../models/input.models/answer.model';
 import { SetPlayerAnswerCommand } from '../../application/commands/set-player-answer.command';
 import { QuizService } from '../../application/quiz.service';
+import { ValidateIdPipe } from '../../../../infra/pipes/id-validate.pipe';
 
 @UseGuards(AccessTokenGuard)
 @Controller(RouterPaths.quizPairs)
@@ -56,7 +57,7 @@ export class PairGameQuizController {
 
     if (
       result.firstPlayerProgress.player.id !== userInfo.userId &&
-      result.secondPlayerProgress.player.id !== userInfo.userId
+      result.secondPlayerProgress?.player.id !== userInfo.userId
     ) {
       throw new ForbiddenException('Current user is not a participant');
     }
@@ -67,7 +68,7 @@ export class PairGameQuizController {
   @Get(':id')
   async getGame(
     @CurrentUserInfo() userInfo: UserSessionDto,
-    @Param('id') gameId: string
+    @Param('id', ValidateIdPipe) gameId: string
   ): Promise<QuizPairViewType> {
     const game = await this.quizQueryRepo.getPairInformation(gameId);
 
@@ -77,7 +78,7 @@ export class PairGameQuizController {
 
     if (
       game.firstPlayerProgress.player.id !== userInfo.userId &&
-      game.secondPlayerProgress.player.id !== userInfo.userId
+      game.secondPlayerProgress?.player.id !== userInfo.userId
     ) {
       throw new ForbiddenException('Current user is not a participant');
     }
@@ -104,20 +105,20 @@ export class PairGameQuizController {
         LayerNoticeInterceptor<OutputId | null>
       >(command);
 
-      if (result.hasError()) {
-        const command = new CreatePairCommand(userInfo);
-        const result = await this.commandBus.execute<
-          CreatePairCommand,
-          LayerNoticeInterceptor<OutputId | null>
-        >(command);
+      // if (result.hasError()) {
+      //   const command = new CreatePairCommand(userInfo);
+      //   const result = await this.commandBus.execute<
+      //     CreatePairCommand,
+      //     LayerNoticeInterceptor<OutputId | null>
+      //   >(command);
 
-        if (result.hasError()) {
-          const errors = handleErrors(result.code, result.extensions[0]);
-          throw errors.error;
-        }
+      //   if (result.hasError()) {
+      //     const errors = handleErrors(result.code, result.extensions[0]);
+      //     throw errors.error;
+      //   }
 
-        return this.quizQueryRepo.getPairInformation(result.data.id);
-      }
+      //   return this.quizQueryRepo.getPairInformation(result.data.id);
+      // }
 
       return this.quizQueryRepo.getPairInformation(result.data.id);
     }

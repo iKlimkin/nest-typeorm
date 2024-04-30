@@ -57,8 +57,17 @@ export class ConnectPlayerUseCase
           secondPlayerProgress,
           pairToConnect
         );
-
+        
         const questions = await this.quizRepo.getFiveRandomQuestions();
+
+        if (!questions) {
+          notice.addError(
+            'No questions in db',
+            'ConnectPlayerUseCase',
+            GetErrors.DatabaseFail
+          );
+          return notice;
+        }
 
         const currentGameQuestions = questions.map((q, i) => {
           const currentGameQuestion = new CurrentGameQuestion();

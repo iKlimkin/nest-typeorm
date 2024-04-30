@@ -29,43 +29,44 @@ export class CreatePairUseCase implements ICommandHandler<CreatePairCommand> {
     try {
       await validateOrRejectModel(command, CreatePairCommand);
     } catch (e) {
-      notice.addError('incorrect model', 'validator', GetErrors.IncorrectModel);
+      notice.addError('incorrect model', 'CreatePairUseCase', GetErrors.IncorrectModel);
       return notice;
     }
 
     try {
-      return runInTransaction(this.dataSource, async (queryRunner) => {
+      return runInTransaction(this.dataSource, async (manager) => {
         const user = await this.usersRepo.getUserById(userId);
 
         const firstPlayerProgressDto = QuizPlayerProgress.create(
           user.login,
           user
         );
-
+        debugger
         const quizGameDto = new QuizGame();
         quizGameDto.status = GameStatus.PendingSecondPlayer;
 
         const result = await this.quizRepo.saveGame(
           quizGameDto,
-          firstPlayerProgressDto
+          firstPlayerProgressDto,
+          manager,
         );
-
-        if (!result) {
+  
+        if (!result.data) {
           notice.addError(
             'Quiz not created',
             'CreatePairUseCase',
             GetErrors.DatabaseFail
           );
         } else {
-          notice.addData(result);
+          notice.addData(result.data);
         }
-
+        
         return notice;
       });
     } catch (error) {
       notice.addError(
         'transaction error',
-        'transaction',
+        'CreatePairUseCase',
         GetErrors.Transaction
       );
       return notice;

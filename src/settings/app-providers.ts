@@ -31,6 +31,7 @@ import { ConnectPlayerUseCase } from '../features/quiz/application/use-cases/con
 import { CreatePairUseCase } from '../features/quiz/application/use-cases/create-pair.use-case';
 import { SetPlayerAnswerUseCase } from '../features/quiz/application/use-cases/set-player-answer.use-case';
 import { QuizService } from '../features/quiz/application/quiz.service';
+import { ValidateIdPipe } from '../infra/pipes/id-validate.pipe';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -80,4 +81,5 @@ export const providers: Provider[] = [
   ...quizProviders,
   BlogIdExistConstraint,
   IsValidAnswersConstraint,
+  ValidateIdPipe,
 ];

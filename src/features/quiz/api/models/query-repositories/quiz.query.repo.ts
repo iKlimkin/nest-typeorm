@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Or, And, Repository } from 'typeorm';
+import { Or, And, Repository, Not } from 'typeorm';
 import { QuizAnswer } from '../../../domain/entities/quiz-answer.entity';
 import { QuizGame } from '../../../domain/entities/quiz-game.entity';
 import { QuizQuestion } from '../../../domain/entities/quiz-questions.entity';
@@ -12,7 +12,7 @@ import { PaginationViewModel } from '../../../../../domain/sorting-base-filter';
 import { getQuestionsViewModel } from '../output.models.ts/view.models.ts/quiz-questions.view-model';
 import { GameStatus } from '../input.models/statuses.model';
 import {
-  getQuizPairPendingViewModel,
+  getQuizPendingPairsViewModel,
   getQuizPairViewModel,
 } from '../output.models.ts/view.models.ts/quiz-pair.view-model';
 import { get } from 'http';
@@ -155,7 +155,7 @@ export class QuizQueryRepo {
 
       if (!result) return null;
 
-      return getQuizPairPendingViewModel(result);
+      return getQuizPendingPairsViewModel(result);
     } catch (error) {
       throw new InternalServerErrorException(`getPendingPairs: ${error}`);
     }
@@ -166,7 +166,31 @@ export class QuizQueryRepo {
   ): Promise<QuizPairViewType | null> {
     try {
       const result = await this.quizPairs.findOne({
-        where: [{ firstPlayerId: userId }, { secondPlayerId: userId }],
+        where: [
+          {
+            firstPlayerId: userId,
+            status: Not(GameStatus.Finished),
+          },
+          {
+            secondPlayerId: userId,
+            status: Not(GameStatus.Finished),
+          },
+        ],
+        order: {
+          questions: {
+            order: 'ASC',
+          },
+          firstPlayerProgress: {
+            answers: {
+              created_at: 'DESC',
+            },
+          },
+          secondPlayerProgress: {
+            answers: {
+              created_at: 'DESC',
+            },
+          },
+        },
         relations: {
           questions: {
             question: true,
@@ -184,7 +208,8 @@ export class QuizQueryRepo {
 
       return getQuizPairViewModel(result);
     } catch (error) {
-      throw new InternalServerErrorException(`getPendingPairs: ${error}`);
+      console.log(`getPendingPairs: ${error}`);
+      return null;
     }
   }
 

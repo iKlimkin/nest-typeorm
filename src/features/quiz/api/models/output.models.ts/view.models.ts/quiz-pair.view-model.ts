@@ -9,6 +9,13 @@ const mapAnswer = (answer: QuizAnswer) => ({
   addedAt: answer.created_at.toISOString(),
 });
 
+const sortQuestionsByNumberInBody = (a, b) => {
+  const getQuestionNumber = (str) => parseInt(str.match(/\d+/)[0]);
+  const numA = getQuestionNumber(a.body);
+  const numB = getQuestionNumber(b.body);
+  return numA - numB;
+};
+
 const mapQuestions = (question: CurrentGameQuestion) => ({
   id: question.questionId,
   body: question.question.body,
@@ -24,22 +31,26 @@ const mapPlayer = (id: string, login: string) => ({
 
 export const getQuizPairViewModel = (quizPair: QuizGame): QuizPairViewType => {
   const { firstPlayerProgress, secondPlayerProgress } = quizPair;
-  const firstPlayerAnswers = firstPlayerProgress?.answers || [];
-  const secondPlayerAnswers = secondPlayerProgress?.answers || [];
-  const questions = quizPair?.questions.length 
-    ? quizPair.questions 
+  const firstPlayerAnswers = firstPlayerProgress?.answers.length
+    ? firstPlayerProgress.answers
     : null;
+  const secondPlayerAnswers = secondPlayerProgress?.answers.length
+    ? secondPlayerProgress.answers
+    : null;
+  const questions = quizPair?.questions.length ? quizPair.questions : null;
 
   return {
     id: quizPair.id,
     firstPlayerProgress: {
-      answers: firstPlayerAnswers.map(mapAnswer),
+      answers: firstPlayerAnswers ? firstPlayerAnswers.map(mapAnswer) : null,
       player: mapPlayer(quizPair.firstPlayerId, firstPlayerProgress.login),
       score: firstPlayerProgress?.score || 0,
     },
     secondPlayerProgress: secondPlayerProgress
       ? {
-          answers: secondPlayerAnswers.map(mapAnswer),
+          answers: secondPlayerAnswers
+            ? secondPlayerAnswers.map(mapAnswer)
+            : null,
           player: secondPlayerProgress
             ? mapPlayer(quizPair.secondPlayerId, secondPlayerProgress.login)
             : null,
@@ -47,14 +58,16 @@ export const getQuizPairViewModel = (quizPair: QuizGame): QuizPairViewType => {
         }
       : null,
     status: quizPair.status,
-    questions: questions ? questions.map(mapQuestions) : null,
+    questions: questions
+      ? questions.map(mapQuestions).sort(sortQuestionsByNumberInBody)
+      : null,
     pairCreatedDate: quizPair.created_at.toISOString(),
-    startGameDate: quizPair.startGameDate?.toISOString(),
-    finishGameDate: quizPair.finishGameDate?.toISOString(),
+    startGameDate: quizPair.startGameDate?.toISOString() || null,
+    finishGameDate: quizPair.finishGameDate?.toISOString() || null,
   };
 };
 
-export const getQuizPairPendingViewModel = (
+export const getQuizPendingPairsViewModel = (
   quizPair: QuizGame
 ): QuizPairViewType => ({
   id: quizPair.id,

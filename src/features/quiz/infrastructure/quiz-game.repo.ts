@@ -14,6 +14,8 @@ import { UserAccount } from '../../auth/infrastructure/settings';
 import { QuizCorrectAnswer } from '../domain/entities/quiz-correct-answers.entity';
 import { CurrentGameQuestion } from '../domain/entities/current-game-questions.entity';
 import { DatabaseError } from 'pg';
+import { LayerNoticeInterceptor } from '../../auth/api/controllers';
+import { GetErrors } from '../../../infra/utils/interlay-error-handler.ts/error-constants';
 
 @Injectable()
 export class QuizRepository {
@@ -57,25 +59,33 @@ export class QuizRepository {
 
   async saveGame(
     quizGameDto: QuizGame,
-    firstPlayerProgress: QuizPlayerProgress
-  ): Promise<OutputId | null> {
+    firstPlayerProgress: QuizPlayerProgress,
+    manager: EntityManager
+  ): Promise<LayerNoticeInterceptor<OutputId> | null> {
     try {
-      const savedProgress = await this.playerProgress.save(firstPlayerProgress);
+      const savedProgress = await manager.save(
+        QuizPlayerProgress,
+        firstPlayerProgress
+      );
 
-      const createdQuizGame = this.quizPairs.create({
+      const createdQuizGame = manager.create(QuizGame, {
         firstPlayerProgress: savedProgress,
         firstPlayerId: savedProgress.player.id,
         status: quizGameDto.status,
       });
 
-      const savedQuizGame = await this.quizPairs.save(createdQuizGame);
-
-      return {
+      const savedQuizGame = await manager.save(QuizGame, createdQuizGame);
+      return new LayerNoticeInterceptor({
         id: savedQuizGame.id,
-      };
+      });
     } catch (error) {
       console.log(`saveGame finished with errors: ${error}`);
-      return null;
+      return new LayerNoticeInterceptor(null);
+      // .addError(
+      //   `${error}`,
+      //   'dal',
+      //   GetErrors.DatabaseFail
+      // );
     }
   }
 
@@ -271,9 +281,9 @@ export class QuizRepository {
     }
   }
 
-  async getFiveRandomQuestions(): Promise<QuizQuestion[]> {
+  async getFiveRandomQuestions(): Promise<QuizQuestion[] | null> {
     try {
-      const randomQuestions = await this.quizQuestions
+      const questions = await this.quizQuestions
         .createQueryBuilder('q')
         .select()
         .where('q.published = :published', { published: true })
@@ -281,7 +291,11 @@ export class QuizRepository {
         .limit(5)
         .getMany();
 
-      return randomQuestions;
+      if (!questions.length) {
+        return null;
+      }
+
+      return questions;
     } catch (error) {
       throw new InternalServerErrorException(
         `getFiveRandomQuestions: ${error}`

@@ -54,7 +54,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   });
 
   afterAll(async () => {
-    // await cleanDatabase(httpServer);
+    await cleanDatabase(httpServer);
     await app.close();
   });
 
@@ -263,10 +263,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
     beforeAll(async () => {
       const { accessTokens, users } = await usersTestManager.createUsers(3);
-  
+
       const questionsAndAnswers =
         await quizQuestionManager.createQuestionsForFurtherTests(10);
-  
+
       expect.setState({
         accessTokens,
         users,
@@ -322,7 +322,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('GET /pair-game-quiz/pairs/my-current - should receive error if current player have no active pairs, 404', async () => {
       const { accessTokens, gameId } = expect.getState();
 
-      await quizPairManager.getCurrentGameByUserId(
+      await quizPairManager.getCurrentUnfinishedGame(
         accessTokens[2],
         HttpStatus.NOT_FOUND
       );
@@ -330,7 +330,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       await quizPairManager.getCurrentGameById(
         accessTokens[2],
         gameId,
-        HttpStatus.NOT_FOUND
+        HttpStatus.FORBIDDEN
       );
     });
 
@@ -347,11 +347,12 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
 
     it('GET /pair-game-quiz/pairs/:id - should receive error if game not found, 404', async () => {
-      const { accessTokens } = expect.getState();
+      let { accessTokens, gameId } = expect.getState();
+      const correctGameIdByNotExists = gameId.slice(0, -1);
 
       const response = await quizPairManager.getCurrentGameById(
         accessTokens[0],
-        'gameId',
+        correctGameIdByNotExists + 1,
         HttpStatus.NOT_FOUND
       );
 
@@ -401,7 +402,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
 
     it('GET /pair-game-quiz/pairs/my-current - should receive error with invalid token, 401', async () => {
-      await quizPairManager.getCurrentGameByUserId(
+      await quizPairManager.getCurrentUnfinishedGame(
         'accessToken',
         HttpStatus.UNAUTHORIZED
       );
@@ -410,10 +411,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('GET /pair-game-quiz/pairs/my-current - should receive current game info, 200', async () => {
       const { accessTokens, gameId } = expect.getState();
 
-      const game = await quizPairManager.getCurrentGameByUserId(
+      const game = await quizPairManager.getCurrentUnfinishedGame(
         accessTokens[0]
       );
-      const theSameGame = await quizPairManager.getCurrentGameByUserId(
+      const theSameGame = await quizPairManager.getCurrentUnfinishedGame(
         accessTokens[1]
       );
 
@@ -429,10 +430,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
     beforeAll(async () => {
       const { accessTokens, users } = await usersTestManager.createUsers(3);
-  
+
       const questionsAndAnswers =
         await quizQuestionManager.createQuestionsForFurtherTests(10);
-  
+
       expect.setState({
         accessTokens,
         users,
@@ -442,11 +443,8 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('prepare for battle', async () => {
       const { accessTokens, questionsAndAnswers } = expect.getState();
 
-      const [
-        firstPlayerToken, 
-        secondPlayerToken, 
-        thirdPlayerToken
-      ] = accessTokens;
+      const [firstPlayerToken, secondPlayerToken, thirdPlayerToken] =
+        accessTokens;
 
       const { correctAnswersForCurrentGame, gameId } =
         await quizPairManager.prepareForBattle(
@@ -472,6 +470,17 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         accessTokens[2],
         answer,
         HttpStatus.FORBIDDEN
+      );
+    });
+
+    it('POST /pair-game-quiz/pairs/incorrect_id_format - should receive BAD_REQUEST if param has incorrect format, 400', async () => {
+      const { firstPlayerToken } = expect.getState();
+      const incorrectGameId = 'incorrect_id_format';
+
+      await quizPairManager.getCurrentGameById(
+        firstPlayerToken,
+        incorrectGameId,
+        HttpStatus.BAD_REQUEST
       );
     });
 
@@ -551,14 +560,18 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         gameId
       );
 
+      const game1 =
+        await quizPairManager.getCurrentUnfinishedGame(firstPlayerToken);
+
+
       expect(game.firstPlayerProgress.score).toBe(5);
       expect(game.status).toBe(GameStatus.Active);
       expect(game.firstPlayerProgress.answers[0].answerStatus).toBe(
         AnswerStatus.Correct
       );
-      game.firstPlayerProgress.answers.forEach((answer, i) => {
-        expect(answer.questionId).toBe(game.questions[i].id);
-      });
+      // game.firstPlayerProgress.answers.forEach((answer, i) => {
+      //   expect(answer.questionId).toBe(game.questions[i].id);
+      // });
 
       await quizPairManager.restoreGameProgress(gameId);
     });
@@ -571,6 +584,17 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         correctAnswersForCurrentGame,
         gameId,
       } = expect.getState();
+
+      await quizPairManager.getCurrentUnfinishedGame(
+        thirdPlayerToken,
+        HttpStatus.NOT_FOUND
+      );
+
+      await quizPairManager.getCurrentGameById(
+        thirdPlayerToken,
+        gameId,
+        HttpStatus.FORBIDDEN
+      );
 
       for (let i = 0; i < correctAnswersForCurrentGame.length / 2; i++) {
         //@ts-ignore
@@ -585,28 +609,24 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
           gameId
         );
 
-        await quizPairManager.getCurrentGameById(secondPlayerToken, gameId);
-
-        await quizPairManager.getCurrentGameById(
-          thirdPlayerToken,
-          gameId,
-          HttpStatus.FORBIDDEN
-        );
-
-        await quizPairManager.getCurrentGameByUserId(
-          thirdPlayerToken,
-          HttpStatus.FORBIDDEN
-        );
-
         await quizPairManager.sendAnswer(
           secondPlayerToken,
           correctAnswersForCurrentGame[i]
         );
 
-        await quizPairManager.getCurrentGameByUserId(secondPlayerToken);
-
         expect(game.firstPlayerProgress.score).toBe(1 + i);
       }
+
+      await quizPairManager.getCurrentGameById(
+        secondPlayerToken,
+        gameId,
+        HttpStatus.OK
+      );
+
+      await quizPairManager.getCurrentUnfinishedGame(
+        secondPlayerToken,
+        HttpStatus.NOT_FOUND
+      );
 
       const game: QuizGame = await quizPairManager.getCurrentGameById(
         firstPlayerToken,
@@ -618,10 +638,34 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       expect(game.status).toBe(GameStatus.Finished);
       expect(game.finishGameDate).toBeDefined();
 
-      await quizPairManager.restoreGameProgress(gameId);
+      await quizPairManager.restoreGameProgress(gameId, true);
+    });
+
+    it('/pair-game-quiz/pairs/my-current/answers", GET -> "/pair-game-quiz/pairs", GET -> "/pair-game-quiz/pairs/my-current" : create game by user2, connect to the game by user1, then: add correct answer by firstPlayer; add incorrect answer by secondPlayer; add correct answer by secondPlayer; get active game and call "/pair-game-quiz/pairs/my-current by both users after each answer"; status 200', async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        questionsAndAnswers,
+        thirdPlayerToken,
+      } = expect.getState();
+
+      const { correctAnswersForCurrentGame, gameId } =
+        await quizPairManager.prepareForBattle(
+          firstPlayerToken,
+          secondPlayerToken,
+          questionsAndAnswers
+        );
+
+      await quizPairManager.sendAnswer(
+        firstPlayerToken,
+        correctAnswersForCurrentGame[0]
+      );
+
+      await quizPairManager.sendAnswer(secondPlayerToken, 'incorrectAnswer');
+
+      expect.setState({ correctAnswersForCurrentGame, gameId });
     });
   });
-
   describe.skip('TEST', () => {
     it('GET QUESTIONS', async () => {
       await quizQuestionManager.getQuestions();

@@ -26,7 +26,7 @@ export class SecurityQueryRepo {
 
       return sessions.map(getSessionViewModel);
     } catch (error) {
-      console.error(`Database fails operate with find user sessions ${error}`);
+      console.log(`Database fails operate with find user sessions ${error}`);
       return null;
     }
   }
@@ -45,7 +45,7 @@ export class SecurityQueryRepo {
 
       return getSessionViewModel(sessions[0]);
     } catch (error) {
-      console.error(`Database fails operate with find user session ${error}`);
+      console.log(`Database fails operate with find user session ${error}`);
       return null;
     }
   }

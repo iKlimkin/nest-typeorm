@@ -95,7 +95,7 @@ export class QuizTestManager {
     return response.body;
   }
 
-  async getCurrentGameByUserId(
+  async getCurrentUnfinishedGame(
     accessToken: string,
     expectStatus = HttpStatus.OK
   ): Promise<QuizPairViewType> {
@@ -207,7 +207,7 @@ export class QuizTestManager {
     return response.body;
   }
 
-  async restoreGameProgress(gameId: string) {
+  async restoreGameProgress(gameId: string, restorePair?: boolean) {
     await this.quizGames
       .createQueryBuilder()
       .delete()
@@ -234,6 +234,10 @@ export class QuizTestManager {
       currentPair.firstPlayerProgress,
       currentPair.secondPlayerProgress,
     ]);
+
+    if (restorePair) {
+      await this.quizGames.remove(currentPair);
+    }
   }
 
   async prepareForBattle(
