@@ -33,9 +33,9 @@ export class QuizPlayerProgress extends BaseEntity {
   @Column({ nullable: true })
   questCompletionDate: Date;
 
-  static create(login: string, user: UserAccount) {
+  static create(user: UserAccount) {
     const playerProgress = new QuizPlayerProgress();
-    playerProgress.login = login;
+    playerProgress.login = user.login;
     playerProgress.player = user;
 
     return playerProgress;

@@ -16,16 +16,17 @@ type ErrorsMessageType = {
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
+    debugger
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const status = exception.getStatus();
+    const { message, key, statusCode } = exception.getResponse() as any;
 
-    if (status === HttpStatus.BAD_REQUEST) {
+    if (statusCode === HttpStatus.BAD_REQUEST) {
       const errorResponse: any = {
         errorsMessages: [],
       };
-      const { message }: any = exception.getResponse();
+      // const { message }: any = exception.getResponse();
       
       if (Array.isArray(message)) {
         message.forEach((m: ErrorsMessageType) =>
@@ -35,12 +36,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
         errorResponse.errorsMessages.push({ message });
       }
 
-      response.status(status).send(errorResponse);
+      response.status(statusCode).send(errorResponse);
     } else {
-      response.status(status).json({
-        statusCode: status,
+      response.status(statusCode).json({
+        statusCode,
         timestamp: new Date().toISOString(),
-        error: exception.message,
+        location: key,
+        error: message,
         path: request.url,
       });
     }

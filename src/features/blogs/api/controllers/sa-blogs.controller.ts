@@ -145,7 +145,7 @@ export class SABlogsController {
       LayerNoticeInterceptor<OutputId | null>
     >(command);
 
-    if (post.hasError()) {
+    if (post.hasError) {
       const errors = handleErrors(post.code, post.extensions[0]);
       throw errors.error;
     }
@@ -205,7 +205,7 @@ export class SABlogsController {
       LayerNoticeInterceptor<boolean>
     >(command);
 
-    if (result.hasError()) {
+    if (result.hasError) {
       const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     }

@@ -24,51 +24,50 @@ export class CreatePairUseCase implements ICommandHandler<CreatePairCommand> {
     command: CreatePairCommand
   ): Promise<LayerNoticeInterceptor<OutputId | null>> {
     const notice = new LayerNoticeInterceptor<OutputId>();
+    const location = 'CreatePairUseCase';
     const { userId } = command.createData;
 
     try {
       await validateOrRejectModel(command, CreatePairCommand);
     } catch (e) {
-      notice.addError('incorrect model', 'CreatePairUseCase', GetErrors.IncorrectModel);
+      notice.addError('incorrect model', location, GetErrors.IncorrectModel);
       return notice;
     }
 
     try {
       return runInTransaction(this.dataSource, async (manager) => {
         const user = await this.usersRepo.getUserById(userId);
+        
+        if (!user) {
+          notice.addError('user not found', location, GetErrors.NotFound);
+          return notice;
+        }
 
-        const firstPlayerProgressDto = QuizPlayerProgress.create(
-          user.login,
-          user
-        );
-        debugger
-        const quizGameDto = new QuizGame();
-        quizGameDto.status = GameStatus.PendingSecondPlayer;
+        const firstPlayerProgressDto = QuizPlayerProgress.create(user);
 
-        const result = await this.quizRepo.saveGame(
-          quizGameDto,
+        const firstPlayerProgress = await this.quizRepo.saveProgress(
           firstPlayerProgressDto,
-          manager,
+          manager
         );
-  
+
+        const quizDto = QuizGame.createGame(firstPlayerProgress);
+
+        const result = await this.quizRepo.saveGame(quizDto, manager);
+
         if (!result.data) {
           notice.addError(
-            'Quiz not created',
-            'CreatePairUseCase',
+            result.errorMessage,
+            'saveGame',
             GetErrors.DatabaseFail
           );
         } else {
           notice.addData(result.data);
         }
-        
+
         return notice;
       });
     } catch (error) {
-      notice.addError(
-        'transaction error',
-        'CreatePairUseCase',
-        GetErrors.Transaction
-      );
+      notice.addError('transaction error', location, GetErrors.Transaction);
       return notice;
     }
   }

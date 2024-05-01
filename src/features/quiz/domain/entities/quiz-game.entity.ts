@@ -42,4 +42,28 @@ export class QuizGame extends BaseEntity {
 
   @VersionColumn({ default: 1 })
   version: number;
+
+  static createGame(firstPlayerProgress: QuizPlayerProgress) {
+    const quizGame = new QuizGame();
+    quizGame.status = GameStatus.PendingSecondPlayer;
+    quizGame.firstPlayerProgress = firstPlayerProgress;
+    quizGame.firstPlayerId = firstPlayerProgress.player.id;
+
+    return quizGame;
+  }
+
+  createConnection(connectionDto: IConnection) {
+    this.secondPlayerId = connectionDto.playerId;
+    this.secondPlayerProgress = connectionDto.secondPlayerProgress;
+    this.status = GameStatus.Active;
+    this.startGameDate = new Date();
+    ++this.version;
+
+    return this;
+  }
+}
+
+interface IConnection {
+  secondPlayerProgress: QuizPlayerProgress;
+  playerId: string;
 }

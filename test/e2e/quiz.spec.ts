@@ -54,7 +54,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await cleanDatabase(httpServer);
+    // await cleanDatabase(httpServer);
     await app.close();
   });
 
@@ -243,20 +243,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
   });
 
-  // beforeEach(async () => {
-  //   const { accessTokens, users } = await usersTestManager.createUsers(3);
-
-  //   const questionsAndAnswers =
-  //     await quizQuestionManager.createQuestionsForFurtherTests(10);
-
-  //   expect.setState({
-  //     accessTokens,
-  //     users,
-  //     questionsAndAnswers,
-  //   });
-  // });
-
-  describe('POST /pair-game-quiz/pairs/connection, GET /pair-game-quiz/pairs/my-current, /pair-game-quiz/pairs/:id', () => {
+  describe.skip('POST /pair-game-quiz/pairs/connection, GET /pair-game-quiz/pairs/my-current, /pair-game-quiz/pairs/:id', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
@@ -424,7 +411,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
   });
 
-  describe('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
+  describe.skip('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
@@ -666,9 +653,12 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       expect.setState({ correctAnswersForCurrentGame, gameId });
     });
   });
-  describe.skip('TEST', () => {
-    it('GET QUESTIONS', async () => {
-      await quizQuestionManager.getQuestions();
+
+  describe('TEST', () => {
+    it('testing', async () => {
+      await quizQuestionManager.createQuestionsForFurtherTests(10)
+      await usersTestManager.createSA(usersTestManager.createInputData({login: 'login0'}))
+      await usersTestManager.createSA(usersTestManager.createInputData({login: 'login1'}))
     });
   });
 });

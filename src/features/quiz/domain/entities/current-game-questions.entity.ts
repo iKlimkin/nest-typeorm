@@ -19,5 +19,24 @@ export class CurrentGameQuestion extends BaseEntity {
   @Column({ type: 'int2' })
   order: number;
 
-  static create() {}
+  static createQuestionsBatch(
+    quizPair: QuizGame,
+    questions: QuizQuestion[]
+  ): CurrentGameQuestion[] {
+    return questions.map((q, i) => {
+      return new CurrentGameQuestion().createQuestion(quizPair, q.id, i + 1);
+    });
+  }
+
+  createQuestion(
+    quizPair: QuizGame,
+    questionId: string,
+    order: number
+  ): CurrentGameQuestion {
+    const gameQuestion = new CurrentGameQuestion();
+    gameQuestion.quizPair = quizPair;
+    gameQuestion.questionId = questionId;
+    gameQuestion.order = order;
+    return gameQuestion;
+  }
 }

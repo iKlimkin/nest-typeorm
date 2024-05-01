@@ -61,7 +61,7 @@ export class QuizQuestionsController {
       LayerNoticeInterceptor<QuestionId | null>
     >(command);
 
-    if (result.hasError()) {
+    if (result.hasError) {
       const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     }
@@ -94,7 +94,7 @@ export class QuizQuestionsController {
       LayerNoticeInterceptor<boolean>
     >(command);
 
-    if (result.hasError()) {
+    if (result.hasError) {
       const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     }
@@ -116,7 +116,7 @@ export class QuizQuestionsController {
 
     const result = await this.commandBus.execute(command);
 
-    if (result.hasError()) {
+    if (result.hasError) {
       const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     }
@@ -136,7 +136,7 @@ export class QuizQuestionsController {
       LayerNoticeInterceptor<boolean>
     >(command);
 
-    if (result.hasError()) {
+    if (result.hasError) {
       const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     }

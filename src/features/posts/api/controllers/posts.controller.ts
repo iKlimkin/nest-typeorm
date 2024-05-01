@@ -154,7 +154,7 @@ export class PostsController {
       LayerNoticeInterceptor<OutputId | null>
     >(command);
 
-    if (result.hasError()) {
+    if (result.hasError) {
       const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     }

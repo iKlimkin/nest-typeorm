@@ -25,79 +25,83 @@ export class ConnectPlayerUseCase
     command: ConnectPlayerCommand
   ): Promise<LayerNoticeInterceptor<OutputId | null>> {
     const notice = new LayerNoticeInterceptor<OutputId>();
+    const quizRepo = this.quizRepo;
+    const location = 'ConnectPlayerUserCase';
     const { userId } = command.connectionData;
 
     try {
       await validateOrRejectModel(command, ConnectPlayerCommand);
     } catch (e) {
-      notice.addError('incorrect model', 'validator', GetErrors.IncorrectModel);
+      notice.addError('incorrect model', location, GetErrors.IncorrectModel);
       return notice;
     }
     try {
-      return runInTransaction(this.dataSource, async (queryRunner) => {
+      return runInTransaction(this.dataSource, async (manager) => {
         const user = await this.usersRepo.getUserById(userId);
-        const pairToConnect = await this.quizRepo.getPendingPair();
-
-        if (!pairToConnect) {
+        const pairToConnect = await quizRepo.getPendingPair();
+debugger
+        if (pairToConnect.hasError || !user) {
           notice.addError(
-            'No pending pairs',
-            'ConnectPlayerUseCase',
-            GetErrors.DatabaseFail
+            !pairToConnect.data
+              ? pairToConnect.errorMessage || 'No pending pairs'
+              : 'User not found',
+            location,
+            GetErrors.NotFound
           );
           return notice;
         }
 
-        const secondPlayerProgress = QuizPlayerProgress.create(
-          user.login,
-          user
-        );
+        const secondPlayerProgress = QuizPlayerProgress.create(user);
 
-        const result = await this.quizRepo.connect(
-          user,
+        /**
+         * refactor connect
+         */
+        const savedProgress = await quizRepo.saveProgress(
           secondPlayerProgress,
-          pairToConnect
+          manager
         );
-        
-        const questions = await this.quizRepo.getFiveRandomQuestions();
 
-        if (!questions) {
-          notice.addError(
-            'No questions in db',
-            'ConnectPlayerUseCase',
-            GetErrors.DatabaseFail
-          );
-          return notice;
-        }
-
-        const currentGameQuestions = questions.map((q, i) => {
-          const currentGameQuestion = new CurrentGameQuestion();
-          currentGameQuestion.quizPair = result;
-          currentGameQuestion.questionId = q.id;
-          currentGameQuestion.order = i + 1;
-
-          return currentGameQuestion;
+        const createdConnectionToQuiz = pairToConnect.data.createConnection({
+          secondPlayerProgress: savedProgress,
+          playerId: userId,
         });
 
-        await this.quizRepo.saveCurrentGameQuestions(currentGameQuestions);
+        const result = await quizRepo.saveConnection(
+          createdConnectionToQuiz,
+          manager
+        );
 
-        if (!result) {
+        if (!result.data) {
           notice.addError(
-            `the user hasn't connected to the pair`,
-            'ConnectPlayerUseCase',
+            result.errorMessage || `player hasn't connected`,
+            location,
             GetErrors.DatabaseFail
           );
-        } else {
-          notice.addData({ id: result.id });
         }
 
+        const questions = await quizRepo.getFiveRandomQuestions(manager);
+
+        if (questions.data.length !== 5) {
+          notice.addError(
+            questions.errorMessage || 'No questions in db',
+            location,
+            GetErrors.DatabaseFail
+          );
+          return notice;
+        }
+
+        const currentGameQuestions = CurrentGameQuestion.createQuestionsBatch(
+          result.data,
+          questions.data
+        );
+
+        await quizRepo.saveCurrentGameQuestions(currentGameQuestions, manager);
+
+        notice.addData({ id: result.data.id });
         return notice;
       });
     } catch (error) {
-      notice.addError(
-        'transaction error',
-        'transaction',
-        GetErrors.Transaction
-      );
+      notice.addError('transaction error', location, GetErrors.Transaction);
       return notice;
     }
   }

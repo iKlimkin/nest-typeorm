@@ -3,7 +3,7 @@ export class LayerNoticeInterceptor<D = null> {
   public extensions: LayerInterceptorExtension[];
   public code = 0;
 
-  constructor(data: D | null = null) {
+  constructor(data: D | null = null, public errorMessage?: string) {
     this.data = data;
     this.extensions = [];
   }
@@ -19,7 +19,7 @@ export class LayerNoticeInterceptor<D = null> {
     this.code = code ?? 1;
     this.extensions.push(new LayerInterceptorExtension(message, key));
   }
-  public hasError(): boolean {
+  get hasError(): boolean {
     return this.code !== 0;
   }
 }

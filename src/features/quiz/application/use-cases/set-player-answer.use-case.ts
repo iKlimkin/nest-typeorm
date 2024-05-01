@@ -100,11 +100,11 @@ export class SetPlayerAnswerUseCase
               otherPlayerProgress.deservesBonusUser(!isFirstPlayerFinishedEarly)
             ) {
               otherPlayerProgress.incrementScore();
-              await quizRepo.savePlayerProgress(otherPlayerProgress);
+              await quizRepo.saveProgress(otherPlayerProgress, manager);
             }
           }
 
-          await quizRepo.savePlayerProgress(currentPlayerProgress);
+          await quizRepo.saveProgress(currentPlayerProgress, manager);
 
           const { created_at, answerStatus, questionId } = savedPlayerAnswer;
 
@@ -138,7 +138,7 @@ export class SetPlayerAnswerUseCase
           currentPlayerProgress.incrementScore();
         }
 
-        await quizRepo.savePlayerProgress(currentPlayerProgress);
+        await quizRepo.saveProgress(currentPlayerProgress, manager);
 
         const { created_at, answerStatus, questionId } = savedPlayerAnswer;
 
@@ -178,7 +178,7 @@ export class SetPlayerAnswerUseCase
       );
 
       if (!question.questionId) {
-        throw new ForbiddenException('Question not found')
+        throw new ForbiddenException('Question not found');
       }
 
       const isCorrectAnswer = await this.quizRepo.checkAnswer(
@@ -198,7 +198,7 @@ export class SetPlayerAnswerUseCase
       return { playerAnswer, savedPlayerAnswer };
     } catch (error) {
       console.error(error);
-      return null
+      return null;
     }
   }
 }

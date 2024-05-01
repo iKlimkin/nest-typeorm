@@ -4,36 +4,45 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { LayerInterceptorExtension } from './error-layer-interceptor';
 import { GetErrors } from './error-constants';
+import { LayerInterceptorExtension } from './error-layer-interceptor';
 
 export const handleErrors = (
   code: number,
   extension: LayerInterceptorExtension
 ) => {
+  const { key, message } = extension
+  const descriptionOrOptions = {
+    cause: extension.key,
+    description: extension.message,
+  };
+
+  const errorObject = {
+    message,
+    statusCode: code,
+    key,
+  }
+
   switch (code) {
     case GetErrors.DatabaseFail:
       return {
-        message: extension.message,
-        error: new InternalServerErrorException(
-          `Error occurred in ${extension.key}`
-        ),
+        error: new InternalServerErrorException(errorObject),
       };
     case GetErrors.NotFound:
       return {
         message: extension.message,
-        error: new NotFoundException(extension.key),
+        error: new NotFoundException(errorObject),
       };
     case GetErrors.IncorrectModel:
       return {
         message: extension.message,
-        error: new BadRequestException(extension.key),
+        error: new BadRequestException(errorObject),
       };
 
     case GetErrors.Forbidden:
       return {
         message: extension.message,
-        error: new ForbiddenException(extension.key),
+        error: new ForbiddenException(errorObject),
       };
     default:
       return {

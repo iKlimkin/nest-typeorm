@@ -1,21 +1,18 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, Repository } from 'typeorm';
-import { QuizGame } from '../domain/entities/quiz-game.entity';
-import { QuizQuestion } from '../domain/entities/quiz-questions.entity';
-import { QuizAnswer } from '../domain/entities/quiz-answer.entity';
-import { getQuestionViewModel } from '../api/models/output.models.ts/view.models.ts/quiz-question.view-model';
-import { QuestionId } from '../api/models/output.models.ts/output.types';
-import { UpdateQuestionData } from '../api/models/input.models/update-question.model';
-import { QuizPlayerProgress } from '../domain/entities/quiz-player-progress.entity';
+import { EntityManager, Repository } from 'typeorm';
 import { OutputId } from '../../../domain/output.models';
-import { GameStatus } from '../api/models/input.models/statuses.model';
-import { UserAccount } from '../../auth/infrastructure/settings';
-import { QuizCorrectAnswer } from '../domain/entities/quiz-correct-answers.entity';
-import { CurrentGameQuestion } from '../domain/entities/current-game-questions.entity';
-import { DatabaseError } from 'pg';
 import { LayerNoticeInterceptor } from '../../auth/api/controllers';
-import { GetErrors } from '../../../infra/utils/interlay-error-handler.ts/error-constants';
+import { UserAccount } from '../../auth/infrastructure/settings';
+import { GameStatus } from '../api/models/input.models/statuses.model';
+import { UpdateQuestionData } from '../api/models/input.models/update-question.model';
+import { QuestionId } from '../api/models/output.models.ts/output.types';
+import { CurrentGameQuestion } from '../domain/entities/current-game-questions.entity';
+import { QuizAnswer } from '../domain/entities/quiz-answer.entity';
+import { QuizCorrectAnswer } from '../domain/entities/quiz-correct-answers.entity';
+import { QuizGame } from '../domain/entities/quiz-game.entity';
+import { QuizPlayerProgress } from '../domain/entities/quiz-player-progress.entity';
+import { QuizQuestion } from '../domain/entities/quiz-questions.entity';
 
 @Injectable()
 export class QuizRepository {
@@ -59,43 +56,30 @@ export class QuizRepository {
 
   async saveGame(
     quizGameDto: QuizGame,
-    firstPlayerProgress: QuizPlayerProgress,
     manager: EntityManager
   ): Promise<LayerNoticeInterceptor<OutputId> | null> {
     try {
-      const savedProgress = await manager.save(
-        QuizPlayerProgress,
-        firstPlayerProgress
-      );
-
-      const createdQuizGame = manager.create(QuizGame, {
-        firstPlayerProgress: savedProgress,
-        firstPlayerId: savedProgress.player.id,
-        status: quizGameDto.status,
-      });
-
-      const savedQuizGame = await manager.save(QuizGame, createdQuizGame);
+      const savedQuizGame = await manager.save(QuizGame, quizGameDto);
+ 
       return new LayerNoticeInterceptor({
         id: savedQuizGame.id,
       });
     } catch (error) {
-      console.log(`saveGame finished with errors: ${error}`);
-      return new LayerNoticeInterceptor(null);
-      // .addError(
-      //   `${error}`,
-      //   'dal',
-      //   GetErrors.DatabaseFail
-      // );
+      return new LayerNoticeInterceptor(
+        null,
+        `saveGame finished with errors: ${error}`
+      );
     }
   }
 
-  async savePlayerProgress(
-    currentPlayerProgress: QuizPlayerProgress
-  ): Promise<void> {
+  async saveProgress(
+    currentPlayerProgress: QuizPlayerProgress,
+    manager: EntityManager
+  ): Promise<QuizPlayerProgress> {
     try {
-      await this.playerProgress.save(currentPlayerProgress);
+      return manager.save(QuizPlayerProgress, currentPlayerProgress);
     } catch (error) {
-      console.log(`savePlayerProgress finished with errors: ${error}`);
+      console.log(`saveProgress finished with errors: ${error}`);
     }
   }
 
@@ -118,27 +102,19 @@ export class QuizRepository {
     }
   }
 
-  async connect(
-    secondPlayer: UserAccount,
-    secondPlayerProgress: QuizPlayerProgress,
-    pairToConnect: QuizGame
-  ): Promise<QuizGame | null> {
+  async saveConnection(
+    quizConnection: QuizGame,
+    manager: EntityManager
+  ): Promise<LayerNoticeInterceptor<QuizGame | null>> {
     try {
-      const savedSecondPlayerProgress =
-        await this.playerProgress.save(secondPlayerProgress);
+      const connectedPair = await manager.save(QuizGame, quizConnection);
 
-      pairToConnect.secondPlayerId = secondPlayer.id;
-      pairToConnect.secondPlayerProgress = secondPlayerProgress;
-      pairToConnect.status = GameStatus.Active;
-      pairToConnect.startGameDate = new Date();
-      ++pairToConnect.version;
-
-      const updatedPair = await this.quizPairs.save(pairToConnect);
-
-      return updatedPair;
+      return new LayerNoticeInterceptor(connectedPair);
     } catch (error) {
-      console.log(`connect finished with errors: ${error}`);
-      return null;
+      return new LayerNoticeInterceptor(
+        null,
+        `${error} occurred during save connection`
+      );
     }
   }
 
@@ -248,7 +224,7 @@ export class QuizRepository {
     }
   }
 
-  async getPendingPair(): Promise<QuizGame> {
+  async getPendingPair(): Promise<LayerNoticeInterceptor<QuizGame | null>> {
     try {
       const pendingPair = await this.quizPairs.findOne({
         where: {
@@ -257,9 +233,12 @@ export class QuizRepository {
         },
       });
 
-      return pendingPair;
+      return new LayerNoticeInterceptor(pendingPair);
     } catch (error) {
-      throw new InternalServerErrorException(`getPendingPairs: ${error}`);
+      return new LayerNoticeInterceptor(
+        null,
+        `${error} occurred during find pending pairs`
+      );
     }
   }
 
@@ -281,38 +260,40 @@ export class QuizRepository {
     }
   }
 
-  async getFiveRandomQuestions(): Promise<QuizQuestion[] | null> {
+  async getFiveRandomQuestions(
+    manager: EntityManager
+  ): Promise<LayerNoticeInterceptor<QuizQuestion[] | null>> {
     try {
-      const questions = await this.quizQuestions
-        .createQueryBuilder('q')
+      const questions = await manager
+        .createQueryBuilder(QuizQuestion, 'q')
         .select()
-        .where('q.published = :published', { published: true })
+        .where('q.published = :published', {
+          published: true,
+        })
         .orderBy('RANDOM()')
         .limit(5)
         .getMany();
 
-      if (!questions.length) {
-        return null;
-      }
-
-      return questions;
+      return new LayerNoticeInterceptor(questions);
     } catch (error) {
-      throw new InternalServerErrorException(
-        `getFiveRandomQuestions: ${error}`
+      return new LayerNoticeInterceptor(
+        null,
+        `${error} occurred while searching the database for five random questions`
       );
     }
   }
 
   async saveCurrentGameQuestions(
-    gameQuestions: CurrentGameQuestion[]
-  ): Promise<void> {
+    gameQuestions: CurrentGameQuestion[],
+    manager: EntityManager
+  ): Promise<void 
+  // | LayerNoticeInterceptor<null>
+  > {
     try {
-      const savedGameQuestions =
-        await this.currentGameQuestions.save(gameQuestions);
+      await manager.save(CurrentGameQuestion, gameQuestions);
     } catch (error) {
-      throw new InternalServerErrorException(
-        `saveCurrentGameQuestions: ${error}`
-      );
+      // return new LayerNoticeInterceptor(null, `${error} occurred while save questions`)
+      throw new InternalServerErrorException(`${error} occurred while save questions`);
     }
   }
 

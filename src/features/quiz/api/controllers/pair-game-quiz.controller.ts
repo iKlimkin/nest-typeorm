@@ -105,20 +105,21 @@ export class PairGameQuizController {
         LayerNoticeInterceptor<OutputId | null>
       >(command);
 
-      // if (result.hasError()) {
-      //   const command = new CreatePairCommand(userInfo);
-      //   const result = await this.commandBus.execute<
-      //     CreatePairCommand,
-      //     LayerNoticeInterceptor<OutputId | null>
-      //   >(command);
+      if (result.hasError) {
+        // const command = new CreatePairCommand(userInfo);
+        // const result = await this.commandBus.execute<
+        //   CreatePairCommand,
+        //   LayerNoticeInterceptor<OutputId | null>
+        // >(command);
 
-      //   if (result.hasError()) {
-      //     const errors = handleErrors(result.code, result.extensions[0]);
-      //     throw errors.error;
-      //   }
+        // if (result.hasError) {
+          
+        const { error } = handleErrors(result.code, result.extensions[0]);
+        throw error;
+        // }
 
-      //   return this.quizQueryRepo.getPairInformation(result.data.id);
-      // }
+        // return this.quizQueryRepo.getPairInformation(result.data.id);
+      }
 
       return this.quizQueryRepo.getPairInformation(result.data.id);
     }
@@ -129,7 +130,7 @@ export class PairGameQuizController {
       LayerNoticeInterceptor<OutputId | null>
     >(command);
 
-    if (result.hasError()) {
+    if (result.hasError) {
       const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     }
@@ -157,7 +158,7 @@ export class PairGameQuizController {
       LayerNoticeInterceptor<AnswerResultViewType>
     >(command);
 
-    if (result.hasError()) {
+    if (result.hasError) {
       const errors = handleErrors(result.code, result.extensions[0]);
       throw errors.error;
     } else {
