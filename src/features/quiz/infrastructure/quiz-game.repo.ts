@@ -60,7 +60,7 @@ export class QuizRepository {
   ): Promise<LayerNoticeInterceptor<OutputId> | null> {
     try {
       const savedQuizGame = await manager.save(QuizGame, quizGameDto);
- 
+
       return new LayerNoticeInterceptor({
         id: savedQuizGame.id,
       });
@@ -83,22 +83,27 @@ export class QuizRepository {
     }
   }
 
-  async saveAnswer(answerDto: QuizAnswer): Promise<QuizAnswer> {
+  async saveAnswer(
+    answerDto: QuizAnswer,
+    manager: EntityManager
+  ): Promise<QuizAnswer> {
     try {
-      return this.quizAnswers.save(answerDto);
+      return manager.save(answerDto);
     } catch (error) {
       console.log(`saveAnswer finished with errors: ${error}`);
+      throw new InternalServerErrorException();
     }
   }
 
-  async finishGame(gameId: string): Promise<void> {
+  async finishGame(gameId: string, manager: EntityManager): Promise<void> {
     try {
-      await this.quizPairs.update(gameId, {
+      await manager.update(QuizGame, gameId, {
         finishGameDate: new Date(),
         status: GameStatus.Finished,
       });
     } catch (error) {
       console.log(`finishGame operation was interrupted with errors: ${error}`);
+      throw new InternalServerErrorException()
     }
   }
 
@@ -286,35 +291,35 @@ export class QuizRepository {
   async saveCurrentGameQuestions(
     gameQuestions: CurrentGameQuestion[],
     manager: EntityManager
-  ): Promise<void 
-  // | LayerNoticeInterceptor<null>
-  > {
+  ): Promise<void> {
+    // | LayerNoticeInterceptor<null>
     try {
       await manager.save(CurrentGameQuestion, gameQuestions);
     } catch (error) {
       // return new LayerNoticeInterceptor(null, `${error} occurred while save questions`)
-      throw new InternalServerErrorException(`${error} occurred while save questions`);
+      throw new InternalServerErrorException(
+        `${error} occurred while save questions`
+      );
     }
   }
 
-  async checkAnswer(answer: string, questionId: string): Promise<boolean> {
+  async getAnswersForCurrentQuestion(
+    questionId: string,
+    manager: EntityManager
+  ): Promise<QuizCorrectAnswer[] | null> {
     try {
-      const answers = await this.quizCorrectAnswers.find({
+      const answers = await manager.find(QuizCorrectAnswer, {
         where: {
           question: { id: questionId },
         },
       });
 
-      if (!answers.length) return false;
+      if (!answers.length) return null;
 
-      const isCorrectAnswer = answers.some(
-        (correctAnswer) => correctAnswer.answerText === answer
-      );
-
-      return isCorrectAnswer;
+      return answers;
     } catch (error) {
       console.error(`checkAnswer: ${error}`);
-      return false;
+      return null;
     }
   }
 
