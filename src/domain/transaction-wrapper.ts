@@ -17,7 +17,7 @@ export async function runInTransaction<T>(
 
     if (result.hasError) {
       await queryRunner.rollbackTransaction();
-      console.log('Transaction rolled back: result.data is null');
+      console.log(`Transaction rolled back with error: ${result.extensions[0].message}` );
       return result;
     }
 
