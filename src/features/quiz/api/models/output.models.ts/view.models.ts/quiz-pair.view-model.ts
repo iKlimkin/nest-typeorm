@@ -19,9 +19,6 @@ const sortQuestionsByNumberInBody = (a, b) => {
 const mapQuestions = (question: CurrentGameQuestion) => ({
   id: question.questionId,
   body: question.question.body,
-  //     question.question.id === question.questionId
-  //       ?
-  //       : null,
 });
 
 const mapPlayer = (id: string, login: string) => ({
@@ -59,7 +56,9 @@ export const getQuizPairViewModel = (quizPair: QuizGame): QuizPairViewType => {
       : null,
     status: quizPair.status,
     questions: questions
-      ? questions.map(mapQuestions).sort(sortQuestionsByNumberInBody)
+      ? questions
+        .map(mapQuestions)
+        // .sort(sortQuestionsByNumberInBody)
       : null,
     pairCreatedDate: quizPair.created_at.toISOString(),
     startGameDate: quizPair.startGameDate?.toISOString() || null,
