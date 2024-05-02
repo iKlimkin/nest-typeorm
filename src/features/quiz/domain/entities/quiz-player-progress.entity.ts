@@ -49,9 +49,30 @@ export class QuizPlayerProgress extends BaseEntity {
     this.score += 1;
   }
 
-  deservesBonusUser(isFinishedEarly: boolean) {
-    if (isFinishedEarly && this.score > 0) {
-      return true;
-    }
+  setCompletionDate() {
+    this.questCompletionDate = new Date();
+  }
+
+  isGameCompleted(otherPlayerProgress: QuizPlayerProgress): boolean {
+    return this.answersCount > 4 && otherPlayerProgress.answersCount > 4;
+  }
+
+  isCurrentPlayerFinishedEarlierThan(otherPlayer: QuizPlayerProgress): boolean {
+    return (
+      this.questCompletionDate.getTime() <
+      otherPlayer.questCompletionDate.getTime()
+    );
+  }
+
+  isExceededAnswerLimit(answerLimit: number): boolean {
+    return this.answersCount >= answerLimit;
+  }
+
+  isLastAnswer(lastAnswerNumber: number): boolean {
+    return this.answersCount === lastAnswerNumber;
+  }
+
+  isPlayerDeservesBonus(isFinishedEarly: boolean): boolean {
+    return isFinishedEarly && this.score > 0;
   }
 }
