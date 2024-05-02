@@ -23,4 +23,8 @@ export class QuizCorrectAnswer extends BaseEntity {
 
     return answers;
   }
+
+  isCorrectAnswer(answer: string): boolean {
+    return this.answerText === answer;
+  }
 }
