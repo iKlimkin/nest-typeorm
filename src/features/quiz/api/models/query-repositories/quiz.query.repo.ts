@@ -182,12 +182,12 @@ export class QuizQueryRepo {
           },
           firstPlayerProgress: {
             answers: {
-              created_at: 'DESC',
+              created_at: 'ASC',
             },
           },
           secondPlayerProgress: {
             answers: {
-              created_at: 'DESC',
+              created_at: 'ASC',
             },
           },
         },
@@ -240,8 +240,8 @@ export class QuizQueryRepo {
         .leftJoinAndSelect('firstPlayerProgress.answers', 'fpAnswers')
         .leftJoinAndSelect('secondPlayerProgress.answers', 'spAnswers')
         .orderBy('questions.order', 'ASC')
-        .orderBy('fpAnswers.created_at', 'DESC')
-        .orderBy('spAnswers.created_at', 'DESC')
+        .orderBy('fpAnswers.created_at', 'ASC')
+        .orderBy('spAnswers.created_at', 'ASC')
         .where('game.id = :gameId', { gameId })
         .getOne();
 
