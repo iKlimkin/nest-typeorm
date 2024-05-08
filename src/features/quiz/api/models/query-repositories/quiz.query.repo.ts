@@ -1,27 +1,24 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Or, And, Repository, Not } from 'typeorm';
-import { QuizAnswer } from '../../../domain/entities/quiz-answer.entity';
+import { FindOptionsOrder, In, Not, Repository } from 'typeorm';
+import { PaginationViewModel } from '../../../../../domain/sorting-base-filter';
+import { getPagination } from '../../../../../infra/utils/get-pagination';
+import { UserAccount } from '../../../../auth/infrastructure/settings';
 import { QuizGame } from '../../../domain/entities/quiz-game.entity';
+import { QuizPlayerProgress } from '../../../domain/entities/quiz-player-progress.entity';
 import { QuizQuestion } from '../../../domain/entities/quiz-questions.entity';
+import { QuizQuestionsQueryFilter } from '../input.models/quiz-questions-query.filter';
+import { GameStatus } from '../input.models/statuses.model';
+import { QuizPairViewType } from '../output.models.ts/view.models.ts/quiz-game.view-type';
+import {
+  getQuizPairViewModel,
+  getQuizPendingPairsViewModel,
+} from '../output.models.ts/view.models.ts/quiz-pair.view-model';
 import { getQuestionViewModel } from '../output.models.ts/view.models.ts/quiz-question.view-model';
 import { QuizQuestionViewType } from '../output.models.ts/view.models.ts/quiz-question.view-type';
-import { QuizQuestionsQueryFilter } from '../input.models/quiz-questions-query.filter';
-import { getPagination } from '../../../../../infra/utils/get-pagination';
-import { PaginationViewModel } from '../../../../../domain/sorting-base-filter';
 import { getQuestionsViewModel } from '../output.models.ts/view.models.ts/quiz-questions.view-model';
-import { GameStatus } from '../input.models/statuses.model';
-import {
-  getQuizPendingPairsViewModel,
-  getQuizPairViewModel,
-} from '../output.models.ts/view.models.ts/quiz-pair.view-model';
-import { get } from 'http';
-import { QuizPairViewType } from '../output.models.ts/view.models.ts/quiz-game.view-type';
-import { relative } from 'path';
-import { QuizPlayerProgress } from '../../../domain/entities/quiz-player-progress.entity';
-import { UserSession } from '../../../../../settings';
-import { UserSessionDto } from '../../../../security/api';
-import { UserAccount } from '../../../../auth/infrastructure/settings';
+import { QuizGamesQueryFilter } from '../input.models/quiz-games-query.filter';
+import { GameStats } from '../output.models.ts/view.models.ts/quiz-game-analyze';
 
 @Injectable()
 export class QuizQueryRepo {
@@ -45,40 +42,6 @@ export class QuizQueryRepo {
       const { pageNumber, pageSize, sortBy, skip, sortDirection } =
         getPagination(queryOptions);
 
-      // const pagination = getPagination(queryOptions)
-      // console.log({publishedStatus, pagination});
-
-      // const testCreate = async (numberOfQuestions: number) => {
-      //   const questionsAndAnswers = [];
-      //   for (let i = 0; i < numberOfQuestions; i++) {
-      //     const question = this.quizQuestions.create({
-      //       body: `Question ${i + 1}`,
-      //       published: i % 3 === 0 ? true : false,
-      //     });
-
-      //     const savedQuestion = await this.quizQuestions.save(question);
-
-      //     const answers: QuizAnswer[] = [];
-
-      //     for (let j = 0; j < 2; j++) {
-      //       const answer = this.quizAnswers.create({
-      //         answerText: `Answer ${j + 1} for question ${i + 1}`,
-      //         isCorrect: j === 0 ? true : false,
-      //         question: { id: savedQuestion.id },
-      //       });
-
-      //       await this.quizAnswers.save(answer);
-
-      //       answers.push(answer);
-      //     }
-      //     questionsAndAnswers.push({ question, answers });
-      //   }
-
-      //   return questionsAndAnswers;
-      // }
-
-      // testCreate(3)
-
       const queryBuilder = this.quizQuestions.createQueryBuilder('q');
 
       queryBuilder
@@ -86,7 +49,9 @@ export class QuizQueryRepo {
         .leftJoin('q.correctAnswers', 'ca')
         .addSelect(['ca.id', 'ca.answerText'])
         .orderBy(
-          sortBy === 'created_at' ? 'q.created_at' : `q.${sortBy}`,
+          sortBy === 'created_at' 
+            ? 'q.created_at' 
+            : `q.${sortBy}`,
           sortDirection
         )
         .skip(skip)
@@ -99,7 +64,7 @@ export class QuizQueryRepo {
       }
 
       const [questions, count] = await queryBuilder.getManyAndCount();
-
+      
       const questionViewModel = new PaginationViewModel<QuizQuestionViewType>(
         questions.map(getQuestionsViewModel),
         pageNumber,
@@ -129,19 +94,241 @@ export class QuizQueryRepo {
     }
   }
 
-  async isUserInGame(userId: string): Promise<Boolean> {
+  async getUserGameAnalytic(userId: string): Promise<GameStats> {
     try {
-      const result = await this.quizPairs
+      const gamesCount = await this.playerProgresses.count({
+        where: {
+          player: {
+            id: userId,
+          },
+        },
+      });
+
+      const { sumScore, avgScore } = await this.playerProgresses
+        .createQueryBuilder('playerProgress')
+        .where('playerProgress.playerId = :userId', { userId })
+        .addSelect('SUM(playerProgress.score)', 'sumScore')
+        .addSelect('AVG(playerProgress.score)', 'avgScore')
+        .getRawOne();
+
+      const winsCount = await this.quizPairs
         .createQueryBuilder('game')
-        .leftJoin('game.firstPlayerProgress', 'fP')
-        .leftJoin('game.secondPlayerProgress', 'sP')
-        .where('(fP.playerId = :userId OR sP.playerId = :userId)', { userId })
+        .leftJoin('game.firstPlayerProgress', 'fpProgress')
+        .leftJoin('game.secondPlayerProgress', 'spProgress')
+        .where(
+          `
+        (
+          (
+            game.firstPlayerId = :userId AND game.secondPlayerId IS NOT NULL AND fpProgress.score > spProgress.score
+          ) 
+          OR 
+          (
+            game.secondPlayerId = :userId AND fpProgress.score < spProgress.score
+          )
+        )`,
+          { userId }
+        )
         .getCount();
 
-      return !!result;
+      const lossesCount = await this.quizPairs
+        .createQueryBuilder('game')
+        .leftJoin('game.firstPlayerProgress', 'fpProgress')
+        .leftJoin('game.secondPlayerProgress', 'spProgress')
+        .where(
+          `
+          (
+              (
+                game.firstPlayerId = :userId AND game.secondPlayerId IS NOT NULL AND fpProgress.score < spProgress.score
+              ) 
+              OR
+              (
+                game.secondPlayerId = :userId AND fpProgress.score > spProgress.score
+              )
+          )`,
+          { userId }
+        )
+        .getCount();
+
+      const drawsCount = await this.quizPairs
+        .createQueryBuilder('game')
+        .leftJoin('game.firstPlayerProgress', 'fpProgress')
+        .leftJoin('game.secondPlayerProgress', 'spProgress')
+        .where(
+          `
+          (
+              (
+                game.firstPlayerId = :userId AND game.secondPlayerId IS NOT NULL AND fpProgress.score = spProgress.score
+              ) 
+              OR
+              (
+                game.secondPlayerId = :userId AND fpProgress.score = spProgress.score
+              )
+          )`,
+          { userId }
+        )
+        .getCount();
+
+      {
+        async function getCountByResult(
+          userId: string,
+          operator: string
+        ): Promise<number> {
+          return await this.quizPairs
+            .createQueryBuilder('game')
+            .leftJoin('game.firstPlayerProgress', 'fpProgress')
+            .leftJoin('game.secondPlayerProgress', 'spProgress')
+            .where(
+              `
+            (
+                (game.firstPlayerId = :userId AND game.secondPlayerId IS NOT NULL AND fpProgress.score ${operator} spProgress.score) OR
+                (game.secondPlayerId = :userId AND fpProgress.score ${operator.replace('>', '<').replace('<', '>')} spProgress.score)
+            )`,
+              { userId }
+            )
+            .getCount();
+        }
+
+        const promises = [
+          getCountByResult.call(this, userId, '>'),
+          getCountByResult.call(this, userId, '<'),
+          getCountByResult.call(this, userId, '='),
+        ];
+
+        const [winsCount, lossesCount, drawsCount] =
+          await Promise.all(promises);
+      }
+
+      return new GameStats({
+        winsCount,
+        lossesCount,
+        drawsCount,
+        gamesCount,
+        sumScore,
+        avgScore,
+      });
     } catch (error) {
-      console.log(`isUserInGame: ${error}`);
-      return false;
+      throw new Error(`getUserGamesAnalyst: ${error}`);
+    }
+  }
+
+  async getUserGames(
+    userId: string,
+    queryOptions?: QuizGamesQueryFilter
+  ): Promise<PaginationViewModel<QuizPairViewType>> {
+    try {
+      const defaultSortDirection = 'ASC';
+      const { pageNumber, pageSize, sortBy, skip, sortDirection } =
+        getPagination(queryOptions);
+
+      const order: FindOptionsOrder<QuizGame> = {
+        questions: {
+          order: defaultSortDirection,
+        },
+        firstPlayerProgress: {
+          answers: {
+            created_at: defaultSortDirection,
+          },
+        },
+        secondPlayerProgress: {
+          answers: {
+            created_at: defaultSortDirection,
+          },
+        },
+      };
+
+      if (sortBy) {
+        order[sortBy] = {
+          direction: sortDirection || defaultSortDirection,
+        };
+      }
+
+      const relations = {
+        firstPlayerProgress: {
+          answers: true,
+        },
+        secondPlayerProgress: {
+          answers: true,
+        },
+        questions: {
+          question: true,
+        },
+      };
+
+      let [quizFinishedGames, count] = await this.quizPairs.findAndCount({
+        where: [
+          { 
+            firstPlayerId: userId, 
+            status: GameStatus.Finished 
+          }, 
+          { 
+            secondPlayerId: userId, 
+            status: GameStatus.Finished
+          }
+        ],
+        relations,
+        skip,
+        take: pageSize,
+        order,
+    });
+    
+      const currentGame = await this.quizPairs.findOne({
+        where: [
+          {
+            firstPlayerId: userId,
+            status: Not(GameStatus.Finished),
+          },
+          {
+            secondPlayerId: userId,
+            status: Not(GameStatus.Finished),
+          },
+        ],
+        order,
+        relations,
+        join: {
+          alias: 'game',
+          leftJoinAndSelect: {
+            firstPlayerProgress: 'game.firstPlayerProgress',
+            secondPlayerProgress: 'game.secondPlayerProgress',
+            // questions: 'game.questions',
+          },
+        },
+      });
+      
+      if (currentGame) {
+        count++
+        quizFinishedGames.unshift(currentGame)
+      }
+
+      const gamesViewModel = new PaginationViewModel<QuizPairViewType>(
+        quizFinishedGames.map(getQuizPairViewModel),
+        pageNumber,
+        pageSize,
+        count
+      );
+
+      return gamesViewModel;
+    } catch (error) {
+      console.log(`getUserGames: ${error}`)
+      throw new Error(`getUserGames: ${error}`);
+    }
+  }
+
+  async isUserInGame(
+    userId: string,
+  ): Promise<null | GameStatus> {
+    try {
+      const result = await this.quizPairs.findOne({
+        where: [
+          { firstPlayerId: userId, status: Not(GameStatus.Finished) },
+          { secondPlayerId: userId, status: Not(GameStatus.Finished) },
+        ],
+      });
+      
+      if (!result) return null;
+
+      return result.status
+    } catch (error) {
+      throw new Error(`isUserInGame: ${error}`);
     }
   }
 
@@ -208,7 +395,7 @@ export class QuizQueryRepo {
 
       return getQuizPairViewModel(result);
     } catch (error) {
-      console.log(`getPendingPairs: ${error}`);
+      console.log(`getCurrentUnfinishedGame: ${error}`);
       return null;
     }
   }
@@ -247,7 +434,7 @@ export class QuizQueryRepo {
 
       return getQuizPairViewModel(result);
     } catch (error) {
-      console.error(`getPairInformation finished with errors: ${error}`);
+      console.log(`getPairInformation finished with errors: ${error}`);
       return null;
     }
   }
