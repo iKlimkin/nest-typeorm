@@ -9,7 +9,7 @@ export const RouterPaths = {
   auth: '/auth',
   security: '/security/devices',
   quizQuestions: '/sa/quiz/questions',
-  quizPairs: '/pair-game-quiz/pairs',
+  quiz: '/pair-game-quiz',
 
   test: '/testing/all-data',
 };
@@ -24,5 +24,6 @@ export enum NavigationEnum {
   security = '/security/devices',
   quizQuestions = '/sa/quiz/questions',
   quizPairs = '/pair-game-quiz/pairs',
+  quizUsers = '/pair-game-quiz/users',
   test = '/testing/all-data',
 }

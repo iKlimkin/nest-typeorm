@@ -3,7 +3,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
 import { SortDirections } from '../../src/domain/sorting-base-filter';
-import { QuizQuestionsQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
 import {
   AnswerStatus,
   GameStatus,
@@ -20,6 +19,14 @@ import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
 import { wait } from '../tools/utils/delayUtils';
 import { initSettings } from '../tools/utils/initSettings';
 import { skipSettings } from '../tools/utils/testsSettings';
+import { QuizQuestionsQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
+import { QuizGamesQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-games-query.filter';
+import { mockGameData } from '../tools/models/game-mock-data';
+import { SuperTestBody } from '../tools/models/body.response.model';
+import { QuizQuestionViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
+import { QuizPairsRouting } from '../tools/routes/quizPairs.routing';
+
+import { ApiRouting } from '../tools/routes/api.routing';
 
 aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   let app: INestApplication;
@@ -29,8 +36,8 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   let quizQuestionRepository: Repository<QuizQuestion>;
   let quizAnswerRepository: Repository<QuizAnswer>;
   let quizGameRepository: Repository<QuizGame>;
-  let quizQuestionManager: QuizTestManager;
-  let quizPairManager: QuizTestManager;
+  let quizTestManager: QuizTestManager;
+  let apiRouting: ApiRouting;
 
   beforeAll(async () => {
     const settings = await initSettings((moduleBuilder) =>
@@ -45,11 +52,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     quizAnswerRepository = app.get(getRepositoryToken(QuizAnswer));
     quizGameRepository = app.get(getRepositoryToken(QuizGame));
 
-    quizQuestionManager = new QuizTestManager(
-      app,
-      NavigationEnum.quizQuestions
-    );
-    quizPairManager = new QuizTestManager(app, NavigationEnum.quizPairs);
+    apiRouting = new ApiRouting();
+    quizTestManager = new QuizTestManager(app, apiRouting);
+
     usersTestManager = settings.usersTestManager;
   });
 
@@ -58,28 +63,63 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     await app.close();
   });
 
-  describe.skip('GET /sa/quiz/questions', () => {
+  describe('GET /sa/quiz/questions', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
+    beforeAll(async () => {
+      await quizTestManager.createQuestionsForFurtherTests(10);
 
-    it('', async () => {
-      const filter: QuizQuestionsQueryFilter = {
+      const numberOfPublishedQuestions = 6;
+      const numberOfUnpublishedQuestions = 4;
+
+      expect.setState({
+        numberOfPublishedQuestions,
+        numberOfUnpublishedQuestions,
+      });
+    });
+
+    it('get all quiz questions with paging', async () => {
+      const query: Partial<QuizQuestionsQueryFilter> = {
         bodySearchTerm: 'Question',
         publishedStatus: publishedStatuses.all,
-        sortBy: 'createdAt',
         sortDirection: SortDirections.Asc,
         pageNumber: '1',
         pageSize: '10',
       };
 
-      await quizQuestionManager.createQuestionsForFurtherTests(3);
+      const questions = await quizTestManager.getQuestions(query);
+      expect(questions.items).toHaveLength(10);
+    });
+    it('get published quiz questions with paging', async () => {
+      const { numberOfPublishedQuestions } = expect.getState();
+      const query: Partial<QuizQuestionsQueryFilter> = {
+        bodySearchTerm: 'Question',
+        publishedStatus: publishedStatuses.published,
+        sortDirection: SortDirections.Asc,
+        pageNumber: '1',
+        pageSize: '10',
+      };
 
-      const questions = await quizQuestionManager.getQuestions(filter);
+      const questions = await quizTestManager.getQuestions(query);
+      expect(questions.items).toHaveLength(numberOfPublishedQuestions);
+    });
+    it('get unpublished quiz questions with paging', async () => {
+      const { numberOfUnpublishedQuestions } = expect.getState();
+      const query: Partial<QuizQuestionsQueryFilter> = {
+        bodySearchTerm: 'Question',
+        publishedStatus: publishedStatuses.unpublished,
+        sortDirection: SortDirections.Asc,
+        pageNumber: '1',
+        pageSize: '10',
+      };
+
+      const questions = await quizTestManager.getQuestions(query);
+      expect(questions.items).toHaveLength(numberOfUnpublishedQuestions);
     });
   });
 
-  describe.skip('POST /sa/quiz/questions', () => {
+  describe('POST /sa/quiz/questions', () => {
     it(`Shouldn't create question with incorrect input model, 400`, async () => {});
 
     it(`Shouldn't create question without authorization, 400`, async () => {});
@@ -91,7 +131,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       };
 
       const question =
-        await quizQuestionManager.createQuestionWithAnswers(createdBody);
+        await quizTestManager.createQuestionWithAnswers(createdBody);
 
       expect(question.body).toEqual(createdBody.body);
       expect(question.correctAnswers).toEqual(createdBody.correctAnswers);
@@ -100,7 +140,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
   });
 
-  describe.skip('PUT /sa/quiz/questions/id', () => {
+  describe('PUT /sa/quiz/questions/id', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
@@ -113,10 +153,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         correctAnswers: ['Updated answer 1', 'Updated answer 2'],
       };
 
-      await quizQuestionManager.updateQuestion(question.id, updatedBody);
+      await quizTestManager.updateQuestion(question.id, updatedBody);
 
       const { answers, question: updatedQuestion } =
-        await quizQuestionManager.getQuestionWithAnswers(question.id);
+        await quizTestManager.getQuestionWithAnswers(question.id);
 
       expect(updatedQuestion.body).toBe(updatedBody.body);
       expect(answers.map((answer) => answer.answerText)).toEqual(
@@ -158,25 +198,30 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
   });
 
-  describe.skip('DELETE /sa/quiz/questions', () => {
+  describe('DELETE /sa/quiz/questions', () => {
     it('should delete question successfully', async () => {
-      const response = await request(httpServer)
-        .post('/sa/quiz/questions')
+      let questionId;
+
+      await request(httpServer)
+        .post(RouterPaths.quizQuestions)
         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
         .send({
           body: 'Test question',
           correctAnswers: ['Answer 1', 'Answer 2'],
-        });
-
-      const { id } = response.body;
+        })
+        .expect(({ body }: SuperTestBody<QuizQuestionViewType>) => {
+          expect(body).toBeDefined();
+          questionId = body.id;
+        })
+        .expect(HttpStatus.CREATED);
 
       await request(httpServer)
-        .delete(`/sa/quiz/questions/${id}`)
+        .delete(`${RouterPaths.quizQuestions}/${questionId}`)
         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
         .expect(HttpStatus.NO_CONTENT);
 
       const { answers, question } =
-        await quizQuestionManager.getQuestionWithAnswers(id);
+        await quizTestManager.getQuestionWithAnswers(questionId);
 
       expect(answers.length).toBe(0);
       expect(question).toBeNull();
@@ -196,7 +241,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
   });
 
-  describe.skip('PUT /sa/quiz/questions/id/publish', () => {
+  describe('PUT /sa/quiz/questions/id/publish', () => {
     beforeAll(async () => {
       const createdBody = {
         body: 'What is the capital of France?',
@@ -204,7 +249,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       };
 
       const question =
-        await quizQuestionManager.createQuestionWithAnswers(createdBody);
+        await quizTestManager.createQuestionWithAnswers(createdBody);
 
       expect.setState({ question });
     });
@@ -242,8 +287,31 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         .expect(HttpStatus.BAD_REQUEST);
     });
   });
+  describe('POST/PUT/GET/ questions', () => {
+    it('should create and publish 10 questions', async () => {
+      await quizTestManager.createQuestions(10);
+      const { items: questions } = await quizTestManager.getQuestions();
 
-  describe.skip('POST /pair-game-quiz/pairs/connection, GET /pair-game-quiz/pairs/my-current, /pair-game-quiz/pairs/:id', () => {
+      questions.forEach((q) => {
+        expect(q.published).toBeFalsy();
+      });
+
+      for (let i = 0; i < questions.length; i++) {
+        await quizTestManager.publishQuestion(questions[i].id, {
+          published: true,
+        });
+      }
+
+      const { items: publishedQuestions } =
+        await quizTestManager.getQuestions();
+
+      publishedQuestions.forEach((q) => {
+        expect(q.published).toBeTruthy();
+      });
+    });
+  });
+
+  describe('POST /pair-game-quiz/pairs/connection, GET /pair-game-quiz/pairs/my-current, /pair-game-quiz/pairs/:id', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
@@ -252,7 +320,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       const { accessTokens, users } = await usersTestManager.createUsers(3);
 
       const questionsAndAnswers =
-        await quizQuestionManager.createQuestionsForFurtherTests(10);
+        await quizTestManager.createQuestionsForFurtherTests(10);
 
       expect.setState({
         accessTokens,
@@ -262,17 +330,28 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
 
     it("shouldn't create a new pair if unauthorized", async () => {
-      await quizPairManager.createPairOrConnect(
+      await quizTestManager.createPairOrConnect(
         'accessTokens',
         HttpStatus.UNAUTHORIZED
       );
     });
 
-    it('should create a new pair if no pending pairs available', async () => {
+    it('should create a new pair if no pending pairs available / try to connect and send answer, in both cases receive 403', async () => {
       const { accessTokens } = expect.getState();
 
-      const response = await quizPairManager.createPairOrConnect(
+      const response = await quizTestManager.createPairOrConnect(
         accessTokens[0]
+      );
+
+      await quizTestManager.createPairOrConnect(
+        accessTokens[0],
+        HttpStatus.FORBIDDEN
+      );
+
+      await quizTestManager.sendAnswer(
+        accessTokens[0],
+        'answer',
+        HttpStatus.FORBIDDEN
       );
 
       expect(response.status).toBe('PendingSecondPlayer');
@@ -282,18 +361,18 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('should return 403 Forbidden if user is already in a game', async () => {
       const { accessTokens } = expect.getState();
 
-      const response = await quizPairManager.createPairOrConnect(
+      const response = await quizTestManager.createPairOrConnect(
         accessTokens[0],
         HttpStatus.FORBIDDEN
       );
 
-      expect(response.error).toBe('User already in game');
+      expect(response.error).toBe('User already in active game');
     });
 
     it('POST /pair-game-quiz/pairs/connection - should connect user to an existing pair if available', async () => {
       const { accessTokens } = expect.getState();
 
-      const response = await quizPairManager.createPairOrConnect(
+      const response = await quizTestManager.createPairOrConnect(
         accessTokens[1]
       );
 
@@ -309,12 +388,12 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('GET /pair-game-quiz/pairs/my-current - should receive error if current player have no active pairs, 404', async () => {
       const { accessTokens, gameId } = expect.getState();
 
-      await quizPairManager.getCurrentUnfinishedGame(
+      await quizTestManager.getCurrentUnfinishedGame(
         accessTokens[2],
         HttpStatus.NOT_FOUND
       );
 
-      await quizPairManager.getCurrentGameById(
+      await quizTestManager.getCurrentGameById(
         accessTokens[2],
         gameId,
         HttpStatus.FORBIDDEN
@@ -324,7 +403,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('POST /pair-game-quiz/pairs/connection - should not connect is pair already created, and create new game pair in status pending, 200', async () => {
       const { accessTokens } = expect.getState();
 
-      const createdGame = await quizPairManager.createPairOrConnect(
+      const createdGame = await quizTestManager.createPairOrConnect(
         accessTokens[2]
       );
 
@@ -335,11 +414,11 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
     it('GET /pair-game-quiz/pairs/:id - should receive error if game not found, 404', async () => {
       let { accessTokens, gameId } = expect.getState();
-      const correctGameIdByNotExists = gameId.slice(0, -1);
+      let correctGameIdButNotExists = gameId.slice(0, -2) + '00';
 
-      const response = await quizPairManager.getCurrentGameById(
+      const response = await quizTestManager.getCurrentGameById(
         accessTokens[0],
-        correctGameIdByNotExists + 1,
+        correctGameIdButNotExists,
         HttpStatus.NOT_FOUND
       );
 
@@ -349,7 +428,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('GET /pair-game-quiz/pairs/:id - should receive error if unauthorized, 401', async () => {
       const { gameId } = expect.getState();
 
-      await quizPairManager.getCurrentGameById(
+      await quizTestManager.getCurrentGameById(
         'accessTokens',
         gameId,
         HttpStatus.UNAUTHORIZED
@@ -359,7 +438,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('GET /pair-game-quiz/pairs/:id - should receive error if user not participant, 403', async () => {
       const { accessTokens, gameId } = expect.getState();
 
-      const response = await quizPairManager.getCurrentGameById(
+      const response = await quizTestManager.getCurrentGameById(
         accessTokens[2],
         gameId,
         HttpStatus.FORBIDDEN
@@ -371,12 +450,12 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('GET /pair-game-quiz/pairs/:id - receive current pair, 200', async () => {
       const { accessTokens, gameId } = expect.getState();
 
-      const gameByFirstPlayer = await quizPairManager.getCurrentGameById(
+      const gameByFirstPlayer = await quizTestManager.getCurrentGameById(
         accessTokens[0],
         gameId
       );
 
-      const gameBySecondPlayer = await quizPairManager.getCurrentGameById(
+      const gameBySecondPlayer = await quizTestManager.getCurrentGameById(
         accessTokens[1],
         gameId
       );
@@ -389,7 +468,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
 
     it('GET /pair-game-quiz/pairs/my-current - should receive error with invalid token, 401', async () => {
-      await quizPairManager.getCurrentUnfinishedGame(
+      await quizTestManager.getCurrentUnfinishedGame(
         'accessToken',
         HttpStatus.UNAUTHORIZED
       );
@@ -398,28 +477,137 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('GET /pair-game-quiz/pairs/my-current - should receive current game info, 200', async () => {
       const { accessTokens, gameId } = expect.getState();
 
-      const game = await quizPairManager.getCurrentUnfinishedGame(
+      const game = await quizTestManager.getCurrentUnfinishedGame(
         accessTokens[0]
       );
-      const theSameGame = await quizPairManager.getCurrentUnfinishedGame(
+      const theSameGame = await quizTestManager.getCurrentUnfinishedGame(
         accessTokens[1]
       );
 
       expect(game.id).toBe(theSameGame.id);
 
-      await quizPairManager.restoreGameProgress(gameId);
+      await quizTestManager.restoreGameProgress(gameId);
     });
   });
+  describe.only('GET /pair-game-quiz/pairs/my-statistic / my', () => {
+    beforeAll(async () => {
+      await cleanDatabase(httpServer)
+      
+      const { accessTokens } = await usersTestManager.createUsers(4);
 
-  describe.skip('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
+      const [
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        fourthPlayerToken,
+      ] = accessTokens;
+
+      console.log({
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        fourthPlayerToken,
+      });
+
+      await quizTestManager.simulateFinishedGames(accessTokens, 10);
+
+      expect.setState({
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        fourthPlayerToken,
+      });
+    });
+
+    it('testing', async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        fourthPlayerToken,
+      } = expect.getState();
+
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+      const firstPlayerGames =
+        await quizTestManager.getMyGames(firstPlayerToken);
+
+      console.log(firstPlayerGames.items);
+    });
+
+    it.skip('GET /pair-game-quiz/pairs/my', async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        fourthPlayerToken,
+      } = expect.getState();
+
+      const query: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        sortBy: 'createdAt',
+        sortDirection: SortDirections.Desc,
+        pageSize: '10',
+      };
+
+      const firstPlayerGames =
+        await quizTestManager.getMyGames(firstPlayerToken);
+      const games = firstPlayerGames.items;
+      console.log({ games });
+
+      expect(firstPlayerGames.totalCount).toBe(games.length);
+
+      games.forEach((game, i) => {
+        expect(game.status).toBe(GameStatus.Finished);
+        expect(game).toEqual(mockGameData);
+        expect(game.questions).toHaveLength(5);
+        expect(
+          game.firstPlayerProgress.answers && game.secondPlayerProgress.answers
+        ).toHaveLength(5);
+
+        expect(game.firstPlayerProgress.answers[i].questionId).toBe(
+          game.questions[i].id
+        );
+      });
+
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+      await quizTestManager.createPairOrConnect(thirdPlayerToken);
+
+      for (let i = 0; i < 5; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+      }
+      const unfinishedGame =
+        await quizTestManager.getCurrentUnfinishedGame(thirdPlayerToken);
+      const unfinishedGameById = await quizTestManager.getCurrentGameById(
+        thirdPlayerToken,
+        unfinishedGame.id
+      );
+
+      unfinishedGame.firstPlayerProgress.answers.forEach((a, i) => {
+        expect(a.questionId).toBe(unfinishedGame.questions[i].id);
+
+        expect(
+          unfinishedGameById.firstPlayerProgress.answers[i].questionId
+        ).toBe(unfinishedGameById.questions[i].id);
+      });
+
+      const checkGamesSorting =
+        quizTestManager.checkConsistencyOfDataSorting(games);
+
+      await quizTestManager.getMyGames(secondPlayerToken);
+      await quizTestManager.getMyGames(thirdPlayerToken);
+      await quizTestManager.getMyGames(fourthPlayerToken);
+    });
+  });
+  describe('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
+
     beforeAll(async () => {
       const { accessTokens, users } = await usersTestManager.createUsers(3);
 
       const questionsAndAnswers =
-        await quizQuestionManager.createQuestionsForFurtherTests(10);
+        await quizTestManager.createQuestionsForFurtherTests(10);
 
       expect.setState({
         accessTokens,
@@ -434,7 +622,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         accessTokens;
 
       const { correctAnswersForCurrentGame, gameId } =
-        await quizPairManager.prepareForBattle(
+        await quizTestManager.prepareForBattle(
           firstPlayerToken,
           secondPlayerToken,
           questionsAndAnswers
@@ -453,7 +641,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       const { accessTokens } = expect.getState();
       const answer = 'answer';
 
-      await quizPairManager.sendAnswer(
+      await quizTestManager.sendAnswer(
         accessTokens[2],
         answer,
         HttpStatus.FORBIDDEN
@@ -464,7 +652,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       const { firstPlayerToken } = expect.getState();
       const incorrectGameId = 'incorrect_id_format';
 
-      await quizPairManager.getCurrentGameById(
+      await quizTestManager.getCurrentGameById(
         firstPlayerToken,
         incorrectGameId,
         HttpStatus.BAD_REQUEST
@@ -474,7 +662,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     it('POST /pair-game-quiz/pairs/my-current/answers - should not send answer if current user is unauthorized, 401', async () => {
       const answer = 'answer';
 
-      await quizPairManager.sendAnswer(
+      await quizTestManager.sendAnswer(
         'accessToken',
         answer,
         HttpStatus.UNAUTHORIZED
@@ -487,12 +675,12 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       const incorrectAnswer = 'incorrect answer';
 
       for (let i = 0; i < 5; i++) {
-        await quizPairManager.sendAnswer(firstPlayerToken, incorrectAnswer);
+        await quizTestManager.sendAnswer(firstPlayerToken, incorrectAnswer);
 
-        await quizPairManager.sendAnswer(secondPlayerToken, incorrectAnswer);
+        await quizTestManager.sendAnswer(secondPlayerToken, incorrectAnswer);
       }
 
-      const gameAfterFinish = await quizPairManager.getCurrentGameById(
+      const gameAfterFinish = await quizTestManager.getCurrentGameById(
         firstPlayerToken,
         gameId
       );
@@ -510,19 +698,19 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
       await wait(5);
 
-      await quizPairManager.sendAnswer(
+      await quizTestManager.sendAnswer(
         firstPlayerToken,
         'answer',
         HttpStatus.FORBIDDEN
       );
 
-      await quizPairManager.sendAnswer(
+      await quizTestManager.sendAnswer(
         secondPlayerToken,
         'answer',
         HttpStatus.FORBIDDEN
       );
 
-      await quizPairManager.restoreGameProgress(gameId);
+      await quizTestManager.restoreGameProgress(gameId);
     });
 
     it('POST /pair-game-quiz/pairs/my-current/answers -  sending correct answers, 200', async () => {
@@ -536,31 +724,32 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       for (let i = 0; i < correctAnswersForCurrentGame.length / 2; i++) {
         //@ts-ignore
         const answerIdx = i & (0b1 === 1);
-        await quizPairManager.sendAnswer(
+        await quizTestManager.sendAnswer(
           firstPlayerToken,
           correctAnswersForCurrentGame[i * 2 + answerIdx]
         );
       }
 
-      const game: QuizGame = await quizPairManager.getCurrentGameById(
+      const game: QuizGame = await quizTestManager.getCurrentGameById(
         firstPlayerToken,
         gameId
       );
+      await quizTestManager.getCurrentGameById(secondPlayerToken, gameId);
 
-      const game1 =
-        await quizPairManager.getCurrentUnfinishedGame(firstPlayerToken);
-
+      await quizTestManager.getCurrentUnfinishedGame(firstPlayerToken);
+      await quizTestManager.getCurrentUnfinishedGame(secondPlayerToken);
 
       expect(game.firstPlayerProgress.score).toBe(5);
       expect(game.status).toBe(GameStatus.Active);
       expect(game.firstPlayerProgress.answers[0].answerStatus).toBe(
         AnswerStatus.Correct
       );
-      // game.firstPlayerProgress.answers.forEach((answer, i) => {
-      //   expect(answer.questionId).toBe(game.questions[i].id);
-      // });
 
-      await quizPairManager.restoreGameProgress(gameId);
+      game.firstPlayerProgress.answers.forEach((answer, i) => {
+        expect(answer.questionId).toBe(game.questions[i].id);
+      });
+
+      await quizTestManager.restoreGameProgress(gameId);
     });
 
     it('POST /pair-game-quiz/pairs/my-current/answers -  sending answer both players; first player all answers correct, second player only 1 first correct, 200', async () => {
@@ -572,31 +761,31 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         gameId,
       } = expect.getState();
 
-      await quizPairManager.getCurrentUnfinishedGame(
+      await quizTestManager.getCurrentUnfinishedGame(
         thirdPlayerToken,
         HttpStatus.NOT_FOUND
       );
 
-      await quizPairManager.getCurrentGameById(
+      await quizTestManager.getCurrentGameById(
         thirdPlayerToken,
         gameId,
         HttpStatus.FORBIDDEN
       );
 
-      for (let i = 0; i < correctAnswersForCurrentGame.length / 2; i++) {
+      for (let i = 0; i < 5; i++) {
         //@ts-ignore
         const answerIdx = i & (0b1 === 1);
-        await quizPairManager.sendAnswer(
+        await quizTestManager.sendAnswer(
           firstPlayerToken,
           correctAnswersForCurrentGame[i * 2 + answerIdx]
         );
 
-        const game = await quizPairManager.getCurrentGameById(
+        const game = await quizTestManager.getCurrentGameById(
           firstPlayerToken,
           gameId
         );
 
-        await quizPairManager.sendAnswer(
+        await quizTestManager.sendAnswer(
           secondPlayerToken,
           correctAnswersForCurrentGame[i]
         );
@@ -604,18 +793,18 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         expect(game.firstPlayerProgress.score).toBe(1 + i);
       }
 
-      await quizPairManager.getCurrentGameById(
+      await quizTestManager.getCurrentGameById(
         secondPlayerToken,
         gameId,
         HttpStatus.OK
       );
 
-      await quizPairManager.getCurrentUnfinishedGame(
+      await quizTestManager.getCurrentUnfinishedGame(
         secondPlayerToken,
         HttpStatus.NOT_FOUND
       );
 
-      const game: QuizGame = await quizPairManager.getCurrentGameById(
+      const game: QuizGame = await quizTestManager.getCurrentGameById(
         firstPlayerToken,
         gameId
       );
@@ -625,40 +814,367 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       expect(game.status).toBe(GameStatus.Finished);
       expect(game.finishGameDate).toBeDefined();
 
-      await quizPairManager.restoreGameProgress(gameId, true);
+      await quizTestManager.restoreGameProgress(gameId);
     });
-
-    it('/pair-game-quiz/pairs/my-current/answers", GET -> "/pair-game-quiz/pairs", GET -> "/pair-game-quiz/pairs/my-current" : create game by user2, connect to the game by user1, then: add correct answer by firstPlayer; add incorrect answer by secondPlayer; add correct answer by secondPlayer; get active game and call "/pair-game-quiz/pairs/my-current by both users after each answer"; status 200', async () => {
+    it('POST /pair-game-quiz/pairs/my-current/answers -  sending answer both players; first and second player get all correct answers, but secondPlayer finished earlier', async () => {
       const {
         firstPlayerToken,
         secondPlayerToken,
-        questionsAndAnswers,
         thirdPlayerToken,
+        correctAnswersForCurrentGame,
+        gameId,
       } = expect.getState();
 
-      const { correctAnswersForCurrentGame, gameId } =
-        await quizPairManager.prepareForBattle(
-          firstPlayerToken,
+      for (let i = 0; i < 5; i++) {
+        //@ts-ignore
+        const answerIdx = i & (0b1 === 1);
+
+        await quizTestManager.sendAnswer(
           secondPlayerToken,
-          questionsAndAnswers
+          correctAnswersForCurrentGame[i * 2 + answerIdx]
         );
 
-      await quizPairManager.sendAnswer(
+        const game = await quizTestManager.getCurrentGameById(
+          secondPlayerToken,
+          gameId
+        );
+
+        await quizTestManager.sendAnswer(
+          firstPlayerToken,
+          correctAnswersForCurrentGame[2 * (i + 1) - 1]
+        );
+
+        expect(game.firstPlayerProgress.score).toBe(i);
+        expect(game.secondPlayerProgress.score).toBe(i + 1);
+      }
+
+      await quizTestManager.getCurrentGameById(secondPlayerToken, gameId);
+
+      await quizTestManager.getCurrentUnfinishedGame(
+        secondPlayerToken,
+        HttpStatus.NOT_FOUND
+      );
+      await quizTestManager.getCurrentUnfinishedGame(
         firstPlayerToken,
-        correctAnswersForCurrentGame[0]
+        HttpStatus.NOT_FOUND
       );
 
-      await quizPairManager.sendAnswer(secondPlayerToken, 'incorrectAnswer');
+      const game: QuizGame = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        gameId
+      );
+      const gameBySecondPlayer = await quizTestManager.getCurrentGameById(
+        secondPlayerToken,
+        gameId
+      );
 
-      expect.setState({ correctAnswersForCurrentGame, gameId });
+      game.firstPlayerProgress.answers.forEach((answer, i) => {
+        expect(answer.questionId).toBe(game.questions[i].id);
+        expect(game.secondPlayerProgress.answers[i].questionId).toBe(
+          game.questions[i].id
+        );
+      });
+
+      gameBySecondPlayer.firstPlayerProgress.answers.forEach((answer, i) => {
+        expect(answer.questionId).toBe(game.questions[i].id);
+      });
+
+      expect(game.status).toBe(GameStatus.Finished);
+      expect(game.firstPlayerProgress.score).toBe(5);
+      expect(game.secondPlayerProgress.score).toBe(6);
+
+      // await quizTestManager.restoreGameProgress(gameId, true);
+    });
+
+    it('GET /pair-game-quiz/pairs/my - should return all user games', async () => {
+      const { firstPlayerToken, secondPlayerToken } = expect.getState();
+
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+      const result =
+        await quizTestManager.createPairOrConnect(secondPlayerToken);
+      const game = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        result.id
+      );
+
+      await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+      await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
+      await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+      await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+      await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
+      await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+
+      const newGame =
+        await quizTestManager.getCurrentUnfinishedGame(firstPlayerToken);
+
+      const query: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        pageSize: '10',
+        sortBy: 'defaultSortBy',
+        sortDirection: SortDirections.Asc,
+      };
+      const games = await quizTestManager.getMyGames(firstPlayerToken, query);
+
+      expect(games.totalCount).toBeDefined();
     });
   });
 
-  describe('TEST', () => {
+  describe('CONSTANT TESTS', () => {
+    beforeEach(async () => {
+      await cleanDatabase(httpServer);
+
+      const questionsAndAnswers =
+        await quizTestManager.createQuestionsForFurtherTests(10);
+
+      const { accessTokens } = await usersTestManager.createUsers(3);
+
+      const [firstPlayerToken, secondPlayerToken, thirdPlayerToken] =
+        accessTokens;
+
+      expect.setState({
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        questionsAndAnswers,
+      });
+    });
+
+    // it.only('', async () => {
+    //   const { firstPlayerToken, secondPlayerToken, thirdPlayerToken } =
+    //     expect.getState();
+
+    //   console.log({
+    //     firstPlayerToken,
+    //     secondPlayerToken,
+    //     thirdPlayerToken,
+    //   });
+    // });
+
     it('testing', async () => {
-      await quizQuestionManager.createQuestionsForFurtherTests(10)
-      await usersTestManager.createSA(usersTestManager.createInputData({login: 'login0'}))
-      await usersTestManager.createSA(usersTestManager.createInputData({login: 'login1'}))
+      const { firstPlayerToken, secondPlayerToken, thirdPlayerToken } =
+        expect.getState();
+      // await cleanDatabase(httpServer);
+
+      // const questionsAndAnswers =
+      //   await quizTestManager.createQuestionsForFurtherTests(10);
+
+      // const { accessTokens } = await usersTestManager.createUsers(3);
+
+      // const [firstPlayerToken, secondPlayerToken, thirdPlayerToken] =
+      //   accessTokens;
+
+      const game = await quizTestManager.createPairOrConnect(firstPlayerToken);
+      const fault = await quizTestManager.createPairOrConnect(
+        firstPlayerToken,
+        HttpStatus.FORBIDDEN
+      );
+
+      await quizTestManager.createPairOrConnect(secondPlayerToken);
+
+      const gameId = game.id;
+
+      await quizTestManager.createPairOrConnect(
+        firstPlayerToken,
+        HttpStatus.FORBIDDEN
+      );
+      await quizTestManager.createPairOrConnect(
+        secondPlayerToken,
+        HttpStatus.FORBIDDEN
+      );
+
+      console.log({ firstPlayerToken, secondPlayerToken, thirdPlayerToken });
+
+      for (let i = 0; i < 5; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+
+        await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
+      }
+
+      await quizTestManager.getCurrentUnfinishedGame(
+        firstPlayerToken,
+        HttpStatus.NOT_FOUND
+      );
+      await quizTestManager.getCurrentUnfinishedGame(
+        secondPlayerToken,
+        HttpStatus.NOT_FOUND
+      );
+
+      const finishedGame = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        gameId
+      );
+
+      expect(finishedGame.status).toBe(GameStatus.Finished);
+
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+      const { id: newGameId } =
+        await quizTestManager.createPairOrConnect(secondPlayerToken);
+
+      for (let i = 0; i < 5; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+
+        await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
+      }
+
+      const newGame = await quizTestManager.getCurrentGameById(
+        secondPlayerToken,
+        newGameId
+      );
+
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+      const { id: newGameId2 } =
+        await quizTestManager.createPairOrConnect(secondPlayerToken);
+
+      for (let i = 0; i < 4; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+
+        await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
+      }
+
+      const newGame2 = await quizTestManager.getCurrentGameById(
+        secondPlayerToken,
+        newGameId2
+      );
+
+      await quizTestManager.createPairOrConnect(
+        firstPlayerToken,
+        HttpStatus.FORBIDDEN
+      );
+      await quizTestManager.createPairOrConnect(
+        secondPlayerToken,
+        HttpStatus.FORBIDDEN
+      );
+
+      await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+
+      await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
+
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+      await quizTestManager.createPairOrConnect(secondPlayerToken);
+
+      for (let i = 0; i < 5; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+        await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
+      }
+      await quizTestManager.getCurrentUnfinishedGame(
+        firstPlayerToken,
+        HttpStatus.NOT_FOUND
+      );
+      await quizTestManager.getCurrentUnfinishedGame(
+        secondPlayerToken,
+        HttpStatus.NOT_FOUND
+      );
+      await quizTestManager.sendAnswer(
+        firstPlayerToken,
+        'answer',
+        HttpStatus.FORBIDDEN
+      );
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        'answer',
+        HttpStatus.FORBIDDEN
+      );
+
+      expect.setState({ firstPlayerToken, secondPlayerToken });
+    });
+    it('POST -> "/pair-game-quiz/pairs/my-current/answers", GET -> "/pair-game-quiz/pairs", GET -> "/pair-game-quiz/pairs/my-current": add answers to first game, created by user1, connected by user2: add incorrect answer by firstPlayer; add incorrect answer by secondPlayer; add incorrect answer by secondPlayer; get active game and call "/pair-game-quiz/pairs/my-current by both users after each answer"; status 200;', async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        questionsAndAnswers,
+      } = expect.getState();
+      console.log({ firstPlayerToken, secondPlayerToken });
+
+      await quizTestManager.createPairOrConnect(secondPlayerToken);
+
+      const firstPair =
+        await quizTestManager.createPairOrConnect(firstPlayerToken);
+
+      const { correctAnswersForCurrentGame: answers } =
+        await quizTestManager.getCorrectAnswersForGame(
+          firstPair.id,
+          questionsAndAnswers
+        );
+
+      for (let i = 0; i < 5; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, answers[i + 1]);
+
+        await quizTestManager.sendAnswer(secondPlayerToken, answers[i]);
+      }
+
+      await quizTestManager.createPairOrConnect(secondPlayerToken);
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+
+      for (let i = 0; i < 4; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, answers[i]);
+        await quizTestManager.getCurrentUnfinishedGame(firstPlayerToken);
+        await quizTestManager.sendAnswer(secondPlayerToken, answers[i + 1]);
+        await quizTestManager.getCurrentUnfinishedGame(secondPlayerToken);
+      }
+      await quizTestManager.sendAnswer(
+        firstPlayerToken,
+        answers[answers.length - 1]
+      );
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        answers[answers.length - 1]
+      );
+
+      await quizTestManager.getCurrentUnfinishedGame(
+        firstPlayerToken,
+        HttpStatus.NOT_FOUND
+      );
+      await quizTestManager.getCurrentUnfinishedGame(
+        secondPlayerToken,
+        HttpStatus.NOT_FOUND
+      );
+
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+      // const game = await quizTestManager.createPairOrConnect(secondPlayerToken);
+
+      // await quizTestManager.getCurrentGameById(secondPlayerToken, game.id);
+      // await quizTestManager.getCurrentGameById(firstPlayerToken, game.id);
+
+      await quizTestManager.sendAnswer(
+        thirdPlayerToken,
+        'answer',
+        HttpStatus.FORBIDDEN
+      );
+      const firstPlayerStats =
+        await quizTestManager.getMyGames(firstPlayerToken);
+      expect(firstPlayerStats.totalCount).toBe(3);
+
+      // await quizUserManager.getStatistics(firstPlayerToken)
+    });
+    it.skip('GET STATS', async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        questionsAndAnswers,
+      } = expect.getState();
+
+      const firstPlayerStats =
+        await quizTestManager.getMyGames(firstPlayerToken);
+      console.log({ firstPlayerStats: firstPlayerStats.items });
+
+      // const secondPlayerStats = await quizTestManager.getMyGames(secondPlayerToken)
+      // console.log({firstPlayerStats, secondPlayerStats});
+    });
+    it.skip('GET /pair-game-quiz/pairs/my - should return all user games', async () => {
+      const { firstPlayerToken } = expect.getState();
+
+      const query: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        pageSize: '10',
+        sortBy: 'defaultSortBy',
+        sortDirection: SortDirections.Asc,
+      };
+      const games = await quizTestManager.getMyGames(firstPlayerToken, query);
+      // console.log(games.items);
+
+      expect(games.totalCount).toBe(2);
     });
   });
 });
