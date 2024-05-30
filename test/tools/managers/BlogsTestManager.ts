@@ -23,7 +23,7 @@ import { PathMappings, RouterPaths } from '../helpers/routing';
 export class BlogsTestManager {
   constructor(
     protected readonly app: INestApplication,
-    protected readonly path: PathMappings
+    protected readonly path: PathMappings,
   ) {}
   private application = this.app.getHttpServer();
   private routing = RouterPaths[this.path];
@@ -84,7 +84,7 @@ export class BlogsTestManager {
 
   checkBlogsBeforeTests = async (
     accessToken: string,
-    expectedCount?: number
+    expectedCount?: number,
   ) => {
     const response = await request(this.application)
       .get(this.routing)
@@ -104,7 +104,7 @@ export class BlogsTestManager {
 
   async createBlog(
     inputData: CreateBlogInputDto,
-    expectedStatus: number = HttpStatus.CREATED
+    expectedStatus: number = HttpStatus.CREATED,
   ): Promise<BlogsTypeWithId> {
     const res = await request(this.application)
       .post(this.routing)
@@ -118,7 +118,7 @@ export class BlogsTestManager {
   async createSABlog(
     inputData: CreateBlogInputDto,
     accessToken: string,
-    expectedStatus: number = HttpStatus.CREATED
+    expectedStatus: number = HttpStatus.CREATED,
   ): Promise<BlogsTypeWithId> {
     const res = await request(this.application)
       .post(this.routing)
@@ -133,7 +133,7 @@ export class BlogsTestManager {
   async createPost(
     inputData: CreationPostDtoByBlogId,
     blog: BlogViewModelType,
-    expectedStatus: number = HttpStatus.CREATED
+    expectedStatus: number = HttpStatus.CREATED,
   ): Promise<PostViewModelType> {
     const response = await request(this.application)
       .post(`${this.routing}/${blog.id}/posts`)
@@ -165,7 +165,7 @@ export class BlogsTestManager {
 
   async createPosts(
     blog: BlogViewModelType,
-    numberOfPosts: number = 1
+    numberOfPosts: number = 1,
   ): Promise<PostViewModelType[]> {
     let posts: PostViewModelType[] = [];
 
@@ -176,7 +176,10 @@ export class BlogsTestManager {
         shortDescription: `shortDescription${i}`,
       };
 
-      const post = await this.createPost(this.createPostInputData(postData), blog);
+      const post = await this.createPost(
+        this.createPostInputData(postData),
+        blog,
+      );
 
       posts.push(post);
     }
@@ -188,7 +191,7 @@ export class BlogsTestManager {
     inputData: CreationPostDtoByBlogId,
     blog: BlogViewModelType,
     accessToken: string,
-    expectedStatus: number = HttpStatus.CREATED
+    expectedStatus: number = HttpStatus.CREATED,
   ): Promise<PostViewModelType> {
     const response = await request(this.application)
       .post(`${this.routing}/${blog.id}/posts`)
@@ -224,7 +227,7 @@ export class BlogsTestManager {
     inputData: UpdateBlogInputDto,
     blogId: string,
     accessToken: string | null = null,
-    expectStatus: number = HttpStatus.NO_CONTENT
+    expectStatus: number = HttpStatus.NO_CONTENT,
   ) {
     if (!accessToken) {
       return request(this.application)
@@ -246,7 +249,7 @@ export class BlogsTestManager {
     blogId: string,
     postId: string,
     accessToken: string | null = null,
-    expectStatus: number = HttpStatus.NO_CONTENT
+    expectStatus: number = HttpStatus.NO_CONTENT,
   ) {
     if (!accessToken) {
       return request(this.application)
@@ -275,7 +278,7 @@ export class BlogsTestManager {
       | BlogsTypeWithId
       | { errorsMessages: ErrorsMessages[] }
       | any
-      | string
+      | string,
   ) {
     expect(responseModel).toEqual(expectedResult);
   }
@@ -306,7 +309,7 @@ export class BlogsTestManager {
     blogId: string,
     token: string | null,
     status: LikeStatusType = LikesStatuses.None,
-    expectStatus: number = HttpStatus.OK
+    expectStatus: number = HttpStatus.OK,
   ) {
     const { body } = await request(this.application)
       .get(`${this.routing}/${blogId}/posts`)
@@ -342,7 +345,7 @@ export class BlogsTestManager {
   async checkStatusOptionId(
     blogId?: string,
     accessToken?: string,
-    expectedStatus: number = HttpStatus.OK
+    expectedStatus: number = HttpStatus.OK,
   ) {
     if (blogId && !accessToken) {
       const getById = await request(this.application)
@@ -396,12 +399,12 @@ export class BlogsTestManager {
   async deleteSABlog(
     blogId: string,
     accessToken: string,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     const beforeDelete = await request(this.application)
       .get(`${this.routing}/${blogId}`)
-      .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
-      // .auth(accessToken, { type: 'bearer' });
+      .set('Authorization', 'Basic YWRtaW46cXdlcnR5');
+    // .auth(accessToken, { type: 'bearer' });
 
     const blog = beforeDelete.body;
 
@@ -422,7 +425,7 @@ export class BlogsTestManager {
           ? HttpStatus.NOT_FOUND
           : blog.statusCode !== 404
             ? HttpStatus.OK
-            : HttpStatus.NOT_FOUND
+            : HttpStatus.NOT_FOUND,
       );
   }
 
@@ -430,12 +433,12 @@ export class BlogsTestManager {
     blogId: string,
     postId: string,
     accessToken?: string,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     const beforeDelete = await request(this.application)
       .get(`${this.routing}/${blogId}/posts`)
-      .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
-      // .auth(accessToken, { type: 'bearer' });
+      .set('Authorization', 'Basic YWRtaW46cXdlcnR5');
+    // .auth(accessToken, { type: 'bearer' });
 
     const posts: PostViewModelType[] = beforeDelete.body.items;
 
@@ -452,12 +455,12 @@ export class BlogsTestManager {
 
       const afterDelete = await request(this.application)
         .get(`${this.routing}/${blogId}/posts`)
-        .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
-        // .auth(accessToken, { type: 'bearer' });
+        .set('Authorization', 'Basic YWRtaW46cXdlcnR5');
+      // .auth(accessToken, { type: 'bearer' });
 
       const restPosts = afterDelete.body.items;
       const findPostAfterDelete = restPosts.find(
-        (p: PostViewModelType) => p.id === postId
+        (p: PostViewModelType) => p.id === postId,
       );
 
       expect(findPostAfterDelete).toBeUndefined();
@@ -472,7 +475,7 @@ export class BlogsTestManager {
           description: blogsData.description[i + 1],
           websiteUrl: blogsData.websiteUrl[i + 1],
         }),
-        accessToken
+        accessToken,
       );
     }
   }

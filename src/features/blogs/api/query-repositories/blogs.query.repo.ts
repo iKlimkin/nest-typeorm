@@ -11,11 +11,11 @@ import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-
 @Injectable()
 export class BlogsQueryRepo {
   constructor(
-    @InjectRepository(Blog) private readonly blogs: Repository<Blog>
+    @InjectRepository(Blog) private readonly blogs: Repository<Blog>,
   ) {}
 
   async getAllBlogs(
-    queryOptions: BlogsQueryFilter
+    queryOptions: BlogsQueryFilter,
   ): Promise<PaginationViewModel<BlogViewModelType> | null> {
     try {
       const { searchNameTerm } = queryOptions;
@@ -35,7 +35,7 @@ export class BlogsQueryRepo {
             : sortBy === 'created_at'
               ? 'blogs.created_at'
               : `blogs.${sortBy}`,
-          sortDirection
+          sortDirection,
         )
         .skip(skip)
         .take(pageSize);
@@ -49,7 +49,7 @@ export class BlogsQueryRepo {
         blogs.map(getBlogsViewModel),
         pageNumber,
         pageSize,
-        blogsCount
+        blogsCount,
       );
 
       return blogsViewModel;

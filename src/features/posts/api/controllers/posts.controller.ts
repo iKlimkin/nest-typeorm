@@ -43,7 +43,7 @@ export class PostsController {
   constructor(
     private feedbacksQueryRepo: FeedbacksQueryRepo,
     private postsQueryRepo: PostsQueryRepo,
-    private commandBus: CommandBus
+    private commandBus: CommandBus,
   ) {}
 
   @Get()
@@ -51,7 +51,7 @@ export class PostsController {
   @HttpCode(HttpStatus.OK)
   async getPosts(
     @Query() query: PostsQueryFilter,
-    @CurrentUserId() userId: string
+    @CurrentUserId() userId: string,
   ): Promise<PaginationViewModel<PostViewModelType>> {
     return this.postsQueryRepo.getAllPosts(query, userId);
   }
@@ -60,7 +60,7 @@ export class PostsController {
   @UseGuards(SetUserIdGuard)
   async getPostById(
     @Param('id') postId: string,
-    @CurrentUserId() userId: string
+    @CurrentUserId() userId: string,
   ): Promise<PostViewModelType> {
     const post = await this.postsQueryRepo.getPostById(postId, userId);
 
@@ -77,7 +77,7 @@ export class PostsController {
   async updateLikesStatus(
     @Param('id') postId: string,
     @Body() body: LikeStatusInputDto,
-    @CurrentUserInfo() userInfo: UserSessionDto
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ) {
     const { userId } = userInfo;
     const { likeStatus } = body;
@@ -103,7 +103,7 @@ export class PostsController {
   async getComments(
     @Param('id') postId: string,
     @CurrentUserId() userId: string,
-    @Query() query: PostsQueryFilter
+    @Query() query: PostsQueryFilter,
   ): Promise<PaginationViewModel<CommentsViewModel>> {
     const post = await this.postsQueryRepo.getPostById(postId);
 
@@ -114,7 +114,7 @@ export class PostsController {
     const comments = await this.feedbacksQueryRepo.getCommentsByPostId(
       postId,
       query,
-      userId
+      userId,
     );
 
     if (!comments) {
@@ -130,7 +130,7 @@ export class PostsController {
   async createComment(
     @Param('id') postId: string,
     @Body() body: InputContentDto,
-    @CurrentUserInfo() userInfo: UserSessionDto
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ): Promise<CommentsViewModel> {
     const { content } = body;
     const { userId } = userInfo;
@@ -161,7 +161,7 @@ export class PostsController {
 
     const foundNewComment = await this.feedbacksQueryRepo.getCommentById(
       result.data!.id,
-      userId
+      userId,
     );
 
     return foundNewComment;
@@ -172,7 +172,7 @@ export class PostsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async updatePost(
     @Param('id') postId: string,
-    @Body() data: CreationPostDtoByBlogId
+    @Body() data: CreationPostDtoByBlogId,
   ) {
     const post = await this.postsQueryRepo.getPostById(postId);
 
@@ -189,7 +189,7 @@ export class PostsController {
   async deletePost(@Param('id') postId: string) {
     const command = new DeletePostCommand(postId);
     const result = await this.commandBus.execute<DeletePostCommand, boolean>(
-      command
+      command,
     );
 
     if (!result) {

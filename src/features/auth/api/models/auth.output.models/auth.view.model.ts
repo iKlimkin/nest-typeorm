@@ -2,7 +2,7 @@ import { UserAccount } from '../../../../admin/domain/entities/user-account.enti
 import { UserAccountViewModel } from './auth.output.models';
 
 export const getUserAccountViewModel = (
-  user: UserAccount
+  user: UserAccount,
 ): UserAccountViewModel => ({
   accountData: {
     id: user.id,

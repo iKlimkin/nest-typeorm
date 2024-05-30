@@ -28,26 +28,20 @@ const mapPlayer = (id: string, login: string) => ({
 
 export const getQuizPairViewModel = (quizPair: QuizGame): QuizPairViewType => {
   const { firstPlayerProgress, secondPlayerProgress } = quizPair;
-  const firstPlayerAnswers = firstPlayerProgress?.answers.length
-    ? firstPlayerProgress.answers
-    : null;
-  const secondPlayerAnswers = secondPlayerProgress?.answers.length
-    ? secondPlayerProgress.answers
-    : null;
+  const firstPlayerAnswers = firstPlayerProgress?.answers || [];
+  const secondPlayerAnswers = secondPlayerProgress?.answers || [];
   const questions = quizPair?.questions.length ? quizPair.questions : null;
 
   return {
     id: quizPair.id,
     firstPlayerProgress: {
-      answers: firstPlayerAnswers ? firstPlayerAnswers.map(mapAnswer) : null,
+      answers: firstPlayerAnswers.map(mapAnswer),
       player: mapPlayer(quizPair.firstPlayerId, firstPlayerProgress.login),
       score: firstPlayerProgress?.score || 0,
     },
     secondPlayerProgress: secondPlayerProgress
       ? {
-          answers: secondPlayerAnswers
-            ? secondPlayerAnswers.map(mapAnswer)
-            : null,
+          answers: secondPlayerAnswers.map(mapAnswer),
           player: secondPlayerProgress
             ? mapPlayer(quizPair.secondPlayerId, secondPlayerProgress.login)
             : null,
@@ -56,10 +50,9 @@ export const getQuizPairViewModel = (quizPair: QuizGame): QuizPairViewType => {
       : null,
     status: quizPair.status,
     questions: questions
-      ? questions
-        .map(mapQuestions)
-        // .sort(sortQuestionsByNumberInBody)
-      : null,
+      ? questions.map(mapQuestions)
+      : // .sort(sortQuestionsByNumberInBody)
+        null,
     pairCreatedDate: quizPair.created_at.toISOString(),
     startGameDate: quizPair.startGameDate?.toISOString() || null,
     finishGameDate: quizPair.finishGameDate?.toISOString() || null,
@@ -67,12 +60,12 @@ export const getQuizPairViewModel = (quizPair: QuizGame): QuizPairViewType => {
 };
 
 export const getQuizPendingPairsViewModel = (
-  quizPair: QuizGame
+  quizPair: QuizGame,
 ): QuizPairViewType => ({
   id: quizPair.id,
   firstPlayerProgress: quizPair.firstPlayerProgress
     ? {
-        answers: null,
+        answers: [],
         player: {
           id: quizPair.firstPlayerId,
           login: quizPair.firstPlayerProgress.login,

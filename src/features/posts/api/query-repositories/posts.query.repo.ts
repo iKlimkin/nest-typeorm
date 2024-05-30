@@ -8,19 +8,20 @@ import { PostReaction } from '../../domain/entities/post-reactions.entity';
 import { Post } from '../../domain/entities/post.entity';
 import { PostsQueryFilter } from '../models/output.post.models/posts-query.filter';
 import { PostViewModelType } from '../models/post.view.models/post-view-model.type';
-import { getPostTORViewModel } from '../models/post.view.models/post-view.model';
+import { getPostViewModel } from '../models/post.view.models/post-view.model';
+import { Blog } from '../../../blogs/domain/entities/blog.entity';
 
 @Injectable()
 export class PostsQueryRepo {
   constructor(
     @InjectRepository(Post) private readonly posts: Repository<Post>,
     @InjectRepository(PostReaction)
-    private readonly postReactions: Repository<PostReaction>
+    private readonly postReactions: Repository<PostReaction>,
   ) {}
 
   async getAllPosts(
     queryOptions: PostsQueryFilter,
-    userId?: string
+    userId?: string,
   ): Promise<PaginationViewModel<PostViewModelType>> {
     try {
       const { searchContentTerm } = queryOptions;
@@ -47,7 +48,7 @@ export class PostsQueryRepo {
             : sortBy === 'created_at'
               ? `posts.created_at`
               : `posts.${sortBy}`,
-          sortDirection
+          sortDirection,
         )
         .skip(skip)
         .take(pageSize);
@@ -84,17 +85,17 @@ export class PostsQueryRepo {
 
       const postsViewModel = new PaginationViewModel<PostViewModelType>(
         posts.map((post: Post) =>
-          getPostTORViewModel(post, latestReactions, myReactions)
+          getPostViewModel(post, latestReactions, myReactions),
         ),
         pageNumber,
         pageSize,
-        count
+        count,
       );
 
       return postsViewModel;
     } catch (error) {
       throw new InternalServerErrorException(
-        `Database fails operation with find all posts ${error}`
+        `Database fails operation with find all posts ${error}`,
       );
     }
   }
@@ -102,7 +103,7 @@ export class PostsQueryRepo {
   async getPostsByBlogId(
     blogId: string,
     queryOptions: PostsQueryFilter,
-    userId?: string
+    userId?: string,
   ): Promise<PaginationViewModel<PostViewModelType> | null> {
     try {
       const { searchContentTerm } = queryOptions;
@@ -116,8 +117,18 @@ export class PostsQueryRepo {
 
       queryBuilder
         .where('posts.content ILIKE :searchTerm', { searchTerm })
-        .andWhere('posts.blog_id = :blogId', { blogId })
-        .leftJoin('posts.blog', 'blog')
+        .andWhere('posts.blogId = :blogId', { blogId })
+        // .leftJoin('posts.blog', 'blog')
+        .leftJoin(
+          (qb) =>
+            qb
+              .select('blog.id', 'id')
+              .addSelect('blog.title', 'title')
+              .from(Blog, 'blog'),
+          'blog',
+          'blog.id = posts.blogId',
+          // { is_membership: true } 
+        )
         .leftJoin('posts.postReactionCounts', 'reactionCounter')
         .addSelect([
           'blog.id',
@@ -130,7 +141,7 @@ export class PostsQueryRepo {
             : 'created_at'
               ? `posts.created_at`
               : `posts.${sortBy}`,
-          sortDirection
+          sortDirection,
         )
         .skip(skip)
         .take(pageSize);
@@ -149,9 +160,7 @@ export class PostsQueryRepo {
               id: userId,
             },
             post: {
-              blog: {
-                id: blogId,
-              },
+              blogId,
             },
           },
           relations: ['post'],
@@ -176,11 +185,11 @@ export class PostsQueryRepo {
 
       const postsViewModel = new PaginationViewModel<PostViewModelType>(
         posts.map((post: Post) =>
-          getPostTORViewModel(post, latestReactions, myReactions)
+          getPostViewModel(post, latestReactions, myReactions),
         ),
         pageNumber,
         pageSize,
-        postsCount
+        postsCount,
       );
 
       return postsViewModel;
@@ -192,7 +201,7 @@ export class PostsQueryRepo {
 
   async getPostById(
     postId: string,
-    userId?: string
+    userId?: string,
   ): Promise<PostViewModelType | null> {
     try {
       let myReaction: LikesStatuses = LikesStatuses.None;
@@ -202,11 +211,20 @@ export class PostsQueryRepo {
       queryBuilder
         .where('posts.id = :postId', { postId })
         .leftJoinAndSelect('posts.postReactionCounts', 'prc')
-        .leftJoin('posts.blog', 'b')
+        .leftJoin(
+          (qb) =>
+            qb
+              .select('blog.id', 'id')
+              .addSelect('blog.title', 'title')
+              .from(Blog, 'blog'),
+          'blog',
+          'blog.id = posts.blogId',
+          // { is_membership: true } 
+        )
         .addSelect('b.id');
 
       const post = await queryBuilder.getOne();
-
+        
       if (!post) return null;
 
       const latestReactions = await this.postReactions
@@ -245,7 +263,7 @@ export class PostsQueryRepo {
         myReaction = reaction ? reaction.reaction_type : LikesStatuses.None;
       }
 
-      return getPostTORViewModel(post, latestReactions, myReaction);
+      return getPostViewModel(post, latestReactions, myReaction);
     } catch (error) {
       console.error(`Database fails operate during find post ${error}`);
       return null;
@@ -253,7 +271,7 @@ export class PostsQueryRepo {
   }
   async getPostsForTest(
     queryOptions: PostsQueryFilter,
-    userId?: string
+    userId?: string,
   ): Promise<PaginationViewModel<PostViewModelType>> {
     try {
       const { searchContentTerm } = queryOptions;
@@ -274,7 +292,7 @@ export class PostsQueryRepo {
           sortBy !== 'created_at'
             ? `posts.${sortBy} COLLATE 'C'`
             : `posts.created_at`,
-          sortDirection
+          sortDirection,
         )
         .skip(skip)
         .take(pageSize);
@@ -314,17 +332,17 @@ export class PostsQueryRepo {
 
       const postsViewModel = new PaginationViewModel<PostViewModelType>(
         posts.map((post: Post) =>
-          getPostTORViewModel(post, latestReactions, myReactions)
+          getPostViewModel(post, latestReactions, myReactions),
         ),
         pageNumber,
         pageSize,
-        count
+        count,
       );
 
       return postsViewModel;
     } catch (error) {
       throw new InternalServerErrorException(
-        `Database fails operation with find all posts ${error}`
+        `Database fails operation with find all posts ${error}`,
       );
     }
   }

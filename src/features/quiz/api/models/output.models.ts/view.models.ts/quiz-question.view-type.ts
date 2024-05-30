@@ -1,4 +1,3 @@
-
 export type QuizQuestionViewType = {
   id: string;
   body: string;

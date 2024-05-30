@@ -9,11 +9,11 @@ import { SecurityViewDeviceModel } from '../models/security.view.models/security
 export class SecurityQueryRepo {
   constructor(
     @InjectRepository(UserSession)
-    private readonly userSessions: Repository<UserSession>
+    private readonly userSessions: Repository<UserSession>,
   ) {}
 
   async getUserActiveSessions(
-    userId: string
+    userId: string,
   ): Promise<SecurityViewDeviceModel[] | null> {
     try {
       const sessions = await this.userSessions.find({
@@ -32,7 +32,7 @@ export class SecurityQueryRepo {
   }
 
   async getUserSession(
-    deviceId: string
+    deviceId: string,
   ): Promise<SecurityViewDeviceModel | null> {
     try {
       const sessions = await this.userSessions.find({

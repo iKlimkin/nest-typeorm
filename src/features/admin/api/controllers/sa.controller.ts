@@ -30,13 +30,13 @@ import { UsersQueryRepo } from '../query-repositories/users.query.repo';
 export class SAController {
   constructor(
     private usersQueryRepo: UsersQueryRepo,
-    private commandBus: CommandBus
+    private commandBus: CommandBus,
   ) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
   async getUserAdmins(
-    @Query() query: SAQueryFilter
+    @Query() query: SAQueryFilter,
   ): Promise<PaginationViewModel<SAViewType> | any> {
     return this.usersQueryRepo.getAllUsers(query);
   }
@@ -70,7 +70,7 @@ export class SAController {
     }
 
     const foundNewestUser = await this.usersQueryRepo.getUserById(
-      result.data!.userId
+      result.data!.userId,
     );
 
     return foundNewestUser!;
@@ -82,7 +82,7 @@ export class SAController {
     const command = new DeleteSACommand(userId);
 
     const result = await this.commandBus.execute<DeleteSACommand, boolean>(
-      command
+      command,
     );
 
     if (!result) {

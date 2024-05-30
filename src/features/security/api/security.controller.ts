@@ -27,12 +27,12 @@ import {
 export class SecurityController implements SecurityInterface {
   constructor(
     private securityQueryRepo: SecurityQueryRepo,
-    private commandBus: CommandBus
+    private commandBus: CommandBus,
   ) {}
 
   @Get()
   async getUserActiveSessions(
-    @CurrentUserInfo() userInfo: UserSessionDto
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ): Promise<SecurityViewDeviceModel[]> {
     const { userId } = userInfo;
 
@@ -49,7 +49,7 @@ export class SecurityController implements SecurityInterface {
   @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
   async terminateOtherUserSessions(
-    @CurrentUserInfo() userInfo: UserSessionDto
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ) {
     const command = new DeleteOtherUserSessionsCommand(userInfo.deviceId);
     await this.commandBus.execute(command);
@@ -59,7 +59,7 @@ export class SecurityController implements SecurityInterface {
   @HttpCode(HttpStatus.NO_CONTENT)
   async terminateSpecificSession(
     @Param('id') deviceId: string,
-    @CurrentUserInfo() userInfo: UserSessionDto
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ) {
     const sessionExistence =
       await this.securityQueryRepo.getUserSession(deviceId);
@@ -69,7 +69,7 @@ export class SecurityController implements SecurityInterface {
     }
 
     const sessions = await this.securityQueryRepo.getUserActiveSessions(
-      userInfo.userId
+      userInfo.userId,
     );
 
     if (!sessions!.some((s) => s.deviceId === deviceId)) {

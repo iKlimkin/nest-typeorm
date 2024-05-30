@@ -51,7 +51,7 @@ export class AuthController {
   constructor(
     private authRepo: AuthQueryRepository,
     private authService: AuthService,
-    private commandBus: CommandBus
+    private commandBus: CommandBus,
   ) {}
 
   @UseGuards(CustomThrottlerGuard, LocalAuthGuard)
@@ -60,10 +60,10 @@ export class AuthController {
   async login(
     @CurrentUserInfo() userInfo: UserSessionDto,
     @GetClientInfo() clientInfo: ClientInfo,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     const { accessToken, refreshToken } = await this.authService.getTokens(
-      userInfo.userId
+      userInfo.userId,
     );
 
     const userPayload = this.authService.getUserPayloadByToken(refreshToken);
@@ -103,7 +103,7 @@ export class AuthController {
   @Post('refresh-token')
   async refreshToken(
     @CurrentUserInfo() userInfo: UserSessionDto,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     const { userId, deviceId } = userInfo;
 
@@ -133,7 +133,7 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async newPassword(@Body() data: RecoveryPassDto) {
     const existingAccount = await this.authRepo.findUserAccountByRecoveryCode(
-      data.recoveryCode
+      data.recoveryCode,
     );
 
     if (existingAccount) {
@@ -157,7 +157,7 @@ export class AuthController {
       const command = new CreateTemporaryAccountCommand(data);
 
       await this.commandBus.execute<CreateTemporaryAccountCommand, OutputId>(
-        command
+        command,
       );
 
       return;
@@ -173,7 +173,7 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async registration(
     @Body() data: CreateUserDto,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     const { login, email } = data;
 
@@ -207,7 +207,7 @@ export class AuthController {
   @Post('registration-confirmation')
   async registrationConfirmation(
     @Body() data: RegistrationCodeDto,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     const command = new ConfirmEmailCommand(data);
 
@@ -227,7 +227,7 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async registrationEmailResending(
     @Body() data: RegistrationEmailDto,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     const userAccount = await this.authRepo.findByLoginOrEmail(data);
 
@@ -249,7 +249,7 @@ export class AuthController {
   @UseGuards(AccessTokenGuard)
   @Get('me')
   async getProfile(
-    @CurrentUserInfo() userInfo: UserSessionDto
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ): Promise<UserProfileType> {
     const user = await this.authRepo.getUserById(userInfo.userId);
 

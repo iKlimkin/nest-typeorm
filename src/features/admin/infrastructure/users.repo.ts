@@ -8,7 +8,7 @@ import { UserIdType } from '../api/models/outputSA.models.ts/user-models';
 export class UsersRepository {
   constructor(
     @InjectRepository(UserAccount)
-    private readonly userAccounts: Repository<UserAccount>
+    private readonly userAccounts: Repository<UserAccount>,
   ) {}
 
   async save(userDto: UserAccount): Promise<UserIdType | null> {

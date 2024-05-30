@@ -12,7 +12,7 @@ export class BasicSAStrategy extends PassportStrategy(BasicStrategy) {
 
   public validate = async (
     username: string,
-    password: string
+    password: string,
   ): Promise<boolean> => {
     const config = this.configService.get('basicAuth', {
       infer: true,

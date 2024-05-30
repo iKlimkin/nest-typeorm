@@ -1,9 +1,9 @@
-import { DataSource, EntityManager, QueryRunner } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { LayerNoticeInterceptor } from '../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 
 export async function runInTransaction<T>(
   dataSource: DataSource,
-  operation: (manager: EntityManager) => Promise<LayerNoticeInterceptor<T>>
+  operation: (manager: EntityManager) => Promise<LayerNoticeInterceptor<T>>,
 ): Promise<LayerNoticeInterceptor<T>> {
   const queryRunner = dataSource.createQueryRunner();
   await queryRunner.connect();
@@ -17,7 +17,9 @@ export async function runInTransaction<T>(
 
     if (result.hasError) {
       await queryRunner.rollbackTransaction();
-      console.log(`Transaction rolled back with error: ${result.extensions[0].message}` );
+      console.log(
+        `Transaction rolled back with error: ${result.extensions[0].message}`,
+      );
       return result;
     }
 
@@ -25,7 +27,7 @@ export async function runInTransaction<T>(
     return result;
   } catch (error) {
     await queryRunner.rollbackTransaction();
-    console.log(`${error}`);
+    console.log(`Transaction rolled back with error: ${error}`);
   } finally {
     await queryRunner.release();
   }

@@ -9,12 +9,10 @@ import {
 @ValidatorConstraint({ name: 'IsValidAnswers', async: true })
 export class IsValidAnswersConstraint implements ValidatorConstraintInterface {
   validate(value: any, args: ValidationArguments) {
-    if (!value || !Array.isArray(value)) {
-      return false;
-    }
+    if (!value || !Array.isArray(value)) return false;
     
-    for (const item of value) {
-      if (item.constructor !== String) return false;
+    for (const answer of value) {
+      if (answer.constructor !== String) return false;
     }
 
     return true;
@@ -27,7 +25,7 @@ export class IsValidAnswersConstraint implements ValidatorConstraintInterface {
 
 export function IsValidAnswers(
   property?: string,
-  validationOptions?: ValidationOptions
+  validationOptions?: ValidationOptions,
 ) {
   return function (object: object, propertyName: string) {
     registerDecorator({

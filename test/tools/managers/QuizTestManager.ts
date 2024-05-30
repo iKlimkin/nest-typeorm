@@ -4,7 +4,6 @@ import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { PaginationViewModelType } from '../../../src/domain/pagination-view.model';
 import { CreateQuestionData } from '../../../src/features/quiz/api/models/input.models/create-question.model';
-import { QuizQuestionsQueryFilter } from '../../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
 import { GameStatus } from '../../../src/features/quiz/api/models/input.models/statuses.model';
 import { UpdateQuestionData } from '../../../src/features/quiz/api/models/input.models/update-question.model';
 import { QuizPairViewType } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game.view-type';
@@ -18,6 +17,10 @@ import {
   QuizQuestion,
 } from '../../../src/settings';
 import { NavigationEnum } from '../helpers/routing';
+import { QuizGamesQueryFilter } from '../../../src/features/quiz/api/models/input.models/quiz-games-query.filter';
+import { InputPublishData } from '../../../src/features/quiz/api/models/input.models/publish-question.model';
+import { GameStatsData } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game-analyze';
+import { ApiRouting } from '../routes/api.routing';
 
 export type QuestionsAndAnswersDB = {
   savedQuestion: QuizQuestion;
@@ -27,41 +30,108 @@ export type QuestionsAndAnswersDB = {
 export class QuizTestManager {
   constructor(
     protected readonly app: INestApplication,
-    protected readonly routing: NavigationEnum
+    protected readonly routing: ApiRouting,
   ) {}
   private application = this.app.getHttpServer();
   private quizQuestionRepository = this.app.get<Repository<QuizQuestion>>(
-    getRepositoryToken(QuizQuestion)
+    getRepositoryToken(QuizQuestion),
   );
   private quizGames = this.app.get<Repository<QuizGame>>(
-    getRepositoryToken(QuizGame)
+    getRepositoryToken(QuizGame),
+  );
+  private playerAnswers = this.app.get<Repository<QuizAnswer>>(
+    getRepositoryToken(QuizAnswer),
   );
   private quizGameQuestions = this.app.get<Repository<CurrentGameQuestion>>(
-    getRepositoryToken(CurrentGameQuestion)
+    getRepositoryToken(CurrentGameQuestion),
   );
   private quizPlayerProgresses = this.app.get<Repository<QuizPlayerProgress>>(
-    getRepositoryToken(QuizPlayerProgress)
+    getRepositoryToken(QuizPlayerProgress),
   );
   private quizCorrectAnswersRepository = this.app.get<
     Repository<QuizCorrectAnswer>
   >(getRepositoryToken(QuizCorrectAnswer));
 
-  createQuestion(field?: any) {
-    if (!field) {
-      return {
-        body: ' ',
-        correctAnswers: ' ',
+  createQuestionBody(field?: any) {
+    return {
+      body: field?.body || ' ',
+      correctAnswers: field?.correctAnswers || [],
+    };
+  }
+
+  async createQuestion(
+    body: CreateQuestionData | any,
+    expectStatus = HttpStatus.CREATED,
+    auth = true,
+  ): Promise<void> {
+    if (!auth) {
+      await request(this.application)
+        .post(this.routing.questions.createQuestion())
+        .send(body)
+        .expect(HttpStatus.UNAUTHORIZED);
+      return;
+    }
+
+    await request(this.application)
+      .post(this.routing.questions.createQuestion())
+      .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
+      .send(body)
+      .expect(expectStatus);
+  }
+
+  async getQuestions(
+    query?: any,
+  ): Promise<PaginationViewModelType<QuizQuestionViewType>> {
+    const response = await request(this.application)
+      .get(this.routing.questions.getQuestions())
+      .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
+      .query(query)
+      .expect(HttpStatus.OK);
+
+    return response.body;
+  }
+
+  async createQuestions(quantityOfQuestions: number) {
+    for (let i = 0; i < quantityOfQuestions; i++) {
+      const questionBody = {
+        body: `question ${i}`,
+        correctAnswers: [
+          `answer ${i + 1} for q${i}`,
+          `answer ${i + 2} for q${i}`,
+          `answer ${i + 3} for q${i}`,
+        ],
       };
-    } else {
-      return {
-        body: field.body,
-        correctAnswers: field.correctAnswers,
-      };
+
+      await this.createQuestion(questionBody);
     }
   }
+
+  async createAndPublishQuestions(quantityOfQuestions: number) {
+    for (let i = 0; i < quantityOfQuestions; i++) {
+      const questionBody = {
+        body: `question ${i}`,
+        correctAnswers: [
+          `answer ${i + 1} for q${i}`,
+          `answer ${i + 2} for q${i}`,
+          `answer ${i + 3} for q${i}`,
+        ],
+      };
+
+      await this.createQuestion(questionBody);
+    }
+
+    const { items: questions } = await this.getQuestions();
+
+    for (let i = 0; i < questions.length; i++) {
+      await this.publishQuestion(questions[i].id, {
+        published: true,
+      });
+    }
+  }
+
   async createPairOrConnect(accessToken: string, expectStatus = HttpStatus.OK) {
     const response = await request(this.application)
-      .post(`${this.routing}/connection`)
+      .post(this.routing.pairs.connectOrCreate())
       .auth(accessToken, { type: 'bearer' })
       .expect(expectStatus);
 
@@ -71,10 +141,10 @@ export class QuizTestManager {
   async sendAnswer(
     accessToken: string,
     answer: string,
-    expectStatus = HttpStatus.OK
+    expectStatus = HttpStatus.OK,
   ) {
     const response = await request(this.application)
-      .post(`${this.routing}/my-current/answers`)
+      .post(this.routing.pairs.sendAnswer())
       .auth(accessToken, { type: 'bearer' })
       .send({ answer })
       .expect(expectStatus);
@@ -85,10 +155,10 @@ export class QuizTestManager {
   async getCurrentGameById(
     accessToken: string,
     gameId: string,
-    expectStatus = HttpStatus.OK
+    expectStatus = HttpStatus.OK,
   ) {
     const response = await request(this.application)
-      .get(`${this.routing}/${gameId}`)
+      .get(this.routing.pairs.getGame(gameId))
       .auth(accessToken, { type: 'bearer' })
       .expect(expectStatus);
 
@@ -97,10 +167,10 @@ export class QuizTestManager {
 
   async getCurrentUnfinishedGame(
     accessToken: string,
-    expectStatus = HttpStatus.OK
+    expectStatus = HttpStatus.OK,
   ): Promise<QuizPairViewType> {
     const response = await request(this.application)
-      .get(`${this.routing}/my-current`)
+      .get(this.routing.pairs.getCurrentUnfinishedGame())
       .auth(accessToken, { type: 'bearer' })
       .expect(expectStatus);
 
@@ -108,19 +178,12 @@ export class QuizTestManager {
   }
 
   async getCurrentGameQuestions(
-    gameId: string
+    gameId: string,
   ): Promise<CurrentGameQuestion[]> {
     const questions = await this.quizGameQuestions.findBy({
       quizPair: { id: gameId },
     });
     return questions;
-  }
-
-  async getCurrentGameAnswers(gameId: string): Promise<QuizAnswer[]> {
-    const questions = await this.quizGameQuestions.findBy({
-      quizPair: { id: gameId },
-    });
-    return;
   }
 
   async getQuestionWithAnswers(questionId: string): Promise<{
@@ -143,10 +206,10 @@ export class QuizTestManager {
   }
 
   async createQuestionWithAnswers(
-    createdBody: CreateQuestionData
+    createdBody: CreateQuestionData,
   ): Promise<QuizQuestionViewType> {
     const result = await request(this.application)
-      .post(this.routing)
+      .post(this.routing.questions.createQuestion())
       .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
       .send(createdBody)
       .expect(HttpStatus.CREATED);
@@ -158,14 +221,22 @@ export class QuizTestManager {
 
   async updateQuestion(questionId: string, updatedBody: UpdateQuestionData) {
     await request(this.application)
-      .put(`${this.routing}/${questionId}`)
+      .put(this.routing.questions.updateQuestion(questionId))
       .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
       .send(updatedBody)
       .expect(HttpStatus.NO_CONTENT);
   }
 
+  async publishQuestion(questionId: string, publishData: InputPublishData) {
+    await request(this.application)
+      .put(this.routing.questions.publishQuestion(questionId))
+      .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
+      .send(publishData)
+      .expect(HttpStatus.NO_CONTENT);
+  }
+
   async createQuestionsForFurtherTests(
-    numberOfQuestions: number
+    numberOfQuestions: number,
   ): Promise<QuestionsAndAnswersDB> {
     const questionsAndAnswers = [];
     for (let i = 0; i < numberOfQuestions; i++) {
@@ -195,13 +266,22 @@ export class QuizTestManager {
     return questionsAndAnswers;
   }
 
-  async getQuestions(
-    query?: QuizQuestionsQueryFilter
-  ): Promise<PaginationViewModelType<QuizQuestionViewType>> {
+  async getMyGames(
+    accessToken: string,
+    query?: QuizGamesQueryFilter,
+  ): Promise<PaginationViewModelType<QuizPairViewType>> {
     const response = await request(this.application)
-      .get(this.routing)
-      .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
+      .get(this.routing.pairs.getUserGames())
+      .auth(accessToken, { type: 'bearer' })
       .query(query)
+      .expect(HttpStatus.OK);
+
+    return response.body;
+  }
+  async getStatistics(accessToken: string): Promise<GameStatsData> {
+    const response = await request(this.application)
+      .get(this.routing.pairs.getUserStatistic())
+      .auth(accessToken, { type: 'bearer' })
       .expect(HttpStatus.OK);
 
     return response.body;
@@ -221,6 +301,8 @@ export class QuizTestManager {
 
     currentPair.version = 0;
     currentPair.firstPlayerProgress.score = 0;
+    currentPair.firstPlayerProgress.answers = [];
+    currentPair.secondPlayerProgress.answers = [];
     currentPair.firstPlayerProgress.questCompletionDate = null;
     currentPair.secondPlayerProgress.score = 0;
     currentPair.firstPlayerProgress.answersCount = 0;
@@ -235,15 +317,21 @@ export class QuizTestManager {
       currentPair.secondPlayerProgress,
     ]);
 
+    await this.playerAnswers.clear();
+
     if (restorePair) {
       await this.quizGames.remove(currentPair);
+      await this.quizPlayerProgresses.remove([
+        currentPair.firstPlayerProgress,
+        currentPair.secondPlayerProgress,
+      ]);
     }
   }
 
   async prepareForBattle(
     firstPlayerToken: string,
     secondPlayerToken: string,
-    questionsAndAnswers: QuestionsAndAnswersDB
+    questionsAndAnswers: QuestionsAndAnswersDB,
   ): Promise<{
     gameId: string;
     correctAnswersForCurrentGame: string[];
@@ -254,6 +342,84 @@ export class QuizTestManager {
 
     const gameId = response.id;
 
+    return this.getCorrectAnswersForGame(gameId, questionsAndAnswers);
+  }
+
+  async simulateFinishedGames(playerTokens: string[], numberOfGames: number) {
+    const questionsAndAnswers = await this.createQuestionsForFurtherTests(100);
+
+    for (let i = 0; i < numberOfGames; i++) {
+      const currentPlayerIdx = i % playerTokens.length;
+      const otherPlayerIdx = (currentPlayerIdx + 1) % playerTokens.length;
+
+      const currentPlayerToken = playerTokens[currentPlayerIdx];
+      const otherPlayerToken = playerTokens[otherPlayerIdx];
+
+      const { correctAnswersForCurrentGame } = await this.prepareForBattle(
+        currentPlayerToken,
+        otherPlayerToken,
+        questionsAndAnswers,
+      );
+
+      await this.simulateFinishGame(
+        currentPlayerToken,
+        otherPlayerToken,
+        correctAnswersForCurrentGame,
+      );
+    }
+  }
+
+  checkConsistencyOfDataSorting(
+    games: QuizPairViewType[],
+    sortDirection: string = 'DESC',
+  ) {
+    for (let i = 0; i < games.length - 1; i++) {
+      const currentGameTime = new Date(games[i].pairCreatedDate).getTime();
+      const nextGameTime = new Date(games[i + 1].pairCreatedDate).getTime();
+
+      if (sortDirection === 'DESC') {
+        expect(nextGameTime).toBeLessThanOrEqual(currentGameTime);
+      } else {
+        expect(currentGameTime).toBeLessThanOrEqual(nextGameTime);
+      }
+    }
+  }
+
+  async simulateFinishGame(
+    firstPlayerToken: string,
+    secondPlayerToken: string,
+    correctAnswersForCurrentGame: any[],
+  ) {
+    for (let i = 0; i < 5; i++) {
+      const answerIdx = Math.random() >= 0.5 ? 0 : 1;
+      const currentPlayerToken =
+        i % 2 === 0 ? firstPlayerToken : secondPlayerToken;
+      const otherPlayerToken =
+        i % 2 === 0 ? secondPlayerToken : firstPlayerToken;
+
+      await this.sendAnswer(
+        currentPlayerToken,
+        correctAnswersForCurrentGame[i * 2 + answerIdx],
+      );
+
+      if (answerIdx) {
+        await this.sendAnswer(otherPlayerToken, 'incorrect_answer');
+      } else {
+        const randomAnswerIdx = Math.floor(
+          Math.random() * correctAnswersForCurrentGame.length,
+        );
+        await this.sendAnswer(
+          otherPlayerToken,
+          correctAnswersForCurrentGame[randomAnswerIdx],
+        );
+      }
+    }
+  }
+
+  async getCorrectAnswersForGame(
+    gameId: string,
+    questionsAndAnswers: QuestionsAndAnswersDB,
+  ) {
     const gameQuestions = await this.getCurrentGameQuestions(gameId);
     expect(gameQuestions).toHaveLength(5);
 
@@ -261,7 +427,7 @@ export class QuizTestManager {
 
     gameQuestions.forEach((gameQuestion) => {
       const matchingQuestion = questionsAndAnswers.find(
-        (qa) => qa.savedQuestion.id === gameQuestion.questionId
+        (qa) => qa.savedQuestion.id === gameQuestion.questionId,
       );
       if (matchingQuestion) {
         matchingQuestion.answers.forEach((answer) => {

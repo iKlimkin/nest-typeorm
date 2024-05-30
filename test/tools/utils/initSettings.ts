@@ -12,7 +12,7 @@ import { UsersTestManager } from '../managers/UsersTestManager';
 import { cleanDatabase } from './dataBaseCleanup';
 
 export const initSettings = async (
-  addSettingsToModuleBuilder?: (moduleBuilder: TestingModuleBuilder) => void
+  addSettingsToModuleBuilder?: (moduleBuilder: TestingModuleBuilder) => void,
 ) => {
   const testingModuleBuilder: TestingModuleBuilder = Test.createTestingModule({
     providers: [

@@ -10,7 +10,7 @@ export class BasicAuthorization {
     path: PathMappings,
     entityId?: string,
     optional?: PathMappings,
-    expectedStatus: number = HttpStatus.UNAUTHORIZED
+    expectedStatus: number = HttpStatus.UNAUTHORIZED,
   ) {
     if (!optional) {
       await request(this.application)
@@ -27,7 +27,7 @@ export class BasicAuthorization {
     path: PathMappings,
     entityId: string,
     expectedStatus: number = HttpStatus.UNAUTHORIZED,
-    optional?: PathMappings
+    optional?: PathMappings,
   ) {
     if (!optional) {
       await request(this.application)
@@ -43,7 +43,7 @@ export class BasicAuthorization {
   async testDeleteAuthorization(
     path: PathMappings,
     entityId: string,
-    expectedStatus: number = HttpStatus.UNAUTHORIZED
+    expectedStatus: number = HttpStatus.UNAUTHORIZED,
   ) {
     await request(this.application)
       .delete(`${RouterPaths[path]}/${entityId}`)
@@ -54,7 +54,7 @@ export class BasicAuthorization {
     path: PathMappings,
     blogId: string,
     postId: string,
-    expectedStatus: number = HttpStatus.UNAUTHORIZED
+    expectedStatus: number = HttpStatus.UNAUTHORIZED,
   ) {
     await request(this.application)
       .delete(`${RouterPaths[path]}/${blogId}/posts/${postId}`)

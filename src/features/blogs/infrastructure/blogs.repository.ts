@@ -9,7 +9,7 @@ import { OutputId } from '../api/controllers';
 @Injectable()
 export class BlogsRepository {
   constructor(
-    @InjectRepository(Blog) private readonly blogs: Repository<Blog>
+    @InjectRepository(Blog) private readonly blogs: Repository<Blog>,
   ) {}
 
   async createBlog(blogDto: BlogCreationDto): Promise<OutputId | null> {
@@ -51,7 +51,7 @@ export class BlogsRepository {
 
       const result = await this.blogs.update(
         { id: blogId },
-        { title: name, description, website_url: websiteUrl }
+        { title: name, description, website_url: websiteUrl },
       );
 
       return result.affected !== 0;

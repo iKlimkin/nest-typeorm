@@ -17,11 +17,11 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
   let blogTestManager: BlogsTestManager;
   let basicAuthManager: BasicAuthorization;
   let dataSource: DataSource;
-  let httpsServer: HttpServer
+  let httpsServer: HttpServer;
 
   beforeAll(async () => {
     const result = await initSettings();
-    httpsServer = result.httpServer
+    httpsServer = result.httpServer;
     dataSource = result.testingAppModule.get(DataSource);
 
     blogTestManager = new BlogsTestManager(app, 'blogs');
@@ -50,7 +50,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
       const newBlog = await blogTestManager.createBlog(
         inputData,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       blogTestManager.assertBlogsMatch(newBlog, blogValidationErrors);
@@ -84,7 +84,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
       await basicAuthManager.testPutAuthorization(
         'blogs',
         blog.id,
-        HttpStatus.UNAUTHORIZED
+        HttpStatus.UNAUTHORIZED,
       );
       expect.setState({ blog, correctInputData });
     });
@@ -98,7 +98,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
         invalidInputData,
         blog.id,
         null,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       blogTestManager.assertBlogsMatch(result.body, blogValidationErrors);
@@ -114,7 +114,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
       const beforeUpdate = await blogTestManager.getBlogById(blog.id);
       blogTestManager.assertBlogsMatch(
         beforeUpdate.blog.name,
-        'Marcus Aurelius'
+        'Marcus Aurelius',
       );
 
       const createOtherValidInputData = blogTestManager.createInputData({
@@ -123,7 +123,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
       const response = await blogTestManager.updateBlog(
         createOtherValidInputData,
-        blog.id
+        blog.id,
       );
 
       const afterUpdate = await blogTestManager.getBlogById(blog.id);
@@ -185,7 +185,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
       await basicAuthManager.testPostAuthorization(
         'blogs',
         blogPost.id,
-        'posts'
+        'posts',
       );
     });
 
@@ -200,7 +200,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
       const result = await blogTestManager.createPost(
         incorrectInputData,
         blogPost,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       const error = createExceptions(['title']);
@@ -219,7 +219,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
       const result = await blogTestManager.createPost(
         incorrectInputData,
         blogPost,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       const error = createExceptions(['shortDescription']);
@@ -238,7 +238,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
       const result = await blogTestManager.createPost(
         incorrectInputData,
         blogPost,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       const error = createExceptions(['content']);
@@ -254,7 +254,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
       const result = await blogTestManager.createPost(
         incorrectInputData,
         blogPost,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       const errors = createExceptions(['title', 'shortDescription', 'content']);
@@ -269,7 +269,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
       const newestPost = await blogTestManager.createPost(
         inputCreatePostData,
-        blogPost
+        blogPost,
       );
     });
 
@@ -279,7 +279,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
       await blogTestManager.getPostsByBlogId(
         blogPost.id,
         null,
-        myStatusWithoutToken
+        myStatusWithoutToken,
       );
     });
   });

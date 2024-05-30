@@ -15,11 +15,11 @@ import { CreateSACommand } from '../commands/create-sa.command';
 export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
   constructor(
     private bcryptAdapter: BcryptAdapter,
-    private usersRepo: UsersRepository
+    private usersRepo: UsersRepository,
   ) {}
 
   async execute(
-    command: CreateSACommand
+    command: CreateSACommand,
   ): Promise<LayerNoticeInterceptor<UserIdType>> {
     let notice = new LayerNoticeInterceptor<UserIdType>();
 
@@ -29,7 +29,7 @@ export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
       notice.addError(
         'Input data incorrect',
         'input',
-        GetErrors.IncorrectModel
+        GetErrors.IncorrectModel,
       );
       return notice;
     }
@@ -54,7 +54,7 @@ export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
       notice.addError(
         'Could not create sa',
         'db',
-        CreateUserErrors.DatabaseFail
+        CreateUserErrors.DatabaseFail,
       );
     } else {
       notice.addData({ userId: userAdminId.userId });

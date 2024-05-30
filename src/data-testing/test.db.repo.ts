@@ -5,13 +5,14 @@ import { UserAccount } from '../features/auth/infrastructure/settings';
 
 @Injectable()
 export class TestDatabaseRepo {
-  constructor(@InjectDataSource() private dataSource: DataSource,
-  @InjectEntityManager() private manager: EntityManager
-) {}
+  constructor(
+    @InjectDataSource() private dataSource: DataSource,
+    @InjectEntityManager() private manager: EntityManager,
+  ) {}
 
   async deleteAllData() {
     try {
-      const usersRepo = this.dataSource.getRepository(UserAccount)
+      const usersRepo = this.dataSource.getRepository(UserAccount);
       // usersRepo.clear()
       // this.manager.clear(UserAccount)
 

@@ -18,8 +18,8 @@ import {
   TemporaryUserAccount,
   UserSession,
   Comment,
+  UserAccount,
 } from '.';
-import { UserAccount } from '../features/auth/infrastructure/settings';
 
 @Injectable()
 export class TypeOrmOptions implements TypeOrmOptionsFactory {
@@ -32,7 +32,6 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
       env?.toUpperCase() === 'DEVELOPMENT' ||
       env?.toUpperCase() === 'TESTING'
     ) {
-      console.log('dev');
       return this.createLocalConnection();
     } else {
       // make remote connection
@@ -40,10 +39,10 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
   }
 
   private createLocalConnection(): TypeOrmModuleOptions {
-    const dbConfig = this.configService.getOrThrow('pg', { infer: true });
+    const { url, username, password, database } = this.configService.getOrThrow('pg', { infer: true });
 
     return {
-      url: dbConfig.url,
+      url,
       type: 'postgres',
       // logging: ['query', 'error'],
       entities: [
@@ -68,11 +67,12 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
       ],
       // entities: ['src/**/*.entity.ts'],
       // entities: [__dirname + '/../**/*.entity.js'],
-      username: dbConfig.username,
-      password: dbConfig.password,
-      database: dbConfig.typeormPostgresDbName,
-      autoLoadEntities: true,
-      synchronize: true,
+      username,
+      password,
+      database,
+      autoLoadEntities: false,
+      synchronize: false,
+      dropSchema: false,
     };
   }
 }

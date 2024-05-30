@@ -12,11 +12,11 @@ import { SAViewType } from '../models/userAdmin.view.models/userAdmin.view.model
 export class UsersQueryRepo {
   constructor(
     @InjectRepository(UserAccount)
-    private readonly userAccounts: Repository<UserAccount>
+    private readonly userAccounts: Repository<UserAccount>,
   ) {}
 
   async getAllUsers(
-    queryOptions: SAQueryFilter
+    queryOptions: SAQueryFilter,
   ): Promise<PaginationViewModel<SAViewType>> {
     const { searchEmailTerm, searchLoginTerm } = queryOptions;
 
@@ -32,13 +32,13 @@ export class UsersQueryRepo {
     queryBuilder
       .where(
         'user_accounts.login ILIKE :login OR user_accounts.email ILIKE :email',
-        { login: searchTerms[0], email: searchTerms[1] }
+        { login: searchTerms[0], email: searchTerms[1] },
       )
       .orderBy(
         sortBy !== 'created_at'
           ? `user_accounts.${sortBy} COLLATE "C"`
           : 'user_accounts.created_at',
-        sortDirection
+        sortDirection,
       )
       .skip(skip)
       .take(pageSize);
@@ -49,7 +49,7 @@ export class UsersQueryRepo {
       users.map(getSAViewModel),
       pageNumber,
       pageSize,
-      usersCount
+      usersCount,
     );
 
     return userSAViewType;
@@ -57,7 +57,7 @@ export class UsersQueryRepo {
   catch(error) {
     throw new InternalServerErrorException(
       'Database fails operate with find users by sorting model',
-      error
+      error,
     );
   }
 

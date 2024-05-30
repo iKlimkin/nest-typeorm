@@ -21,7 +21,7 @@ export class CurrentGameQuestion extends BaseEntity {
 
   static createQuestionsBatch(
     quizPair: QuizGame,
-    questions: QuizQuestion[]
+    questions: QuizQuestion[],
   ): CurrentGameQuestion[] {
     return questions.map((q, i) => {
       return new CurrentGameQuestion().createQuestion(quizPair, q.id, i + 1);
@@ -31,7 +31,7 @@ export class CurrentGameQuestion extends BaseEntity {
   createQuestion(
     quizPair: QuizGame,
     questionId: string,
-    order: number
+    order: number,
   ): CurrentGameQuestion {
     const gameQuestion = new CurrentGameQuestion();
     gameQuestion.quizPair = quizPair;

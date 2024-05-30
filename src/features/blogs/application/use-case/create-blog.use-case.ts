@@ -12,7 +12,7 @@ export class CreateBlogUseCase implements ICommandHandler<CreateBlogCommand> {
   constructor(private blogsRepo: BlogsRepository) {}
 
   async execute(
-    command: CreateBlogCommand
+    command: CreateBlogCommand,
   ): Promise<LayerNoticeInterceptor<OutputId | null>> {
     const notice = new LayerNoticeInterceptor<OutputId | null>();
 
@@ -22,21 +22,21 @@ export class CreateBlogUseCase implements ICommandHandler<CreateBlogCommand> {
       notice.addError(
         'incorrect model',
         'CreateBlogUseCase',
-        GetErrors.IncorrectModel
+        GetErrors.IncorrectModel,
       );
     }
 
     const { description, name, websiteUrl } = command.createData;
 
     const blogDto = new BlogCreationDto(name, description, websiteUrl);
-    
+
     const result = await this.blogsRepo.createBlog(blogDto);
 
     if (!result) {
       notice.addError(
         `blog not created `,
         'CreateBlogUseCase',
-        GetErrors.DatabaseFail
+        GetErrors.DatabaseFail,
       );
     } else {
       notice.addData(result);

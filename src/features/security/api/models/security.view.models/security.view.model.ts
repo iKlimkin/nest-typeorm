@@ -2,7 +2,7 @@ import { UserSession } from '../../../domain/entities/security.entity';
 import { SecurityViewDeviceModel } from './security.view.types';
 
 export const getSessionViewModel = (
-  session: UserSession
+  session: UserSession,
 ): SecurityViewDeviceModel => ({
   ip: session.ip,
   title: session.user_agent_info,

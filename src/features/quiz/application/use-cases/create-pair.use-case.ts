@@ -1,30 +1,30 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { DataSource } from 'typeorm';
 import { OutputId } from '../../../../domain/output.models';
+import { runInTransaction } from '../../../../domain/transaction-wrapper';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
 import { UsersRepository } from '../../../admin/infrastructure/users.repo';
-import { GameStatus } from '../../api/models/input.models/statuses.model';
 import { QuizGame } from '../../domain/entities/quiz-game.entity';
 import { QuizPlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
 import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { CreatePairCommand } from '../commands/create-pair.command';
-import { DataSource } from 'typeorm';
-import { runInTransaction } from '../../../../domain/transaction-wrapper';
 
 @CommandHandler(CreatePairCommand)
 export class CreatePairUseCase implements ICommandHandler<CreatePairCommand> {
+  private readonly location = 'CreatePairUseCase';
+  private readonly notice = new LayerNoticeInterceptor<OutputId>();
   constructor(
     private readonly quizRepo: QuizRepository,
     private readonly usersRepo: UsersRepository,
-    private readonly dataSource: DataSource
+    private readonly dataSource: DataSource,
   ) {}
 
   async execute(
-    command: CreatePairCommand
-  ): Promise<LayerNoticeInterceptor<OutputId | null>> {
-    const notice = new LayerNoticeInterceptor<OutputId>();
-    const location = 'CreatePairUseCase';
+    command: CreatePairCommand,
+  ): Promise<LayerNoticeInterceptor<OutputId>> {
+    const { notice, location, quizRepo, usersRepo } = this;
     const { userId } = command.createData;
 
     try {
@@ -36,29 +36,35 @@ export class CreatePairUseCase implements ICommandHandler<CreatePairCommand> {
 
     try {
       return runInTransaction(this.dataSource, async (manager) => {
-        const user = await this.usersRepo.getUserById(userId);
-        
-        if (!user) {
-          notice.addError('user not found', location, GetErrors.NotFound);
+        const pendingPair = await quizRepo.getPendingPair(manager);
+        const user = await usersRepo.getUserById(userId);
+
+        if (pendingPair.data || !user) {
+          notice.addError(
+            pendingPair.data
+              ? pendingPair.errorMessage || 'there is already a pending pair'
+              : 'user not found',
+            location,
+            pendingPair.data ? GetErrors.Forbidden : GetErrors.NotFound,
+          );
           return notice;
         }
 
         const firstPlayerProgressDto = QuizPlayerProgress.create(user);
 
-        const firstPlayerProgress = await this.quizRepo.saveProgress(
+        const firstPlayerProgress = await quizRepo.saveProgress(
           firstPlayerProgressDto,
-          manager
+          manager,
         );
-
         const quizDto = QuizGame.createGame(firstPlayerProgress);
 
-        const result = await this.quizRepo.saveGame(quizDto, manager);
+        const result = await quizRepo.saveGame(quizDto, manager);
 
         if (!result.data) {
           notice.addError(
-            result.errorMessage,
-            'saveGame',
-            GetErrors.DatabaseFail
+            'error occurred during save game',
+            location,
+            GetErrors.DatabaseFail,
           );
         } else {
           notice.addData(result.data);
@@ -67,7 +73,11 @@ export class CreatePairUseCase implements ICommandHandler<CreatePairCommand> {
         return notice;
       });
     } catch (error) {
-      notice.addError('transaction error', location, GetErrors.Transaction);
+      notice.addError(
+        `transaction error: ${error}`,
+        location,
+        GetErrors.Transaction,
+      );
       return notice;
     }
   }

@@ -18,7 +18,8 @@ export class AccessTokenStrategy extends PassportStrategy(
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get('jwtSettings', { infer: true }).ACCESS_TOKEN_SECRET,
+      secretOrKey: configService.get('jwtSettings', { infer: true })
+        .ACCESS_TOKEN_SECRET,
     });
   }
 
@@ -45,7 +46,8 @@ export class RefreshTokenStrategy extends PassportStrategy(
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
       ignoreExpiration: false,
-      secretOrKey: configService.get('jwtSettings', { infer: true }).REFRESH_TOKEN_SECRET,
+      secretOrKey: configService.get('jwtSettings', { infer: true })
+        .REFRESH_TOKEN_SECRET,
     });
   }
 

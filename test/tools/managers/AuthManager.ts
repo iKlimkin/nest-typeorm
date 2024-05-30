@@ -10,7 +10,7 @@ export class AuthManager {
 
   async registration(
     inputData: AuthUserType,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     return await request(this.application)
       .post(`${RouterPaths.auth}/registration`)
@@ -20,7 +20,7 @@ export class AuthManager {
 
   async registrationEmailResending(
     email: string,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     await request(this.application)
       .post(`${RouterPaths.auth}/registration-email-resending`)
@@ -30,7 +30,7 @@ export class AuthManager {
 
   async passwordRecovery(
     email: string,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     await request(this.application)
       .post(`${RouterPaths.auth}/password-recovery`)
@@ -40,7 +40,7 @@ export class AuthManager {
 
   async newPassword(
     email: string,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     await request(this.application)
       .post(`${RouterPaths.auth}/new-password`)
@@ -50,7 +50,7 @@ export class AuthManager {
 
   async registrationConfirmation(
     code: string = 'any',
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     await request(this.application)
       .post(`${RouterPaths.auth}/registration-confrirmation`)
@@ -60,7 +60,7 @@ export class AuthManager {
 
   async login(
     user?: AuthUserType | null,
-    expectedStatus: number = HttpStatus.OK
+    expectedStatus: number = HttpStatus.OK,
   ) {
     const response = await request(this.application)
       .post(`${RouterPaths.auth}/login`)
@@ -75,7 +75,7 @@ export class AuthManager {
 
   async logout(
     refreshToken: string,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     await request(this.application)
       .post(`${RouterPaths.auth}/logout`)
@@ -86,7 +86,7 @@ export class AuthManager {
   async authMe(
     user: AuthUserType,
     token: string,
-    expectedStatus: number = HttpStatus.OK
+    expectedStatus: number = HttpStatus.OK,
   ) {
     const res = await request(this.application)
       .get(`${RouterPaths.auth}/me`)
@@ -102,7 +102,7 @@ export class AuthManager {
 
   async refreshToken(
     refreshToken: string,
-    expectedStatus: number = HttpStatus.OK
+    expectedStatus: number = HttpStatus.OK,
   ) {
     const tokens = await request(this.application)
       .post(`${RouterPaths.auth}/refresh-token`)
@@ -118,7 +118,7 @@ export class AuthManager {
 
   checkData(
     responceModel: AuthUserType | { errorsMessages: ErrorsMessages[] },
-    expectedResult: AuthUserType | { errorsMessages: ErrorsMessages[] }
+    expectedResult: AuthUserType | { errorsMessages: ErrorsMessages[] },
   ) {
     expect(responceModel).toEqual(expectedResult);
   }

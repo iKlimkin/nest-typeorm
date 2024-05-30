@@ -1,6 +1,6 @@
 const getConfig = (
   environmentVariables: EnvironmentVariable,
-  currentEnvironment: Environments
+  currentEnvironment: Environments,
 ) => ({
   Port: parseInt(process.env.PORT ?? '5000'),
   jwtSettings: {
@@ -18,7 +18,7 @@ const getConfig = (
   },
   pg: {
     url: process.env.DATABASE_URL,
-    typeormPostgresDbName: process.env.typeormPostgresDbName,
+    database: process.env.database,
     studyDbName: process.env.studyDbName,
     port: process.env.POSTGRES_PORT,
     username: process.env.POSTGRES_USER,
@@ -43,7 +43,7 @@ export type EnvironmentTypes = keyof typeof Environments;
 
 export default () => {
   const environmentVariables = process.env;
-  
+
   console.log('process.env.ENV =', environmentVariables.ENV);
   const currentEnvironment: Environments =
     environmentVariables.ENV as Environments;

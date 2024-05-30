@@ -7,7 +7,6 @@ import type { UserSession } from '../../../security/domain/entities/security.ent
 import { BaseEntity } from '../../../../domain/base-entity';
 import { add } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
-import type { QuizGame } from '../../../quiz/domain/entities/quiz-game.entity';
 import type { QuizPlayerProgress } from '../../../quiz/domain/entities/quiz-player-progress.entity';
 import type { Post } from '../../../posts/domain/entities/post.entity';
 
@@ -65,8 +64,8 @@ export class UserAccount extends BaseEntity {
   @OneToMany('CommentReaction', 'userAccount', { nullable: true })
   commentReactions: CommentReaction[];
 
-  @OneToOne('QuizPlayerProgress', 'player', { nullable: true })
-  gameProgress: QuizPlayerProgress;
+  @OneToMany('QuizPlayerProgress', 'player', { nullable: true })
+  gameProgress: QuizPlayerProgress[];
 
   static create(userData: UserDataType): UserAccount {
     const { login, email, passwordSalt, passwordHash } = userData;

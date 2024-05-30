@@ -11,7 +11,7 @@ export class DeleteQuestionUseCase
   constructor(private readonly quizRepo: QuizRepository) {}
 
   async execute(
-    command: DeleteQuestionCommand
+    command: DeleteQuestionCommand,
   ): Promise<LayerNoticeInterceptor<boolean | null>> {
     const notice = new LayerNoticeInterceptor<boolean>();
 
@@ -23,7 +23,7 @@ export class DeleteQuestionUseCase
       notice.addError(
         'Question not deleted',
         'DeleteQuestionUseCase',
-        GetErrors.DatabaseFail
+        GetErrors.DatabaseFail,
       );
     } else {
       notice.addData(result);

@@ -46,12 +46,12 @@ export class SABlogsController {
   constructor(
     private readonly blogsQueryRepo: BlogsQueryRepo,
     private readonly postsQueryRepo: PostsQueryRepo,
-    private readonly commandBus: CommandBus
+    private readonly commandBus: CommandBus,
   ) {}
 
   @Get()
   async getBlogs(
-    @Query() query: BlogsQueryFilter
+    @Query() query: BlogsQueryFilter,
   ): Promise<PaginationViewModel<BlogViewModelType>> {
     const result = await this.blogsQueryRepo.getAllBlogs(query);
 
@@ -75,7 +75,7 @@ export class SABlogsController {
     //@CurrentUserInfo() userInfo: UserInfoType,
     @CurrentUserId() userId: string,
     @Param('blogId') blogId: string,
-    @Query() query: PostsQueryFilter
+    @Query() query: PostsQueryFilter,
   ): Promise<PaginationViewModel<PostViewModelType>> {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
 
@@ -87,7 +87,7 @@ export class SABlogsController {
     const posts = await this.postsQueryRepo.getPostsByBlogId(
       blogId,
       query,
-      userId
+      userId,
       // userInfo.userId,
     );
 
@@ -99,7 +99,7 @@ export class SABlogsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createBlog(
-    @Body() data: CreateBlogInputDto
+    @Body() data: CreateBlogInputDto,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ): Promise<BlogViewModelType> {
     const command = new CreateBlogCommand({
@@ -121,14 +121,12 @@ export class SABlogsController {
   @HttpCode(HttpStatus.CREATED)
   async createPost(
     @Param('id') blogId: string,
-    @Body() body: CreationPostDtoByBlogId
+    @Body() body: CreationPostDtoByBlogId,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ): Promise<PostViewModelType> {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
 
-    if (!blog) {
-      throw new NotFoundException();
-    }
+    if (!blog) throw new NotFoundException();
 
     // if (userInfo.userId !== blog.ownerInfo.userId) {
     //   throw new ForbiddenException();
@@ -140,21 +138,17 @@ export class SABlogsController {
       blogTitle: blog.name,
     });
 
-    const post = await this.commandBus.execute<
+    const { hasError, code, extensions, data } = await this.commandBus.execute<
       CreatePostCommand,
       LayerNoticeInterceptor<OutputId | null>
     >(command);
 
-    if (post.hasError) {
-      const errors = handleErrors(post.code, post.extensions[0]);
+    if (hasError) {
+      const errors = handleErrors(code, extensions[0]);
       throw errors.error;
     }
 
-    const result = await this.postsQueryRepo.getPostById(post.data!.id);
-
-    if (!result) throw new NotFoundException();
-
-    return result;
+    return this.postsQueryRepo.getPostById(data!.id);
   }
 
   @Put(':id/posts/:postId')
@@ -162,7 +156,7 @@ export class SABlogsController {
   async updatePost(
     @Param('id') blogId: string,
     @Param('postId') postId: string,
-    @Body() data: CreationPostDtoByBlogId
+    @Body() data: CreationPostDtoByBlogId,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
@@ -186,7 +180,7 @@ export class SABlogsController {
   async updateBlog(
     @Param('id') blogId: string,
     //@CurrentUserInfo() userInfo: UserInfoType,
-    @Body() data: UpdateBlogInputDto
+    @Body() data: UpdateBlogInputDto,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
 
@@ -214,7 +208,7 @@ export class SABlogsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteBlog(
-    @Param('id') blogId: string
+    @Param('id') blogId: string,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);
@@ -235,7 +229,7 @@ export class SABlogsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deletePost(
     @Param('id') blogId: string,
-    @Param('postId') postId: string
+    @Param('postId') postId: string,
     //@CurrentUserInfo() userInfo: UserInfoType,
   ) {
     const blog = await this.blogsQueryRepo.getBlogById(blogId);

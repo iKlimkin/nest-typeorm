@@ -9,9 +9,9 @@ import { LayerInterceptorExtension } from './error-layer-interceptor';
 
 export const handleErrors = (
   code: number,
-  extension: LayerInterceptorExtension
+  extension: LayerInterceptorExtension,
 ) => {
-  const { key, message } = extension
+  const { key, message } = extension;
   const descriptionOrOptions = {
     cause: extension.key,
     description: extension.message,
@@ -21,7 +21,7 @@ export const handleErrors = (
     message,
     statusCode: code,
     key,
-  }
+  };
 
   switch (code) {
     case GetErrors.DatabaseFail:

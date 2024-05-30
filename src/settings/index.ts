@@ -4,6 +4,8 @@ export * from '../features/blogs/api/controllers/sa-blogs.controller';
 export * from '../features/comments/api/controllers/feedbacks.controller';
 export * from '../features/posts/api/controllers/posts.controller';
 export * from '../app.controller';
+export * from '../features/quiz/api/controllers/pair-game-quiz.controller';
+export * from '../features/quiz/api/controllers/quiz-questions.controller';
 
 export * from '../data-testing/test.db.repo';
 export * from '../infra/decorators/validate/is-valid-blogId';
@@ -43,5 +45,4 @@ export * from '../features/quiz/domain/entities/quiz-answer.entity';
 export * from '../features/quiz/domain/entities/quiz-player-progress.entity';
 export * from '../features/quiz/domain/entities/current-game-questions.entity';
 export * from '../features/quiz/domain/entities/quiz-correct-answers.entity';
-
-
+export * from '../features/auth/infrastructure/settings';

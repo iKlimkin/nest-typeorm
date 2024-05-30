@@ -18,11 +18,11 @@ export class ConnectPlayerUseCase
   constructor(
     private readonly quizRepo: QuizRepository,
     private readonly usersRepo: UsersRepository,
-    private readonly dataSource: DataSource
+    private readonly dataSource: DataSource,
   ) {}
 
   async execute(
-    command: ConnectPlayerCommand
+    command: ConnectPlayerCommand,
   ): Promise<LayerNoticeInterceptor<OutputId | null>> {
     const notice = new LayerNoticeInterceptor<OutputId>();
     const quizRepo = this.quizRepo;
@@ -38,27 +38,24 @@ export class ConnectPlayerUseCase
     try {
       return runInTransaction(this.dataSource, async (manager) => {
         const user = await this.usersRepo.getUserById(userId);
-        const pairToConnect = await quizRepo.getPendingPair();
-debugger
+        const pairToConnect = await quizRepo.getPendingPair(manager);
+
         if (pairToConnect.hasError || !user) {
           notice.addError(
             !pairToConnect.data
               ? pairToConnect.errorMessage || 'No pending pairs'
               : 'User not found',
             location,
-            GetErrors.NotFound
+            GetErrors.NotFound,
           );
           return notice;
         }
 
         const secondPlayerProgress = QuizPlayerProgress.create(user);
 
-        /**
-         * refactor connect
-         */
         const savedProgress = await quizRepo.saveProgress(
           secondPlayerProgress,
-          manager
+          manager,
         );
 
         const createdConnectionToQuiz = pairToConnect.data.createConnection({
@@ -68,15 +65,16 @@ debugger
 
         const result = await quizRepo.saveConnection(
           createdConnectionToQuiz,
-          manager
+          manager,
         );
 
         if (!result.data) {
           notice.addError(
             result.errorMessage || `player hasn't connected`,
             location,
-            GetErrors.DatabaseFail
+            GetErrors.DatabaseFail,
           );
+          return notice;
         }
 
         const questions = await quizRepo.getFiveRandomQuestions(manager);
@@ -85,14 +83,14 @@ debugger
           notice.addError(
             questions.errorMessage || 'No questions in db',
             location,
-            GetErrors.DatabaseFail
+            GetErrors.DatabaseFail,
           );
           return notice;
         }
 
         const currentGameQuestions = CurrentGameQuestion.createQuestionsBatch(
           result.data,
-          questions.data
+          questions.data,
         );
 
         await quizRepo.saveCurrentGameQuestions(currentGameQuestions, manager);

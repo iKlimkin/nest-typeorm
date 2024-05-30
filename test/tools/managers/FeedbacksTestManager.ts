@@ -22,7 +22,7 @@ export class FeedbacksTestManager {
   async getCommentsForTheCurrentPost(
     postId: string,
     inputData?: InputCommentsAndPaginationType,
-    expectStatus: number = HttpStatus.CREATED
+    expectStatus: number = HttpStatus.CREATED,
   ): Promise<{ comments: CommentsViewModel } | void> {
     if (inputData) {
       let { pageNumber, pageSize, searchNameTerm, sortBy, sortDirection } =
@@ -59,7 +59,7 @@ export class FeedbacksTestManager {
       post: PostViewModelType;
     },
     content: string,
-    expectedStatus: number = HttpStatus.CREATED
+    expectedStatus: number = HttpStatus.CREATED,
   ): Promise<{ comment: CommentsViewModel }> {
     const response = await request(this.application)
       .post(`${RouterPaths.posts}/${inputData.post.id}/comments`)
@@ -94,7 +94,7 @@ export class FeedbacksTestManager {
       token: string;
       content?: string;
     },
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     await request(this.application)
       .put(`${RouterPaths.comments}/${inputData.commentId}`)
@@ -102,7 +102,7 @@ export class FeedbacksTestManager {
       .send(
         inputData.content || {
           content: 'content include discussion about neurobiology',
-        }
+        },
       )
       .expect(expectedStatus);
   }
@@ -110,7 +110,7 @@ export class FeedbacksTestManager {
   async deleteComment(
     commentId: number,
     token: string,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     await request(this.application)
       .delete(`${RouterPaths.comments}/${commentId}`)

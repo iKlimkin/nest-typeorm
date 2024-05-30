@@ -5,6 +5,6 @@ export class UpdateQuestionCommand {
     public readonly updateData: UpdateQuestionData & {
       published: boolean;
       questionId: string;
-    }
+    },
   ) {}
 }

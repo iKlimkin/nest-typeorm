@@ -3,6 +3,7 @@ import type { QuizQuestion } from './quiz-questions.entity';
 import { BaseEntity } from '../../../../domain/base-entity';
 import type { QuizPlayerProgress } from './quiz-player-progress.entity';
 import { AnswerStatus } from '../../api/models/input.models/statuses.model';
+import { QuizCorrectAnswer } from './quiz-correct-answers.entity';
 
 interface CreateAnswerData {
   answerText: string;
@@ -42,7 +43,7 @@ export class QuizAnswer extends BaseEntity {
     return playerAnswer;
   }
 
-  isCorrectAnswer(answerStatus: AnswerStatus) {
-    return answerStatus === AnswerStatus.Correct;
+  isCorrectAnswer() {
+    return this.answerStatus === AnswerStatus.Correct;
   }
 }

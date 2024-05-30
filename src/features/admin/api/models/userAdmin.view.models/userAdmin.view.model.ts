@@ -17,5 +17,5 @@ export type SAViewType = {
   /**
    * user creation date
    */
-  createdAt: string | Date
+  createdAt: string | Date;
 };

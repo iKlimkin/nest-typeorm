@@ -15,7 +15,7 @@ import { ConfigurationType } from '../../../settings/config/configuration';
 export class AuthService {
   constructor(
     private jwtService: JwtService,
-    private configService: ConfigService<ConfigurationType>
+    private configService: ConfigService<ConfigurationType>,
   ) {}
 
   async getTokens(userId: string): Promise<JwtTokens> {
@@ -30,7 +30,7 @@ export class AuthService {
   }
 
   async getUserInfoByToken(
-    inputToken: VerifyTokensType
+    inputToken: VerifyTokensType,
   ): Promise<TokensMeta | null> {
     try {
       const decodedData = await this.jwtService.verifyAsync(inputToken.token, {
@@ -63,7 +63,7 @@ export class AuthService {
   }
 
   private async createNewTokens(
-    payload: UserSessionDto
+    payload: UserSessionDto,
   ): Promise<[accessToken: string, refreshToken: string]> {
     const jwtConfig = this.configService.get('jwtSettings', {
       infer: true,

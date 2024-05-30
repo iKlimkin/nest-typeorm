@@ -3,7 +3,7 @@ import { BlogsRawDbType } from './blog.models';
 import { SABlogViewModelType } from './blog.view.model-type';
 
 export const getSABlogsViewModel = (
-  blog: BlogsRawDbType
+  blog: BlogsRawDbType,
   // | Blog,
 ): SABlogViewModelType => ({
   id: blog.id,

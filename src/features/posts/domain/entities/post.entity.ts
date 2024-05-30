@@ -12,6 +12,7 @@ import type { Comment } from '../../../comments/domain/entities/comment.entity';
 import { BaseEntity } from '../../../../domain/base-entity';
 import type { PostReactionCounts } from './post-reaction-counts.entity';
 import type { UserAccount } from '../../../auth/infrastructure/settings';
+import { ForeignKeyMetadata } from 'typeorm/metadata/ForeignKeyMetadata';
 
 @Entity()
 export class Post extends BaseEntity {
@@ -27,9 +28,11 @@ export class Post extends BaseEntity {
   @Column()
   content: string;
 
-  @ManyToOne('Blog', 'posts')
-  @JoinColumn({ name: 'blog_id' })
-  blog: Blog;
+  // @ManyToOne('Blog', 'posts')
+  // @JoinColumn({ name: 'blog_id' })
+
+  @Column({ unique: true })
+  blogId: string;
 
   @ManyToOne('UserAccount', 'posts')
   user: UserAccount;

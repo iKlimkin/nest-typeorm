@@ -18,21 +18,22 @@ export class PostsRepository {
     @InjectRepository(Post) private readonly posts: Repository<Post>,
     @InjectRepository(PostReactionCounts)
     private readonly postReactions: Repository<PostReaction>,
-    @InjectDataSource() private dataSource: DataSource
+    @InjectDataSource() private dataSource: DataSource,
   ) {}
 
   async createPost(
-    postDto: Readonly<PostCreationDto>
+    postDto: Readonly<PostCreationDto>,
   ): Promise<OutputId | null> {
     try {
+      const { title, short_description, content, blogId, blog_title } =
+        postDto.createPostDto;
+
       const post = this.posts.create({
-        title: postDto.createPostDto.title,
-        short_description: postDto.createPostDto.short_description,
-        content: postDto.createPostDto.content,
-        blog_title: postDto.createPostDto.blog_title,
-        blog: {
-          id: postDto.createPostDto.blog_id,
-        },
+        blogId,
+        blog_title,
+        title,
+        short_description,
+        content,
       });
 
       const result = await this.posts.save(post);
@@ -48,7 +49,7 @@ export class PostsRepository {
 
   async getUserReaction(
     userId: string,
-    postId: string
+    postId: string,
   ): Promise<LikesStatuses | null> {
     try {
       const result = await this.postReactions
@@ -63,7 +64,7 @@ export class PostsRepository {
       return result.reaction_type;
     } catch (error) {
       console.error(
-        `Database fails operate with find user's reactions on post`
+        `Database fails operate with find user's reactions on post`,
       );
       return null;
     }
@@ -77,7 +78,7 @@ export class PostsRepository {
         {
           id: postId,
         },
-        { title, content, short_description: shortDescription }
+        { title, content, short_description: shortDescription },
       );
 
       return result.affected !== 0;
@@ -142,7 +143,7 @@ export class PostsRepository {
       ]);
     } catch (error) {
       console.error(
-        `Database fails during create post reaction operate ${error}`
+        `Database fails during create post reaction operate ${error}`,
       );
     }
   }

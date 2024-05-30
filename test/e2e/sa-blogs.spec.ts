@@ -53,7 +53,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
 
       const newBlog = await blogTestManager.createBlog(
         inputData,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       blogTestManager.assertBlogsMatch(newBlog, blogValidationErrors);
@@ -87,7 +87,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
       await basicAuthManager.testPutAuthorization(
         'blogs',
         blog.id,
-        HttpStatus.UNAUTHORIZED
+        HttpStatus.UNAUTHORIZED,
       );
       expect.setState({ blog, correctInputData });
     });
@@ -101,7 +101,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
         invalidInputData,
         blog.id,
         null,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       blogTestManager.assertBlogsMatch(result.body, blogValidationErrors);
@@ -117,7 +117,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
       const beforeUpdate = await blogTestManager.getBlogById(blog.id);
       blogTestManager.assertBlogsMatch(
         beforeUpdate.blog.name,
-        'Marcus Aurelius'
+        'Marcus Aurelius',
       );
 
       const createOtherValidInputData = blogTestManager.createInputData({
@@ -126,7 +126,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
 
       const response = await blogTestManager.updateBlog(
         createOtherValidInputData,
-        blog.id
+        blog.id,
       );
 
       const afterUpdate = await blogTestManager.getBlogById(blog.id);
@@ -184,7 +184,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
       await basicAuthManager.testPostAuthorization(
         'sa_blogs',
         blogPost.id,
-        'posts'
+        'posts',
       );
     });
 
@@ -198,7 +198,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
       const result = await blogTestManager.createPost(
         incorrectInputData,
         blogPost,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       const error = createExceptions(['title']);
@@ -217,7 +217,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
       const result = await blogTestManager.createPost(
         incorrectInputData,
         blogPost,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       const error = createExceptions(['shortDescription']);
@@ -236,7 +236,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
       const result = await blogTestManager.createPost(
         incorrectInputData,
         blogPost,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       const error = createExceptions(['content']);
@@ -252,7 +252,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
       const result = await blogTestManager.createPost(
         incorrectInputData,
         blogPost,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       const errors = createExceptions(['title', 'shortDescription', 'content']);
@@ -267,7 +267,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
 
       const newestPost = await blogTestManager.createPost(
         inputCreatePostData,
-        blogPost
+        blogPost,
       );
 
       expect.setState({ post: newestPost });
@@ -279,7 +279,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
       await blogTestManager.getPostsByBlogId(
         blogPost.id,
         null,
-        LikesStatuses.None
+        LikesStatuses.None,
       );
     });
   });
@@ -294,7 +294,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
         post.blogId,
         post.id,
         null,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
 
       const errors = createExceptions(['title', 'shortDescription', 'content']);
@@ -316,7 +316,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
         post.blogId,
         invalidPostId,
         accessToken,
-        HttpStatus.NOT_FOUND
+        HttpStatus.NOT_FOUND,
       );
 
       await blogTestManager.updateSAPost(
@@ -324,7 +324,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
         invalidBlogId,
         post.id,
         accessToken,
-        HttpStatus.NOT_FOUND
+        HttpStatus.NOT_FOUND,
       );
 
       expect.setState({ updatePostData });
@@ -337,7 +337,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
         updatePostData,
         post.blogId,
         post.id,
-        accessToken
+        accessToken,
       );
     });
   });
@@ -353,7 +353,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
       await basicAuthManager.testDeleteSAAuthorization(
         'sa_blogs',
         post.blogId,
-        post.id
+        post.id,
       );
     });
 
@@ -368,7 +368,7 @@ aDescribe(skipSettings.for('sa_blogs'))('SABlogsController (e2e)', () => {
         invalidBlogId,
         invalidPostId,
         null,
-        HttpStatus.NOT_FOUND
+        HttpStatus.NOT_FOUND,
       );
     });
 

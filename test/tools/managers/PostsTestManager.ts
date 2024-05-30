@@ -52,7 +52,7 @@ export class PostsTestManager {
 
   async createPost(
     inputData: CreatePostModel,
-    expectedStatus: number = HttpStatus.CREATED
+    expectedStatus: number = HttpStatus.CREATED,
   ): Promise<PostViewModelType> {
     const res = await request(this.application)
       .post(RouterPaths.posts)
@@ -66,7 +66,7 @@ export class PostsTestManager {
   async createComment(
     inputData: CreationCommentData,
     content: string,
-    expectedStatus: number = HttpStatus.CREATED
+    expectedStatus: number = HttpStatus.CREATED,
   ): Promise<{ comment: CommentsViewModel }> {
     const response = await request(this.application)
       .post(`${RouterPaths.posts}/${inputData.post.id}/comments`)
@@ -95,12 +95,10 @@ export class PostsTestManager {
     return { comment };
   }
 
-  
-
   async updatePost(
     inputData: CreatePostModel,
     postId: string,
-    expectStatus: number = HttpStatus.NO_CONTENT
+    expectStatus: number = HttpStatus.NO_CONTENT,
   ) {
     return await request(this.application)
       .put(`${RouterPaths.posts}/${postId}`)
@@ -117,7 +115,7 @@ export class PostsTestManager {
     postId: string,
     token?: string | null,
     status: LikeStatusType = LikesStatuses.None,
-    expectStatus: number = HttpStatus.OK
+    expectStatus: number = HttpStatus.OK,
   ) {
     const response = await request(this.application)
       .get(`${RouterPaths.posts}/${postId}`)
@@ -135,7 +133,7 @@ export class PostsTestManager {
     postId: string | PostViewModelType[],
     token: string,
     status: LikeStatusType | string = LikesStatuses.None,
-    expectStatus: number = HttpStatus.NO_CONTENT
+    expectStatus: number = HttpStatus.NO_CONTENT,
   ) {
     if (Array.isArray(postId)) {
       for (const post of postId) {
@@ -160,7 +158,7 @@ export class PostsTestManager {
 
   async checkLength(totalCount: number) {
     const { body } = await request(this.application).get(
-      `${RouterPaths.posts}`
+      `${RouterPaths.posts}`,
     );
 
     expect(body.totalCount).toBe(totalCount);
@@ -168,7 +166,7 @@ export class PostsTestManager {
 
   async deletePost(postId: number) {
     const beforeDelete = await request(this.application).get(
-      `${RouterPaths.posts}/${postId}`
+      `${RouterPaths.posts}/${postId}`,
     );
 
     expect(beforeDelete.body).toBeDefined();

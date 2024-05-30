@@ -27,16 +27,9 @@ export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
       return notice;
     }
 
-    const { title, shortDescription, content, blogId, blogTitle } =
-      command.createData;
+    const { createPostData } = command;
 
-    const postDto = new PostCreationDto({
-      title,
-      short_description: shortDescription,
-      content,
-      blog_id: blogId,
-      blog_title: blogTitle,
-    });
+    const postDto = new PostCreationDto(createPostData);
 
     const result = await this.postsRepo.createPost(postDto);
 

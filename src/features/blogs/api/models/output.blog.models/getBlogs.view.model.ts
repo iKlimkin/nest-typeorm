@@ -1,9 +1,7 @@
 import { BlogViewModelType } from './blog.view.model-type';
 import { Blog } from '../../../domain/entities/blog.entity';
 
-export const getBlogsViewModel = (
-  blog: Blog,
-): BlogViewModelType => ({
+export const getBlogsViewModel = (blog: Blog): BlogViewModelType => ({
   id: blog.id,
   name: blog.title,
   description: blog.description,

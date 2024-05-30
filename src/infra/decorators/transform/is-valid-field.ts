@@ -22,7 +22,7 @@ export const iSValidField = ({ min, max }, regexOption?: RegExp) => {
 
   if (regexOption) {
     decorators.unshift(
-      Matches(regexOption, { message: "field doesn't match" })
+      Matches(regexOption, { message: "field doesn't match" }),
     );
   }
 
@@ -54,7 +54,7 @@ export const ValidSortDirection = () =>
 export const ValidateAndConvertStatuses = () =>
   Transform(({ value }: TransformFnParams) => {
     const isValidStatus = publishedStatuses[value];
-    
+
     return !isValidStatus
       ? convertPublishedStatus.all
       : convertPublishedStatus[value];

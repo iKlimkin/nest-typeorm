@@ -21,12 +21,12 @@ export class FeedbacksQueryRepo {
     @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(Comment) private readonly comments: Repository<Comment>,
     @InjectRepository(CommentReaction)
-    private readonly commentReactions: Repository<CommentReaction>
+    private readonly commentReactions: Repository<CommentReaction>,
   ) {}
 
   async getComments(
     queryOptions: CommentsQueryFilter,
-    userId?: string
+    userId?: string,
   ): Promise<PaginationViewModel<CommentsViewModel>> {
     try {
       const { searchContentTerm } = queryOptions;
@@ -51,7 +51,7 @@ export class FeedbacksQueryRepo {
           sortBy === 'created_at'
             ? 'comments.created_at'
             : `comments.${sortBy}`,
-          sortDirection
+          sortDirection,
         )
         .skip(skip)
         .take(pageSize);
@@ -75,11 +75,11 @@ export class FeedbacksQueryRepo {
 
       const commentsViewModel = new PaginationViewModel<CommentsViewModel>(
         comments.map((comment: Comment) =>
-          getCommentsViewModel(comment, myReactions)
+          getCommentsViewModel(comment, myReactions),
         ),
         pageNumber,
         pageSize,
-        count
+        count,
       );
 
       return commentsViewModel;
@@ -90,7 +90,7 @@ export class FeedbacksQueryRepo {
   async getCommentsByPostId(
     postId: string,
     queryOptions: CommentsQueryFilter,
-    userId?: string
+    userId?: string,
   ): Promise<PaginationViewModel<CommentsViewModel> | null> {
     try {
       const { searchContentTerm } = queryOptions;
@@ -112,7 +112,7 @@ export class FeedbacksQueryRepo {
           sortBy !== 'created_at'
             ? `comments.${sortBy}`
             : `comments.created_at`,
-          sortDirection
+          sortDirection,
         )
         .skip(skip)
         .take(pageSize);
@@ -144,17 +144,17 @@ export class FeedbacksQueryRepo {
 
       const commentsViewModel = new PaginationViewModel<CommentsViewModel>(
         comments.map((comment: Comment) =>
-          getCommentsViewModel(comment, myReactions)
+          getCommentsViewModel(comment, myReactions),
         ),
         pageNumber,
         pageSize,
-        commentsCount
+        commentsCount,
       );
 
       return commentsViewModel;
     } catch (error) {
       console.error(
-        `Database fails during find comments by postId operation ${error}`
+        `Database fails during find comments by postId operation ${error}`,
       );
       return null;
     }
@@ -162,7 +162,7 @@ export class FeedbacksQueryRepo {
 
   async getCommentById(
     commentId: string,
-    userId?: string
+    userId?: string,
   ): Promise<CommentsViewModel | null> {
     try {
       let myReaction: LikesStatuses = LikesStatuses.None;
@@ -197,7 +197,7 @@ export class FeedbacksQueryRepo {
     } catch (error) {
       console.error(
         'Database fails during find comment by id operation',
-        error
+        error,
       );
       return null;
     }
@@ -205,7 +205,7 @@ export class FeedbacksQueryRepo {
 
   async getCommentsByUserId(
     userId: string,
-    queryOptions: CommentsQueryFilter
+    queryOptions: CommentsQueryFilter,
   ): Promise<PaginationViewModel<CommentsViewModel>> {
     try {
       const { pageNumber, pageSize, sortBy, skip, sortDirection } =
@@ -217,7 +217,7 @@ export class FeedbacksQueryRepo {
             FROM comment_reactions cr
             WHERE user_id = $1
         `,
-        [userId]
+        [userId],
       );
 
       const userReactions: CommentReactionsRawType[] = reactionsResult;
@@ -229,7 +229,7 @@ export class FeedbacksQueryRepo {
         INNER JOIN comment_reaction_counts USING(comment_id)
         WHERE user_id = $1
         `,
-        [userId]
+        [userId],
       );
 
       const [commentsCounter] = await this.dataSource.query(
@@ -238,7 +238,7 @@ export class FeedbacksQueryRepo {
           FROM comments
           WHERE user_id = $1
         `,
-        [userId]
+        [userId],
       );
 
       const sortQuery = `
@@ -257,18 +257,18 @@ export class FeedbacksQueryRepo {
 
       const commentsViewModel = new PaginationViewModel<CommentsViewModel>(
         result.map((comment: CommentSqlDbType) =>
-          getCommentsRawViewModel(comment, reactionCounter, userReactions)
+          getCommentsRawViewModel(comment, reactionCounter, userReactions),
         ),
         pageNumber,
         pageSize,
-        commentsCounter.count
+        commentsCounter.count,
       );
 
       return commentsViewModel;
     } catch (error) {
       throw new InternalServerErrorException(
         'Database fails during find comment by userId operation',
-        error
+        error,
       );
     }
   }

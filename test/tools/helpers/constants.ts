@@ -26,4 +26,4 @@ export const feedbacksConstants = {
     'content include discussion about neuroscience',
     'content include discussion about neurobiology',
   ],
-}
+};

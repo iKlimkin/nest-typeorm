@@ -19,7 +19,7 @@ type ErrorMessagesType = keyof typeof errors;
 
 export const createExceptions = (
   fields: ErrorMessagesType[],
-  message?: string
+  message?: string,
 ) => {
   const errorsMessages: ErrorsMessages[] = [];
   for (const field of fields) {

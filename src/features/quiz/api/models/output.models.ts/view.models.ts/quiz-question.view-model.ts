@@ -3,7 +3,7 @@ import { QuizQuestion } from '../../../../domain/entities/quiz-questions.entity'
 import { QuizQuestionViewType } from './quiz-question.view-type';
 
 export const getQuestionViewModel = (
-  question: QuizQuestion
+  question: QuizQuestion,
 ): QuizQuestionViewType => ({
   id: question.id,
   body: question.body,

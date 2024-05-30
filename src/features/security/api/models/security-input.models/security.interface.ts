@@ -3,11 +3,11 @@ import { SecurityViewDeviceModel } from '../security.view.models/security.view.t
 
 export interface SecurityInterface {
   getUserActiveSessions(
-    userInfo: UserSessionDto
+    userInfo: UserSessionDto,
   ): Promise<SecurityViewDeviceModel[]>;
   terminateOtherUserSessions(userInfo: UserSessionDto): Promise<void>;
   terminateSpecificSession(
     deviceId: string,
-    userInfo: UserSessionDto
+    userInfo: UserSessionDto,
   ): Promise<void>;
 }

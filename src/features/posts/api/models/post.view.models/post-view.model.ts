@@ -37,7 +37,7 @@ const filterNewestLikes = (reactions: PostReaction[], postId: string) => {
     .slice(0, 3);
 };
 
-export const getPostTORViewModel = (
+export const getPostViewModel = (
   post: Post,
   latestReactions: PostReaction[],
   myReaction: LikesStatuses | PostReaction[],
@@ -47,7 +47,8 @@ export const getPostTORViewModel = (
     title: post.title,
     shortDescription: post.short_description,
     content: post.content,
-    blogId: post.blog.id,
+    // blogId: post.blog.id,
+    blogId: post.blogId,
     blogName: post.blog_title,
     createdAt: post.created_at.toISOString(),
     extendedLikesInfo: {

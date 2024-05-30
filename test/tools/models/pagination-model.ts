@@ -7,7 +7,7 @@ export class PaginationModel<T> {
   getData(
     data: PaginationModelData<T>,
     query?: any,
-    hideFieldOptions?: any
+    hideFieldOptions?: any,
   ): PaginationModelData<T> {
     const { pagesCount, page, pageSize, totalCount, items } = data;
 

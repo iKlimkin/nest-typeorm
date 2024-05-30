@@ -11,17 +11,17 @@ import { CommentsViewModel } from './comments.view-model.type';
 
 const calculateLikesDislikesCount = (
   reactionCounters: CommentReactionRawCounter[],
-  commentId: string
+  commentId: string,
 ): ReactionsCounter => {
   const likesCount = +reactionCounters
     .map((counter) =>
-      counter.comment_id === commentId ? counter.likes_count : 0
+      counter.comment_id === commentId ? counter.likes_count : 0,
     )
     .filter(Number);
 
   const dislikesCount = +reactionCounters
     .map((counter) =>
-      counter.comment_id === commentId ? counter.dislikes_count : 0
+      counter.comment_id === commentId ? counter.dislikes_count : 0,
     )
     .filter(Number);
 
@@ -33,7 +33,7 @@ const calculateLikesDislikesCount = (
 
 const convertStatus = (
   myReactions: CommentReactionsRawType[] | LikesStatuses,
-  commentId: string
+  commentId: string,
 ): LikesStatuses => {
   if (Array.isArray(myReactions)) {
     if (!myReactions.length) return LikesStatuses.None;
@@ -50,11 +50,11 @@ const convertStatus = (
 export const getCommentsRawViewModel = (
   comment: CommentSqlDbType,
   reactionCounter: CommentReactionRawCounter[],
-  myReactions: CommentReactionsRawType[] | LikesStatuses = []
+  myReactions: CommentReactionsRawType[] | LikesStatuses = [],
 ): CommentsViewModel => {
   const { likesCount, dislikesCount } = calculateLikesDislikesCount(
     reactionCounter,
-    comment.id
+    comment.id,
   );
 
   return {

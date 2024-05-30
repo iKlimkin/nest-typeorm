@@ -13,6 +13,8 @@ import { QuizCorrectAnswer } from '../domain/entities/quiz-correct-answers.entit
 import { QuizGame } from '../domain/entities/quiz-game.entity';
 import { QuizPlayerProgress } from '../domain/entities/quiz-player-progress.entity';
 import { QuizQuestion } from '../domain/entities/quiz-questions.entity';
+import { QuizPairViewType } from '../api/models/output.models.ts/view.models.ts/quiz-game.view-type';
+import { getQuizPairViewModel } from '../api/models/output.models.ts/view.models.ts/quiz-pair.view-model';
 
 @Injectable()
 export class QuizRepository {
@@ -28,12 +30,12 @@ export class QuizRepository {
     @InjectRepository(QuizCorrectAnswer)
     private readonly quizCorrectAnswers: Repository<QuizCorrectAnswer>,
     @InjectRepository(CurrentGameQuestion)
-    private readonly currentGameQuestions: Repository<CurrentGameQuestion>
+    private readonly currentGameQuestions: Repository<CurrentGameQuestion>,
   ) {}
 
   async saveQuestionAndAnswers(
     quizQuestion: QuizQuestion,
-    quizAnswers: QuizCorrectAnswer[]
+    quizAnswers: QuizCorrectAnswer[],
   ): Promise<QuestionId | null> {
     try {
       const savedQuestion = await this.quizQuestions.save(quizQuestion);
@@ -42,7 +44,7 @@ export class QuizRepository {
         quizAnswers.map(async (answer) => {
           answer.question = savedQuestion;
           return this.quizCorrectAnswers.save(answer);
-        })
+        }),
       );
 
       return {
@@ -56,7 +58,7 @@ export class QuizRepository {
 
   async saveGame(
     quizGameDto: QuizGame,
-    manager: EntityManager
+    manager: EntityManager,
   ): Promise<LayerNoticeInterceptor<OutputId> | null> {
     try {
       const savedQuizGame = await manager.save(QuizGame, quizGameDto);
@@ -65,27 +67,24 @@ export class QuizRepository {
         id: savedQuizGame.id,
       });
     } catch (error) {
-      return new LayerNoticeInterceptor(
-        null,
-        `saveGame finished with errors: ${error}`
-      );
+      throw new Error(`saveGame finished with errors: ${error}`);
     }
   }
 
   async saveProgress(
     currentPlayerProgress: QuizPlayerProgress,
-    manager: EntityManager
+    manager: EntityManager,
   ): Promise<QuizPlayerProgress> {
     try {
       return manager.save(QuizPlayerProgress, currentPlayerProgress);
     } catch (error) {
-      console.log(`saveProgress finished with errors: ${error}`);
+      throw new Error(`saveProgress finished with errors: ${error}`);
     }
   }
 
   async saveAnswer(
     answerDto: QuizAnswer,
-    manager: EntityManager
+    manager: EntityManager,
   ): Promise<QuizAnswer> {
     try {
       return manager.save(answerDto);
@@ -97,19 +96,19 @@ export class QuizRepository {
 
   async finishGame(gameId: string, manager: EntityManager): Promise<void> {
     try {
-      await manager.update(QuizGame, gameId, {
+      const res = await manager.update(QuizGame, gameId, {
         finishGameDate: new Date(),
         status: GameStatus.Finished,
       });
     } catch (error) {
       console.log(`finishGame operation was interrupted with errors: ${error}`);
-      throw new InternalServerErrorException()
+      throw new InternalServerErrorException();
     }
   }
 
   async saveConnection(
     quizConnection: QuizGame,
-    manager: EntityManager
+    manager: EntityManager,
   ): Promise<LayerNoticeInterceptor<QuizGame | null>> {
     try {
       const connectedPair = await manager.save(QuizGame, quizConnection);
@@ -118,13 +117,13 @@ export class QuizRepository {
     } catch (error) {
       return new LayerNoticeInterceptor(
         null,
-        `${error} occurred during save connection`
+        `${error} occurred during save connection`,
       );
     }
   }
 
   async updateQuestionAndAnswers(
-    updateDto: UpdateQuestionData & { questionId: string }
+    updateDto: UpdateQuestionData & { questionId: string },
   ): Promise<boolean> {
     try {
       const { body, correctAnswers, questionId } = updateDto;
@@ -154,7 +153,7 @@ export class QuizRepository {
         {
           id: questionId,
         },
-        { body, updated_at: new Date() }
+        { body, updated_at: new Date() },
       );
 
       return result.affected !== 0;
@@ -171,7 +170,7 @@ export class QuizRepository {
       return deleteQuestion.affected !== 0;
     } catch (error) {
       console.error(
-        `Database fails during delete quiz-question operation ${error}`
+        `Database fails during delete quiz-question operation ${error}`,
       );
       return false;
     }
@@ -187,36 +186,11 @@ export class QuizRepository {
       return result.affected !== 0;
     } catch (error) {
       console.error(
-        `Database fails during publish question operation ${error}`
+        `Database fails during publish question operation ${error}`,
       );
       return false;
     }
   }
-
-  // async getInformationOnPlayerProgress(
-  //   firstPlayerId: string,
-  //   secondPlayerId: string
-  // ): Promise<{
-  //   firstPlayerProgress: QuizPlayerProgress;
-  //   progressOfSecondPlayer: QuizPlayerProgress;
-  // } | null> {
-  //   try {
-  //     const firstPlayerProgress = await this.playerProgress.findOneBy({
-  //       id: firstPlayerId,
-  //     });
-
-  //     const progressOfSecondPlayer = await this.playerProgress.findOneBy({
-  //       id: secondPlayerId,
-  //     });
-
-  //     return { firstPlayerProgress, progressOfSecondPlayer };
-  //   } catch (errors) {
-  //     console.error(
-  //       `Database fails during getPlayerProgressesInfo operation: ${errors}`
-  //     );
-  //     return null;
-  //   }
-  // }
 
   async getPlayerProgressById(playerId: string): Promise<QuizPlayerProgress> {
     try {
@@ -229,9 +203,11 @@ export class QuizRepository {
     }
   }
 
-  async getPendingPair(): Promise<LayerNoticeInterceptor<QuizGame | null>> {
+  async getPendingPair(
+    manager: EntityManager,
+  ): Promise<LayerNoticeInterceptor<QuizGame | null>> {
     try {
-      const pendingPair = await this.quizPairs.findOne({
+      const pendingPair = await manager.findOne(QuizGame, {
         where: {
           status: GameStatus.PendingSecondPlayer,
           version: 1,
@@ -242,14 +218,14 @@ export class QuizRepository {
     } catch (error) {
       return new LayerNoticeInterceptor(
         null,
-        `${error} occurred during find pending pairs`
+        `${error} occurred during find pending pairs`,
       );
     }
   }
 
   async getCurrentGameQuestion(
     gameId: string,
-    order: number
+    order: number,
   ): Promise<CurrentGameQuestion> {
     try {
       const result = await this.currentGameQuestions.findOne({
@@ -266,7 +242,7 @@ export class QuizRepository {
   }
 
   async getFiveRandomQuestions(
-    manager: EntityManager
+    manager: EntityManager,
   ): Promise<LayerNoticeInterceptor<QuizQuestion[] | null>> {
     try {
       const questions = await manager
@@ -283,14 +259,14 @@ export class QuizRepository {
     } catch (error) {
       return new LayerNoticeInterceptor(
         null,
-        `${error} occurred while searching the database for five random questions`
+        `${error} occurred while searching the database for five random questions`,
       );
     }
   }
 
   async saveCurrentGameQuestions(
     gameQuestions: CurrentGameQuestion[],
-    manager: EntityManager
+    manager: EntityManager,
   ): Promise<void> {
     // | LayerNoticeInterceptor<null>
     try {
@@ -298,14 +274,14 @@ export class QuizRepository {
     } catch (error) {
       // return new LayerNoticeInterceptor(null, `${error} occurred while save questions`)
       throw new InternalServerErrorException(
-        `${error} occurred while save questions`
+        `${error} occurred while save questions`,
       );
     }
   }
 
   async getAnswersForCurrentQuestion(
     questionId: string,
-    manager: EntityManager
+    manager: EntityManager,
   ): Promise<QuizCorrectAnswer[] | null> {
     try {
       const answers = await manager.find(QuizCorrectAnswer, {
@@ -322,53 +298,73 @@ export class QuizRepository {
       return null;
     }
   }
+  async getPairInformation(gameId: string): Promise<QuizPairViewType | null> {
+    try {
+      const result = await this.quizPairs
+        .createQueryBuilder('game')
+        .select([
+          'game.id',
+          'game.status',
+          'game.startGameDate',
+          'game.finishGameDate',
+          'game.created_at',
+          'game.firstPlayerId',
+          'game.secondPlayerId',
+        ])
+        .leftJoin('game.firstPlayerProgress', 'firstPlayerProgress')
+        .addSelect(['firstPlayerProgress.login', 'firstPlayerProgress.score'])
+        .leftJoin('game.secondPlayerProgress', 'secondPlayerProgress')
+        .addSelect(['secondPlayerProgress.login', 'secondPlayerProgress.score'])
+        .leftJoin('game.questions', 'questions')
+        .leftJoin('questions.question', 'allQuestions')
+        .addSelect([
+          'questions.questionId',
+          'allQuestions.id',
+          'allQuestions.body',
+        ])
+        .leftJoinAndSelect('firstPlayerProgress.answers', 'fpAnswers')
+        .leftJoinAndSelect('secondPlayerProgress.answers', 'spAnswers')
+        .orderBy('questions.order', 'ASC')
+        .addOrderBy('fpAnswers.created_at', 'ASC')
+        .addOrderBy('spAnswers.created_at', 'ASC')
+        .where('game.id = :gameId', { gameId })
+        .getOne();
 
+      return getQuizPairViewModel(result);
+    } catch (error) {
+      console.log(`getPairInformation finished with errors: ${error}`);
+      return null;
+    }
+  }
   async getCurrentGameByUserId(
     userId: string,
-    manager: EntityManager
+    manager: EntityManager,
   ): Promise<QuizGame | null> {
     try {
-      // const result = await manager
-      //   .createQueryBuilder(QuizGame, 'game')
-      //   .select()
-      //   .leftJoinAndSelect('game.firstPlayerProgress', 'firstPlayerProgress')
-      //   .leftJoinAndSelect('game.secondPlayerProgress', 'secondPlayerProgress')
-      //   .leftJoinAndSelect('game.questions', 'questions')
-      //   .where(
-      //     '(game.firstPlayerId = :userId OR game.secondPlayerId = :userId)',
-      //     {
-      //       userId,
-      //     }
-      //   )
-      //   .getOne();
-
-      //   await manager.query('COMMIT');
-
-      const result = await this.quizPairs
+      return this.quizPairs
         .createQueryBuilder('game')
         .select()
         .leftJoinAndSelect('game.firstPlayerProgress', 'firstPlayerProgress')
         .leftJoinAndSelect('game.secondPlayerProgress', 'secondPlayerProgress')
         .leftJoinAndSelect('game.questions', 'questions')
         .where(
-          '(game.firstPlayerId = :userId OR game.secondPlayerId = :userId)',
+          '(game.firstPlayerId = :userId OR game.secondPlayerId = :userId) AND game.status = :status',
           {
             userId,
-          }
+            status: GameStatus.Active,
+          },
         )
         .getOne();
-
-      return result;
     } catch (error) {
       throw new InternalServerErrorException(
-        `getCurrentGameByUserId: ${error}`
+        `getCurrentGameByUserId: ${error}`,
       );
     }
   }
 
   async findAnswerByText(
     answerText: string,
-    playerId: string
+    playerId: string,
   ): Promise<QuizAnswer> {
     try {
       return this.quizAnswers.findOne({
@@ -378,7 +374,7 @@ export class QuizRepository {
         },
       });
     } catch (error) {
-      console.error(`findAnswerByText: ${error}`);
+      throw new Error(`findAnswerByText: ${error}`);
     }
   }
 }

@@ -8,6 +8,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
@@ -23,6 +24,7 @@ import { CreatePairCommand } from '../../application/commands/create-pair.comman
 import {
   LayerNoticeInterceptor,
   OutputId,
+  PaginationViewModel,
   handleErrors,
 } from '../../../blogs/api/controllers';
 import {
@@ -33,22 +35,57 @@ import { InputAnswerModel } from '../models/input.models/answer.model';
 import { SetPlayerAnswerCommand } from '../../application/commands/set-player-answer.command';
 import { QuizService } from '../../application/quiz.service';
 import { ValidateIdPipe } from '../../../../infra/pipes/id-validate.pipe';
+import { GameStatus } from '../models/input.models/statuses.model';
+import { QuizGamesQueryFilter } from '../models/input.models/quiz-games-query.filter';
 
 @UseGuards(AccessTokenGuard)
-@Controller(RouterPaths.quizPairs)
+@Controller(RouterPaths.quiz)
 export class PairGameQuizController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly quizQueryRepo: QuizQueryRepo,
-    private readonly quizService: QuizService
+    private readonly quizService: QuizService,
   ) {}
 
-  @Get('my-current')
+  @Get('users/top')
+  async getTopUsers(
+    @CurrentUserInfo() userInfo: UserSessionDto,
+    @Query() query: QuizGamesQueryFilter,
+  ): Promise<PaginationViewModel<QuizPairViewType>> {
+    const result = this.quizQueryRepo.getUserGames(userInfo.userId, query);
+
+    if (!result) {
+      throw new NotFoundException('User games not found');
+    }
+
+    return result;
+  }
+  @Get('pairs/my')
+  async getAllUserGames(
+    @CurrentUserInfo() userInfo: UserSessionDto,
+    @Query() query: QuizGamesQueryFilter,
+  ): Promise<PaginationViewModel<QuizPairViewType>> {
+    const result = this.quizQueryRepo.getUserGames(userInfo.userId, query);
+
+    if (!result) {
+      throw new NotFoundException('User games not found');
+    }
+
+    return result;
+  }
+  @Get('users/my-statistic')
+  async getUserStatistic(
+    @CurrentUserInfo() userInfo: UserSessionDto,
+  ): Promise<any> {
+    return this.quizQueryRepo.getUserGameAnalytic(userInfo.userId);
+  }
+
+  @Get('pairs/my-current')
   async getCurrentUnfinishedGame(
-    @CurrentUserInfo() userInfo: UserSessionDto
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ): Promise<QuizPairViewType> {
     const result = await this.quizQueryRepo.getCurrentUnfinishedGame(
-      userInfo.userId
+      userInfo.userId,
     );
 
     if (!result) {
@@ -65,10 +102,10 @@ export class PairGameQuizController {
     return result;
   }
 
-  @Get(':id')
+  @Get('pairs/:id')
   async getGame(
     @CurrentUserInfo() userInfo: UserSessionDto,
-    @Param('id', ValidateIdPipe) gameId: string
+    @Param('id', ValidateIdPipe) gameId: string,
   ): Promise<QuizPairViewType> {
     const game = await this.quizQueryRepo.getPairInformation(gameId);
 
@@ -86,14 +123,14 @@ export class PairGameQuizController {
     return game;
   }
 
-  @Post('connection')
+  @Post('pairs/connection')
   @HttpCode(HttpStatus.OK)
   async connectOrCreatePair(
-    @CurrentUserInfo() userInfo: UserSessionDto
+    @CurrentUserInfo() userInfo: UserSessionDto,
   ): Promise<QuizPairViewType> {
     const userInGame = await this.quizQueryRepo.isUserInGame(userInfo.userId);
 
-    if (userInGame) throw new ForbiddenException('User already in game');
+    if (userInGame) throw new ForbiddenException('User already in active game');
 
     const pendingPair = await this.quizQueryRepo.getPendingPair();
 
@@ -106,19 +143,8 @@ export class PairGameQuizController {
       >(command);
 
       if (result.hasError) {
-        // const command = new CreatePairCommand(userInfo);
-        // const result = await this.commandBus.execute<
-        //   CreatePairCommand,
-        //   LayerNoticeInterceptor<OutputId | null>
-        // >(command);
-
-        // if (result.hasError) {
-          
         const { error } = handleErrors(result.code, result.extensions[0]);
         throw error;
-        // }
-
-        // return this.quizQueryRepo.getPairInformation(result.data.id);
       }
 
       return this.quizQueryRepo.getPairInformation(result.data.id);
@@ -138,15 +164,23 @@ export class PairGameQuizController {
     return this.quizQueryRepo.getPairInformation(result.data.id);
   }
 
-  @Post('my-current/answers')
+  @Post('pairs/my-current/answers')
   @HttpCode(HttpStatus.OK)
   async sendAnswer(
     @CurrentUserInfo() userInfo: UserSessionDto,
-    @Body() body: InputAnswerModel
+    @Body() body: InputAnswerModel,
   ): Promise<AnswerResultViewType | any> {
-    const userInGame = await this.quizQueryRepo.isUserInGame(userInfo.userId);
+    const userInGameStatus = await this.quizQueryRepo.isUserInGame(
+      userInfo.userId,
+    );
 
-    if (!userInGame) throw new ForbiddenException('non-player user');
+    if (
+      !userInGameStatus ||
+      userInGameStatus === GameStatus.PendingSecondPlayer
+    )
+      throw new ForbiddenException(
+        'non-player user or the pair is not assembled',
+      );
 
     const command = new SetPlayerAnswerCommand({
       answer: body.answer,

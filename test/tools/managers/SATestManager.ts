@@ -28,7 +28,7 @@ export class SATestManager {
 
   async createSA(
     inputData: AuthUserType,
-    expectedStatus: number = HttpStatus.CREATED
+    expectedStatus: number = HttpStatus.CREATED,
   ): Promise<{ user: SAViewType }> {
     const response = await request(this.application)
       .post(RouterPaths.users)
@@ -81,7 +81,7 @@ export class SATestManager {
 
   checkUserData(
     responseModel: any | { errorsMessages: ErrorsMessages[] },
-    expectedResult: SAViewType | { errorsMessages: ErrorsMessages[] }
+    expectedResult: SAViewType | { errorsMessages: ErrorsMessages[] },
   ) {
     expect(responseModel).toEqual(expectedResult);
   }

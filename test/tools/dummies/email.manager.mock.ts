@@ -1,4 +1,3 @@
-
 import { EmailManager } from '../../../src/features/auth/infrastructure/settings';
 
 export class EmailManagerMock {
@@ -13,7 +12,7 @@ export class EmailManagerMock {
 export class EmailMockService extends EmailManager {
   sendEmailConfirmationMessage(
     email: string,
-    confirmationCode: string
+    confirmationCode: string,
   ): Promise<any> {
     return Promise.resolve({ confirmationCode, email });
   }

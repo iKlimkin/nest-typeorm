@@ -19,11 +19,11 @@ export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
   constructor(
     private usersRepo: UsersRepository,
     private bcryptAdapter: BcryptAdapter,
-    private eventBus: EventBus
+    private eventBus: EventBus,
   ) {}
 
   async execute(
-    command: CreateUserCommand
+    command: CreateUserCommand,
   ): Promise<LayerNoticeInterceptor<UserIdType> | null> {
     const { email, login, password } = command.createDto;
 
@@ -35,7 +35,7 @@ export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
       notice.addError(
         'invalid model',
         'CreateUserUseCase',
-        GetErrors.IncorrectModel
+        GetErrors.IncorrectModel,
       );
       return notice;
     }
@@ -58,7 +58,7 @@ export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
       notice.addError(
         'Could not create user',
         'db',
-        CreateUserErrors.DatabaseFail
+        CreateUserErrors.DatabaseFail,
       );
     } else {
       notice.addData({ userId: result.userId });

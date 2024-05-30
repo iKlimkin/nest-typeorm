@@ -32,7 +32,7 @@ export class UsersTestManager {
 
   async createSA(
     inputData: AuthUserType,
-    expectedStatus: number = HttpStatus.CREATED
+    expectedStatus: number = HttpStatus.CREATED,
   ): Promise<AuthUserType> {
     const result = await request(this.application)
       .post(RouterPaths.users)
@@ -44,7 +44,7 @@ export class UsersTestManager {
   }
 
   async createUsers(
-    numberOfUsers: number
+    numberOfUsers: number,
   ): Promise<{ users: AuthUserType[]; accessTokens: string[] }> {
     const users: AuthUserType[] = [];
     const accessTokens: string[] = [];
@@ -68,7 +68,7 @@ export class UsersTestManager {
 
   async registration(
     inputData: AuthUserType,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     const response = await request(this.application)
       .post(`${RouterPaths.auth}/registration`)
@@ -80,7 +80,7 @@ export class UsersTestManager {
 
   async registrationEmailResending(
     email: string,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     const response = await request(this.application)
       .post(`${RouterPaths.auth}/registration-email-resending`)
@@ -92,7 +92,7 @@ export class UsersTestManager {
 
   async registrationConfirmation(
     code: string | null,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     await request(this.application)
       .post(`${RouterPaths.auth}/registration-confirmation`)
@@ -113,7 +113,7 @@ export class UsersTestManager {
   async authLogin(
     user: AuthUserType,
     loginOrEmailOptions: boolean | null = false,
-    expectedStatus: number = HttpStatus.OK
+    expectedStatus: number = HttpStatus.OK,
   ): Promise<JwtTokens | any> {
     const res = await request(this.application)
       .post(`${RouterPaths.auth}/login`)
@@ -134,7 +134,7 @@ export class UsersTestManager {
 
   async refreshToken(
     refreshToken: string,
-    expectedStatus: number = HttpStatus.OK
+    expectedStatus: number = HttpStatus.OK,
   ): Promise<JwtTokens | any> {
     const response = await request(this.application)
       .post(`${RouterPaths.auth}/refresh-token`)
@@ -161,7 +161,7 @@ export class UsersTestManager {
   async getProfile(
     user: AuthUserType | null,
     token: string,
-    expectedStatus: number = HttpStatus.OK
+    expectedStatus: number = HttpStatus.OK,
   ) {
     const res = await request(this.application)
       .get(`${RouterPaths.auth}/me`)
@@ -180,7 +180,7 @@ export class UsersTestManager {
 
   async logout(
     refreshToken: string,
-    expectedStatus: number = HttpStatus.NO_CONTENT
+    expectedStatus: number = HttpStatus.NO_CONTENT,
   ) {
     await request(this.application)
       .post(`${RouterPaths.auth}/logout`)

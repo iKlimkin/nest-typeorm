@@ -25,7 +25,7 @@ interface CustomOutputFilter {
 }
 
 export const getPagination = <T extends CustomFilter>(
-  inputData: T
+  inputData: T,
 ): PaginationType & CustomOutputFilter => {
   let sortDirection: SortDirections;
   let sortBy: string;

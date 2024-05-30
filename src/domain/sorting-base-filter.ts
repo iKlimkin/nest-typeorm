@@ -14,6 +14,7 @@ export enum convertSortBy {
   description = 'description',
   shortDescription = 'short_description',
   websiteUrl = 'website_url',
+  pairCreatedDate = 'created_at',
   createdAt = 'created_at',
   created_at = 'created_at',
   isMembership = 'is_membership',
@@ -28,6 +29,7 @@ export const sortingKeys = Object.keys(convertSortBy);
 export const sortingConstraints = {
   sa: ['id', 'login', 'email', 'createdAt'],
   quizQuestions: ['body', 'id', 'correctAnswers', 'published', 'updatedAt'],
+  quizGames: ['id', 'startGameDate', 'pairCreatedDate', 'finishGameDate'],
   blogs: [
     'id',
     'name',

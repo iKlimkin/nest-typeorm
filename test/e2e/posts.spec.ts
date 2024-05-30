@@ -17,6 +17,7 @@ import { postConstants } from '../tools/models/post-models';
 import { constants, feedbacksConstants } from '../tools/helpers/constants';
 import { LikesStatuses } from '../../src/domain/reaction.models';
 
+// (only, skip)
 aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
   let app: INestApplication;
   let testingAppModule: TestingModule;
@@ -26,15 +27,13 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
   let saManager: SATestManager;
   let feedbacksTestManager: FeedbacksTestManager;
   let usersTestManager: UsersTestManager;
-  let httpsServer: HttpServer;
-  let dataBase: DataSource;
-
+  let httpServer: HttpServer;
+ 
   beforeAll(async () => {
     const settings = await initSettings();
 
-    dataBase = settings.testingAppModule.get(DataSource);
-    httpsServer = settings.httpServer;
-
+    httpServer = settings.httpServer;
+    app = settings.app
     postTestManager = new PostsTestManager(app);
     blogTestManager = new BlogsTestManager(app, 'sa_blogs');
     authManager = new AuthManager(app);
@@ -49,7 +48,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
 
   describe('POST posts/:postId/comments', () => {
     afterAll(async () => {
-      await cleanDatabase(httpsServer);
+      // await cleanDatabase(httpsServer);
     });
 
     beforeAll(async () => {
@@ -90,7 +89,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
       await feedbacksTestManager.createComment(
         { user: user1, token: constants.inputData.expiredAccessToken, post },
         feedbacksConstants.createdContent[0],
-        HttpStatus.UNAUTHORIZED
+        HttpStatus.UNAUTHORIZED,
       );
     });
 
@@ -102,7 +101,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
       await feedbacksTestManager.createComment(
         { user: user1, token: accessToken1, post: postWithInvalidPostId },
         feedbacksConstants.createdContent[0],
-        HttpStatus.NOT_FOUND
+        HttpStatus.NOT_FOUND,
       );
     });
 
@@ -114,7 +113,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
       await feedbacksTestManager.createComment(
         { user: user1, token: accessToken1, post },
         content,
-        HttpStatus.BAD_REQUEST
+        HttpStatus.BAD_REQUEST,
       );
     });
 
@@ -123,7 +122,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
 
       await feedbacksTestManager.createComment(
         { user: user2, token: accessToken2, post },
-        feedbacksConstants.createdContent[0]
+        feedbacksConstants.createdContent[0],
       );
     });
 
@@ -134,7 +133,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
         let content = feedbacksConstants.createdContent[i];
         await feedbacksTestManager.createComment(
           { user: user1, token: accessToken1, post },
-          content
+          content,
         );
       }
     });
@@ -170,31 +169,31 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
       await postTestManager.likeStatusOperations(
         posts,
         accessTokens[0],
-        LikesStatuses.Like
+        LikesStatuses.Like,
       );
 
       await postTestManager.likeStatusOperations(
         posts,
         accessTokens[1],
-        LikesStatuses.Like
+        LikesStatuses.Like,
       );
 
       await postTestManager.likeStatusOperations(
         posts,
         accessTokens[2],
-        LikesStatuses.Like
+        LikesStatuses.Like,
       );
 
       await postTestManager.likeStatusOperations(
         posts,
         accessTokens[3],
-        LikesStatuses.Like
+        LikesStatuses.Like,
       );
 
       await postTestManager.likeStatusOperations(
         posts,
         accessTokens[4],
-        LikesStatuses.Dislike
+        LikesStatuses.Dislike,
       );
 
       const post = await postTestManager.getPostById(posts[0].id);
@@ -203,7 +202,7 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
 
       postTestManager.checkPostData(
         post.extendedLikesInfo.likesCount,
-        numberOfLikes
+        numberOfLikes,
       );
     });
 
@@ -213,13 +212,13 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
       await postTestManager.likeStatusOperations(
         posts,
         accessTokens[0],
-        LikesStatuses.Dislike
+        LikesStatuses.Dislike,
       );
 
       await postTestManager.getPostById(
         posts[0].id,
         accessTokens[0],
-        LikesStatuses.Dislike
+        LikesStatuses.Dislike,
       );
     });
   });

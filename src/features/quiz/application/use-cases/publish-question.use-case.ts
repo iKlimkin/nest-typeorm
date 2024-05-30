@@ -11,7 +11,7 @@ export class PublishQuestionUseCase
   constructor(private readonly quizRepo: QuizRepository) {}
 
   async execute(
-    command: PublishQuestionCommand
+    command: PublishQuestionCommand,
   ): Promise<LayerNoticeInterceptor<boolean | null>> {
     const notice = new LayerNoticeInterceptor<boolean>();
 
@@ -21,7 +21,7 @@ export class PublishQuestionUseCase
       notice.addError(
         'Question not published',
         'PublishQuestionUseCase',
-        GetErrors.DatabaseFail
+        GetErrors.DatabaseFail,
       );
     } else {
       notice.addData(result);

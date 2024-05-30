@@ -12,7 +12,7 @@ export class UpdateQuestionUseCase
   constructor(private readonly quizRepo: QuizRepository) {}
 
   async execute(
-    command: UpdateQuestionCommand
+    command: UpdateQuestionCommand,
   ): Promise<LayerNoticeInterceptor<boolean>> {
     const notice = new LayerNoticeInterceptor<boolean>();
     try {
@@ -28,7 +28,7 @@ export class UpdateQuestionUseCase
       notice.addError(
         'Question must have at least one correct answer',
         'UpdateQuestionUseCase',
-        GetErrors.IncorrectModel
+        GetErrors.IncorrectModel,
       );
       return notice;
     }
@@ -43,7 +43,7 @@ export class UpdateQuestionUseCase
       notice.addError(
         'Question not updated',
         'UpdateQuestionUseCase',
-        GetErrors.DatabaseFail
+        GetErrors.DatabaseFail,
       );
     } else {
       notice.addData(result);

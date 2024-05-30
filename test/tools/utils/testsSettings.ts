@@ -1,28 +1,28 @@
+const skip = true;
+const run = false;
+
 export const skipSettings = {
-  run_all_tests: false,
+  run_all_tests: skip,
 
-  quiz: false,
-  userAuth: true,
-  sa: true,
-  sa_blogs: true,
-  userAuthSql: true,
-  posts: true,
-  appTests: true,
-  blogs: true,
-  security: true,
-  app: true,
-  staging: true,
+  quiz: run,
+  userAuth: skip,
+  sa: skip,
+  sa_blogs: skip,
+  userAuthSql: skip,
+  posts: skip,
+  appTests: skip,
+  blogs: skip,
+  security: skip,
+  app: skip,
+  staging: skip,
 
-  for(testName: TestsName): boolean {
-    if (this.run_all_tests) return false;
-
-    if (this[testName]) return this[testName];
-
-    return false;
+  for(testName: TestNamesE2E): boolean {
+    if (!this.run_all_tests) return run;
+    return this[testName] ?? skip;
   },
 };
 
-enum TestsNames {
+enum e2eTestNamesEnum {
   app = 'app',
   appTests = 'appTests',
   userAuth = 'userAuth',
@@ -36,8 +36,13 @@ enum TestsNames {
   quiz = 'quiz',
 }
 
-type TestsName = keyof typeof TestsNames;
+type TestNamesE2E = keyof typeof e2eTestNamesEnum;
 
+enum uTestNamesEnum {
+  createPair = 'CreatePairUseCase',
+}
+
+type uTestNames = keyof typeof uTestNamesEnum;
 // export const skipDescribeSettings = {
 //   run_all_tests: false,
 

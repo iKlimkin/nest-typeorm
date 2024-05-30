@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
 import type { UserAccount } from '../../../auth/infrastructure/settings';
 import type { QuizAnswer } from './quiz-answer.entity';
@@ -6,7 +13,7 @@ import type { QuizGame } from './quiz-game.entity';
 
 @Entity()
 export class QuizPlayerProgress extends BaseEntity {
-  @OneToOne('UserAccount', 'gameProgress', {
+  @ManyToOne('UserAccount', 'gameProgress', {
     nullable: false,
     onDelete: 'CASCADE',
   })

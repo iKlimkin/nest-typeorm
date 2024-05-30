@@ -3,7 +3,10 @@ export class LayerNoticeInterceptor<D = null> {
   public extensions: LayerInterceptorExtension[];
   public code = 0;
 
-  constructor(data: D | null = null, public errorMessage?: string) {
+  constructor(
+    data: D | null = null,
+    public errorMessage?: string,
+  ) {
     this.data = data;
     this.extensions = [];
   }

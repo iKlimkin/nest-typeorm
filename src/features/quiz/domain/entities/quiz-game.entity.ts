@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   OneToMany,
   OneToOne,
@@ -13,7 +14,7 @@ import type { CurrentGameQuestion } from './current-game-questions.entity';
 import type { QuizPlayerProgress } from './quiz-player-progress.entity';
 
 @Entity()
-@Unique(['firstPlayerId', 'secondPlayerId'])
+// @Unique(['firstPlayerId', 'secondPlayerId'])
 export class QuizGame extends BaseEntity {
   @OneToOne('QuizPlayerProgress', 'quizGame')
   @JoinColumn()
@@ -57,7 +58,6 @@ export class QuizGame extends BaseEntity {
     this.secondPlayerProgress = connectionDto.secondPlayerProgress;
     this.status = GameStatus.Active;
     this.startGameDate = new Date();
-    ++this.version;
 
     return this;
   }
