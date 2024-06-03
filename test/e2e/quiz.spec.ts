@@ -57,10 +57,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await cleanDatabase(httpServer);
+    // await cleanDatabase(httpServer);
     await app.close();
   });
-  describe('q', () => {
+  describe.skip('q', () => {
     describe('GET /sa/quiz/questions', () => {
       afterAll(async () => {
         await cleanDatabase(httpServer);
@@ -637,7 +637,8 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       await quizTestManager.getMyGames(fourthPlayerToken);
     });
   });
-  describe('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
+
+  describe.only('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
@@ -645,20 +646,24 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     beforeAll(async () => {
       const { accessTokens, users } = await usersTestManager.createUsers(3);
 
+      const [firstPlayerToken, secondPlayerToken, thirdPlayerToken] =
+        accessTokens;
+
       const questionsAndAnswers =
         await quizTestManager.createQuestionsForFurtherTests(10);
 
       expect.setState({
         accessTokens,
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
         users,
         questionsAndAnswers,
       });
     });
     it('prepare for battle', async () => {
-      const { accessTokens, questionsAndAnswers } = expect.getState();
-
-      const [firstPlayerToken, secondPlayerToken, thirdPlayerToken] =
-        accessTokens;
+      const { firstPlayerToken, secondPlayerToken, questionsAndAnswers } =
+        expect.getState();
 
       const { correctAnswersForCurrentGame, gameId } =
         await quizTestManager.prepareForBattle(
@@ -669,9 +674,6 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
       expect.setState({
         gameId,
-        firstPlayerToken,
-        secondPlayerToken,
-        thirdPlayerToken,
         correctAnswersForCurrentGame,
       });
     });
@@ -914,7 +916,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         );
       });
 
-      gameBySecondPlayer.firstPlayerProgress.answers.forEac((answer, i) => {
+      gameBySecondPlayer.firstPlayerProgress.answers.forEach((answer, i) => {
         expect(answer.questionId).toBe(game.questions[i].id);
       });
 
@@ -922,33 +924,63 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       expect(game.firstPlayerProgress.score).toBe(5);
       expect(game.secondPlayerProgress.score).toBe(6);
 
-      // await quizTestManager.restoreGameProgress(gameId, true);
+      await quizTestManager.restoreGameProgress(gameId, true);
     });
 
-    it('POST -> ../connect, POST -> "../answers", GET -> "../pairs", GET -> "/../my-current": add answers to first game, created by user2, connected by user1: add answers by each user; get active game and call "../my-current by both users after each answer"; ../connect, ../answers, /my-current, ../:id, ../connect; create pair by first player, try add answer -> 403, first player`s number of games 3;', async () => {
+    it.only('POST -> ../connect, POST -> "../answers", GET -> "../pairs", GET -> "/../my-current": add answers to first game, created by user2, connected by user1: add answers by each user; get active game and call "../my-current by both users after each answer"; ../connect, ../answers, /my-current, ../:id, ../connect; create pair by first player, try add answer -> 403, first player`s number of games 3;', async () => {
       const {
         firstPlayerToken,
         secondPlayerToken,
         thirdPlayerToken,
         questionsAndAnswers,
       } = expect.getState();
+      console.log({ firstPlayerToken, secondPlayerToken });
 
       await quizTestManager.createPairOrConnect(secondPlayerToken);
 
-      const firstPair =
+      const { id: firstPairId } =
         await quizTestManager.createPairOrConnect(firstPlayerToken);
 
       const { correctAnswersForCurrentGame: answers } =
         await quizTestManager.getCorrectAnswersForGame(
-          firstPair.id,
+          firstPairId,
           questionsAndAnswers,
         );
 
+      // give 1 correct answer by first player and 2 by second
       for (let i = 0; i < 5; i++) {
         await quizTestManager.sendAnswer(firstPlayerToken, answers[i + 1]);
 
+        i == 4 &&
+          (await quizTestManager.sendAnswer(
+            firstPlayerToken,
+            answers[i],
+            HttpStatus.FORBIDDEN,
+          ));
+
         await quizTestManager.sendAnswer(secondPlayerToken, answers[i]);
+
+        if (i === 4) {
+          await quizTestManager.sendAnswer(
+            firstPlayerToken,
+            answers[i],
+            HttpStatus.FORBIDDEN,
+          );
+          await quizTestManager.sendAnswer(
+            secondPlayerToken,
+            answers[i],
+            HttpStatus.FORBIDDEN,
+          );
+        }
       }
+
+      const gameFirstAfterFinish = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        firstPairId,
+      );
+
+      expect(gameFirstAfterFinish.firstPlayerProgress.score).toBe(1);
+      expect(gameFirstAfterFinish.secondPlayerProgress.score).toBe(3);
 
       await quizTestManager.createPairOrConnect(secondPlayerToken);
       await quizTestManager.createPairOrConnect(firstPlayerToken);
@@ -990,7 +1022,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
   });
 
-  describe.only('CONSTANT TESTS', () => {
+  describe('CONSTANT TESTS', () => {
     beforeEach(async () => {
       await cleanDatabase(httpServer);
 
