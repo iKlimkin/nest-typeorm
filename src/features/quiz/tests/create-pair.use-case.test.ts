@@ -155,20 +155,7 @@ describe('Create-pair.use-case', () => {
         new CreatePairCommand(userSession),
       );
 
-      expect(resultBadProgress).not.toBeDefined();
-
-      // quizRepoMock.saveProgress = jest.fn().mockReturnValueOnce({ data: null });
-
-      // const resultBadProgress2 = await createPairUseCase.execute(
-      //   new CreatePairCommand(userSession)
-      // );
-
-      // expect(resultBadProgress2.data).toBeNull();
-      // expect(resultBadProgress2.code).toBe(500);
-      // expect(resultBadProgress2.extensions[0]).toEqual({
-      //   message: 'error occurred during save game',
-      //   key: location,
-      // });
+      expect(resultBadProgress.data).toBeNull();
     });
     // starts only test => predictable conduct, all tests => error
     it.skip('testing saveGame', async () => {
