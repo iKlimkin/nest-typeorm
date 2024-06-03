@@ -1,5 +1,6 @@
 import { DataSource, EntityManager } from 'typeorm';
 import { LayerNoticeInterceptor } from '../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
+import { GetErrors } from '../infra/utils/interlay-error-handler.ts/error-constants';
 
 export async function runInTransaction<T>(
   dataSource: DataSource,
@@ -22,12 +23,13 @@ export async function runInTransaction<T>(
       );
       return result;
     }
-
     await queryRunner.commitTransaction();
     return result;
   } catch (error) {
     await queryRunner.rollbackTransaction();
-    console.log(`Transaction rolled back with error: ${error}`);
+    const notice = new LayerNoticeInterceptor();
+    notice.addError(error, 'runInTransaction', GetErrors.Transaction);
+    return notice;
   } finally {
     await queryRunner.release();
   }
