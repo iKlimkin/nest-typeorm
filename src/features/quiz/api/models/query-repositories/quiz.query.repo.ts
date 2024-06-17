@@ -1,21 +1,24 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import {
-  DataSource,
-  FindOptionsOrder,
-  In,
-  Not,
-  Repository,
-  SelectQueryBuilder,
-} from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 import { PaginationViewModel } from '../../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../../infra/utils/get-pagination';
 import { UserAccount } from '../../../../auth/infrastructure/settings';
+import { CurrentGameQuestion } from '../../../domain/entities/current-game-questions.entity';
+import { QuizAnswer } from '../../../domain/entities/quiz-answer.entity';
 import { QuizGame } from '../../../domain/entities/quiz-game.entity';
 import { QuizPlayerProgress } from '../../../domain/entities/quiz-player-progress.entity';
 import { QuizQuestion } from '../../../domain/entities/quiz-questions.entity';
+import {
+  QuizGamesQueryFilter,
+  StatsQueryFilter,
+} from '../input.models/quiz-games-query.filter';
 import { QuizQuestionsQueryFilter } from '../input.models/quiz-questions-query.filter';
 import { GameStatus, publishedStatuses } from '../input.models/statuses.model';
+import {
+  GameStats,
+  UserStats,
+} from '../output.models.ts/view.models.ts/quiz-game-analyze';
 import { QuizPairViewType } from '../output.models.ts/view.models.ts/quiz-game.view-type';
 import {
   getQuizPairViewModel,
@@ -24,10 +27,7 @@ import {
 import { getQuestionViewModel } from '../output.models.ts/view.models.ts/quiz-question.view-model';
 import { QuizQuestionViewType } from '../output.models.ts/view.models.ts/quiz-question.view-type';
 import { getQuestionsViewModel } from '../output.models.ts/view.models.ts/quiz-questions.view-model';
-import { QuizGamesQueryFilter } from '../input.models/quiz-games-query.filter';
-import { GameStats } from '../output.models.ts/view.models.ts/quiz-game-analyze';
-import { QuizAnswer } from '../../../domain/entities/quiz-answer.entity';
-import { CurrentGameQuestion } from '../../../domain/entities/current-game-questions.entity';
+import { transformRawQuizDataToView } from '../output.models.ts/view.models.ts/quiz-raw.view-model';
 
 @Injectable()
 export class QuizQueryRepo {
@@ -76,7 +76,7 @@ export class QuizQueryRepo {
           publishedStatus,
         });
       }
-      
+
       const [questions, count] = await queryBuilder.getManyAndCount();
 
       const questionViewModel = new PaginationViewModel<QuizQuestionViewType>(
@@ -179,227 +179,248 @@ export class QuizQueryRepo {
     }
   }
 
+  async getUsersTop(queryOptions?: StatsQueryFilter) {
+    try {
+      const { pageNumber, pageSize, sort } = getPagination(queryOptions);
+
+      const gameQueryBuilder = this.quizPairs.createQueryBuilder('g');
+
+      const gamesQuantity = await gameQueryBuilder.getCount();
+
+      const userIds = await gameQueryBuilder
+        .select(['g.firstPlayerId', 'g.secondPlayerId'])
+        .getMany();
+
+      console.log({ userIds });
+
+      const uniqueUserIds = new Set();
+      userIds.forEach((id) => {
+        uniqueUserIds.add(id.firstPlayerId);
+        uniqueUserIds.add(id.secondPlayerId);
+      });
+      // const uniqueUserIds = new Map();
+      // userIds.forEach(async (id) => {
+      //   const progressIds = await gameQueryBuilder
+      //     .select(['g.firstPlayerProgressId', 'g.secondPlayerProgressId'])
+      //     .where('g.firstPlayerId = :id OR g.secondPlayerId = :id', { id })
+      //     .getMany();
+
+      //   uniqueUserIds.set(id.firstPlayerId, progressIds);
+      // });
+
+      const progressQueryBuilder =
+        this.playerProgresses.createQueryBuilder('progress');
+
+      const userStats = {};
+      const result = [];
+      for (const userId of uniqueUserIds) {
+        // const gamesQuantityQuery = progressQueryBuilder
+        //   .select('COUNT(progress.id)', 'gamesQuantity')
+        //   .where('progress.player = :userId', { userId })
+        //   .getRawOne();
+
+        // const sumScoreQuery = progressQueryBuilder
+        //   .select('SUM(progress.score)', 'sumScore')
+        //   .where('progress.player = :userId', { userId })
+        //   .getRawOne();
+
+        // const avgScoreQuery = progressQueryBuilder
+        //   .select('AVG(progress.score)', 'avgScore')
+        //   .where('progress.playerId = :userId', { userId })
+        //   .getRawOne();
+
+        // const winsQuery = gameQueryBuilder
+        //   .select('COUNT(g.id)', 'winsQuantity')
+        //   .where('g.winnerId = :userId', { userId })
+        //   .andWhere('g.status = :status', { status: GameStatus.Finished })
+        //   .getRawOne();
+
+        // const drawsQuery = gameQueryBuilder
+        //   .select('COUNT(g.id)', 'drawsQuantity')
+        //   .where('g.winnerId IS NULL')
+        //   .andWhere('g.status = :status', { status: GameStatus.Finished })
+        //   .getRawOne();
+
+        // const [
+        //   { gamesQuantity },
+        //   { sumScore },
+        //   { avgScore },
+        //   { winsQuantity },
+        //   { drawsQuantity },
+        // ] = await Promise.all([
+        //   gamesQuantityQuery,
+        //   sumScoreQuery,
+        //   avgScoreQuery,
+        //   winsQuery,
+        //   drawsQuery,
+        // ]);
+
+        // const losesQuantity = +gamesQuantity - (+winsQuantity + +drawsQuantity);
+
+        let statsQuery = `
+          SELECT
+            player.id,
+            player.login,
+            COALESCE(SUM(pp.score), 0) AS "sumScore",
+            COALESCE(AVG(pp.score), 0) AS "avgScores",
+            COUNT(player_games.id) AS "gamesCount",
+            COUNT(
+              CASE 
+                WHEN player_games."winnerId" = player.id AND player_games.status = 'Finished'
+                THEN 1 
+              END
+            ) AS "winsCount",
+            COUNT(
+              CASE 
+                WHEN player_games."winnerId" != player.id AND player_games."winnerId" IS NOT NULL 
+                THEN 1 
+              END
+            ) AS "lossesCount",
+            COUNT(
+              CASE 
+                WHEN player_games."winnerId" IS NULL AND player_games.status = 'Finished'
+                THEN 1 
+              END
+            ) AS "drawsCount"
+          FROM (
+            SELECT 
+              g.id,
+              g."winnerId"::uuid,
+              g.status,
+              g."firstPlayerId"::uuid AS playerId,
+              g."firstPlayerProgressId" AS progressId
+            FROM quiz_game g
+            WHERE g."firstPlayerId" = $1
+            UNION ALL
+            SELECT 
+              g.id,
+              g."winnerId"::uuid,
+              g.status,
+              g."secondPlayerId"::uuid AS playerId,
+              g."secondPlayerProgressId" AS progressId
+            FROM quiz_game g
+            WHERE g."secondPlayerId" = $1
+          ) AS player_games
+          LEFT JOIN quiz_player_progress pp ON player_games.progressId = pp.id
+          LEFT JOIN user_account player ON player.id = player_games.playerId
+          GROUP BY player.id, player.login
+        `;
+
+        if (sort) {
+          statsQuery += `\nORDER BY`;
+          sort.forEach((sortRule) => {
+            const [sortBy, sortDirection] = sortRule.split(' ');
+            statsQuery += `\n ${sortBy} ${sortDirection},`;
+          });
+          statsQuery = statsQuery.slice(0, -1);
+        }
+
+        const [stats] = await this.dataSource.query(statsQuery, [userId]);
+        userStats[userId as string] = new UserStats(stats);
+        result.push(new UserStats(stats));
+      }
+
+      const statsViewModel = new PaginationViewModel<UserStats>(
+        result,
+        pageNumber,
+        pageSize,
+        result.length,
+      );
+
+      return statsViewModel;
+    } catch (error) {
+      throw new Error(`getTopUsers: ${error}`);
+    }
+  }
   async getUserGames(
     userId: string,
     queryOptions?: QuizGamesQueryFilter,
   ): Promise<PaginationViewModel<QuizPairViewType>> {
     try {
-      const { pageNumber, pageSize, sortBy, skip, sortDirection } =
+      let { pageNumber, pageSize, sortBy, skip, sortDirection } =
         getPagination(queryOptions);
 
-      // const subQueryAnswers =
-      //   (alias: string) => (queryBuilder: SelectQueryBuilder<any>) =>
-      //     this.quizAnswers
-      //       .createQueryBuilder('answers')
-      //       .select([
-      //         'answers.questionId',
-      //         'answers.answerStatus',
-      //         'answers.created_at',
-      //       ])
-      //       .where(`${alias}.id = answers.playerProgressId`)
-      //       .andWhere('answers.')
-      //       .orderBy('answers.created_at', 'ASC');
-
-      // const subQueryAnswers = (alias: string) => `
-      //   SELECT answers."questionId", answers."answerStatus", answers."created_at"
-      //   FROM quiz_answer answers
-      //   WHERE answers."playerProgressId" = ${alias}.id
-      //   ORDER BY answers."created_at" ASC
-      // `;
-      const queryBuilder = this.quizPairs.createQueryBuilder('game');
       const query = `
-    SELECT 
-    g.id, 
-    g.status, 
-    g."startGameDate", 
-    g."finishGameDate", 
-    g."created_at", 
-    g."firstPlayerId", 
-    g."secondPlayerId", 
-    fPP.login AS "firstPlayerLogin", 
-    fPP.score AS "firstPlayerScore", 
-    sPP.login AS "secondPlayerLogin", 
-    sPP.score AS "secondPlayerScore",
-    JSON_AGG(
-      JSON_BUILD_OBJECT(
-        'id', fA.id,
-        'created_at', fA."created_at",
-        'answerStatus', fA."answerStatus",
-        'questionId', fA."questionId",
-        'playerProgressId', fA."playerProgressId"
-      ) ORDER BY fA."created_at"
-    ) AS "firstPlayerAnswers",
-    JSON_AGG(
-      JSON_BUILD_OBJECT(
-        'id', sA.id,
-        'created_at', sA."created_at",
-        'answerStatus', sA."answerStatus",
-        'questionId', sA."questionId",
-        'playerProgressId', sA."playerProgressId"
-      ) ORDER BY sA."created_at"
-    ) AS "secondPlayerAnswers",
-    (
-      SELECT JSON_AGG(
-        JSON_BUILD_OBJECT(
-          'questionId', qg."questionId",
-          'body', q."body"
-        ) ORDER BY qg."order"
-      )
-      FROM current_game_question qg
-      JOIN quiz_question q ON qg."questionId" = q.id
-      WHERE qg."quizPairId" = g.id
-    ) AS questions
-  FROM 
-    quiz_game g
-  LEFT JOIN 
-    quiz_player_progress fPP ON g."firstPlayerProgressId" = fPP.id
-  LEFT JOIN 
-    quiz_player_progress sPP ON g."secondPlayerProgressId" = sPP.id
-  LEFT JOIN 
-    quiz_answer fA ON fPP.id = fA."playerProgressId"
-  LEFT JOIN 
-    quiz_answer sA ON sPP.id = sA."playerProgressId"
-  GROUP BY 
-    g.id, fPP.login, fPP.score, sPP.login, sPP.score
-  ORDER BY 
-    g."created_at"
-  `;
-      // const res = this.dataSource.query(query);
-      // res
-      //   .then((res) => {
-      //     console.log('res: ', res);
-      //   })
-      //   .catch((err) => {
-      //     console.log(`err: ${err}`);
-      //   });
+        SELECT 
+          g.id,
+          g."firstPlayerId",
+          g."secondPlayerId",
+          g."created_at",
+          g."startGameDate",
+          g."finishGameDate",
+          g."status",
+          json_build_object(
+                'login', fPP.login, 
+                'score', fPP.score, 
+                'answers', (
+                    SELECT json_agg(
+                        json_build_object(
+                            'questionId', fa."questionId",
+                            'answerStatus', fa."answerStatus",
+                            'addedAt', fa."created_at"
+                        )
+                        ORDER BY fa."created_at"
+                    )
+                    FROM quiz_answer fa
+                    WHERE fa."playerProgressId" = fPP.id
+                )
+            ) AS "firstPlayerProgressRaw",
+          json_build_object(
+              'login', sPP.login,
+              'score', sPP.score, 
+              'answers', (
+                  SELECT json_agg(
+                      json_build_object(
+                          'questionId', sa."questionId",
+                          'answerStatus', sa."answerStatus",
+                          'addedAt', sa."created_at"
+                      )
+                      ORDER BY sa."created_at"
+                  )
+                  FROM quiz_answer sa
+                  WHERE sa."playerProgressId" = sPP.id
+              )
+          ) AS "secondPlayerProgressRaw",
+            json_agg(
+                json_build_object(
+                    'id', qq.id,
+                    'body', qq.body,
+                    'order', cq.order
+                )
+                ORDER BY cq."order"
+            ) AS questions
+          FROM quiz_game g 
+          LEFT JOIN quiz_player_progress fPP ON g."firstPlayerProgressId" = fPP."id"
+          LEFT JOIN quiz_player_progress sPP ON g."secondPlayerProgressId" = sPP."id"
+          LEFT JOIN current_game_question cq ON g."id" = cq."quizPairId"
+          LEFT JOIN quiz_question qq ON qq.id = cq."questionId"
+          WHERE $1 IN (g."firstPlayerId", g."secondPlayerId")
+          GROUP BY g.id, fPP.id, sPP.id
+          ORDER BY 
+            ${sortBy} ${sortDirection},
+            g.created_at DESC
+          LIMIT $2 
+          OFFSET $3;
+        `;
 
-      // queryBuilder
-      //   .select([
-      //     'game.id',
-      //     'game.status',
-      //     'game.startGameDate',
-      //     'game.finishGameDate',
-      //     'game.created_at',
-      //     'game.firstPlayerId',
-      //     'game.secondPlayerId',
-      //   ])
-      //   .where(
-      //     `game.firstPlayerId = :userId OR game.secondPlayerId = :userId`,
-      //     { userId }
-      //   )
-      //   .leftJoin('game.firstPlayerProgress', 'firstPlayerProgress')
-      //   .addSelect(['firstPlayerProgress.login', 'firstPlayerProgress.score'])
-      //   .leftJoin('game.secondPlayerProgress', 'secondPlayerProgress')
-      //   .addSelect(['secondPlayerProgress.login', 'secondPlayerProgress.score'])
-      //   .leftJoin('game.questions', 'currentGameQuestions')
-      //   .leftJoin('currentGameQuestions.question', 'allQuestions')
-      //   .addSelect([
-      //     'currentGameQuestions.questionId',
-      //     'currentGameQuestions.order',
-      //     'allQuestions.id',
-      //     'allQuestions.body',
-      //   ])
-      //   .leftJoinAndSelect('firstPlayerProgress.answers', 'fpAnswers')
-      //   // .addSelect([
-      //   //   'fpAnswers.id',
-      //   //   'fpAnswers.created_at',
-      //   //   'fpAnswers.answerStatus',
-      //   //   'fpAnswers.questionId',
-      //   // ])
-      //   .leftJoinAndSelect('secondPlayerProgress.answers', 'spAnswers')
-      //   // .addSelect([
-      //   //   'spAnswers.id',
-      //   //   'spAnswers.created_at',
-      //   //   'spAnswers.answerStatus',
-      //   //   'spAnswers.questionId',
-      //   // ])
-      //   .orderBy(`game.${sortBy}`, sortDirection || 'ASC')
-      //   .addSelect(subQueryAnswers('firstPlayerProgress'), 'fpSubQuery')
-      //   // .addSelect(subQueryAnswers('secondPlayerProgress'), 'spSubQuery')
-      //   .skip(skip)
-      //   .take(pageSize);
-
-      // const [userGames, count] = await queryBuilder.getManyAndCount();
-
-      // const [userGames, count] = await this.quizPairs.findAndCount({
-      //   where: [
-      //     { firstPlayerId: userId },
-      //     { secondPlayerId: userId }
-      //   ],
-      //   order: {
-      //     questions: {
-      //       order: 'ASC',
-      //     },
-      //     firstPlayerProgress: {
-      //       answers: {
-      //         created_at: 'ASC',
-      //       },
-      //     },
-      //     secondPlayerProgress: {
-      //       answers: {
-      //         created_at: 'ASC',
-      //       },
-      //     },
-      //     sortBy: sortDirection || 'ASC',
-      //   },
-      //   relations: {
-      //     questions: {
-      //       question: true,
-      //     },
-      //     firstPlayerProgress: {
-      //       answers: true,
-      //     },
-      //     secondPlayerProgress: {
-      //       answers: true,
-      //     },
-      //   },
-      //   skip,
-      //   take: pageSize,
-      // });
-
-      queryBuilder
-        .select([
-          'game.id',
-          'game.status',
-          'game.startGameDate',
-          'game.finishGameDate',
-          'game.created_at',
-          'game.firstPlayerId',
-          'game.secondPlayerId',
-          'firstPlayerProgress.login',
-          'firstPlayerProgress.score',
-          'secondPlayerProgress.login',
-          'secondPlayerProgress.score',
-          'currentGameQuestions.questionId',
-          'currentGameQuestions.order',
-          // 'allQuestions.id',
-          // 'allQuestions.body',
-        ])
-        .leftJoin('game.firstPlayerProgress', 'firstPlayerProgress')
-        .leftJoin('game.secondPlayerProgress', 'secondPlayerProgress')
-        .leftJoinAndSelect('firstPlayerProgress.answers', 'fpAnswers')
-        .leftJoinAndSelect('secondPlayerProgress.answers', 'spAnswers')
-        .leftJoin('game.questions', 'currentGameQuestions')
-        .leftJoinAndSelect('currentGameQuestions.question', 'allQuestions')
-        // .addSelect(subQueryAnswers('firstPlayerProgress'), 'fpAnswers')
-        // .addSelect(subQueryAnswers('secondPlayerProgress'), 'spAnswers')
+      const count = await this.quizPairs
+        .createQueryBuilder('game')
         .where(
           'game.firstPlayerId = :userId OR game.secondPlayerId = :userId',
           { userId },
         )
-        .orderBy(`game.${sortBy}`, sortDirection || 'ASC')
-        // .addOrderBy('currentGameQuestions.order', 'ASC')
-        .skip(skip)
-        .take(pageSize);
+        .getCount();
 
-      const [userGames, count] = await queryBuilder.getManyAndCount();
+      const queryResult = await this.dataSource.query(query, [
+        userId,
+        pageSize,
+        skip,
+      ]);
 
-      await this.getAllGames(userId, queryOptions);
-
-      // console.log(userGames);
+      const userGames = queryResult.map(transformRawQuizDataToView);
 
       const gamesViewModel = new PaginationViewModel<QuizPairViewType>(
-        userGames.map(getQuizPairViewModel),
+        userGames,
         pageNumber,
         pageSize,
         count,
@@ -608,98 +629,5 @@ export class QuizQueryRepo {
     } catch (error) {
       console.error(`TESTING: ${error}`);
     }
-  }
-
-  private async getAllGames(
-    userId: string,
-    queryOptions: QuizGamesQueryFilter,
-  ) {
-    await this.dataSource.query(
-      `
-  CREATE TEMP TABLE temp_fp_answers AS
-  SELECT 
-    answers.id,
-    answers."created_at",
-    answers."answerStatus",
-    answers."questionId",
-    answers."playerProgressId"
-  FROM quiz_answer answers
-  JOIN quiz_player_progress fPP ON fPP.id = answers."playerProgressId"
-  WHERE fPP."playerId" = $1
-  ORDER BY answers."created_at" ASC;
-`,
-      [userId],
-    );
-
-    await this.dataSource.query(
-      `
-      CREATE TEMP TABLE temp_sp_answers AS
-      SELECT 
-        answers.id,
-        answers."created_at",
-        answers."answerStatus",
-        answers."questionId",
-        answers."playerProgressId"
-      FROM quiz_answer answers
-      JOIN quiz_player_progress sPP ON sPP.id = answers."playerProgressId"
-      WHERE sPP."playerId" = $1
-      ORDER BY answers."created_at" ASC;
-    `,
-      [userId],
-    );
-
-    const { pageSize, sortBy, skip, sortDirection } =
-      getPagination(queryOptions);
-
-    const query = `
-SELECT 
-    game.id,
-    game.status,
-    game."startGameDate",
-    game."finishGameDate",
-    game."created_at",
-    game."firstPlayerId",
-    game."secondPlayerId",
-    fPP.login AS "firstPlayerLogin",
-    fPP.score AS "firstPlayerScore",
-    sPP.login AS "secondPlayerLogin",
-    sPP.score AS "secondPlayerScore",
-    q."questionId",
-    q."order" AS "questionOrder",
-    allQuestions.id AS "questionId",
-    allQuestions.body,
-    fpAnswers.id AS "fpAnswerId",
-    fpAnswers."created_at" AS "fpAnswerCreatedAt",
-    fpAnswers."answerStatus" AS "fpAnswerStatus",
-    fpAnswers."questionId" AS "fpAnswerQuestionId",
-    spAnswers.id AS "spAnswerId",
-    spAnswers."created_at" AS "spAnswerCreatedAt",
-    spAnswers."answerStatus" AS "spAnswerStatus",
-    spAnswers."questionId" AS "spAnswerQuestionId"
-FROM quiz_game AS game
-LEFT JOIN quiz_player_progress AS fPP 
-    ON game."firstPlayerProgressId" = fPP.id
-LEFT JOIN quiz_player_progress AS sPP 
-    ON game."secondPlayerProgressId" = sPP.id
-LEFT JOIN current_game_question AS q 
-    ON game.id = q."quizPairId"
-LEFT JOIN quiz_question AS allQuestions 
-    ON q."questionId" = allQuestions.id
-LEFT JOIN temp_fp_answers AS fpAnswers 
-    ON fPP.id = fpAnswers."playerProgressId"
-LEFT JOIN temp_sp_answers AS spAnswers 
-    ON sPP.id = spAnswers."playerProgressId"
-WHERE game."firstPlayerId" = $1 OR game."secondPlayerId" = $1
-ORDER BY 
-    game."${sortBy}" ${sortDirection}, 
-    q."order" ASC,                    
-    fpAnswers."created_at" ASC,        
-    spAnswers."created_at" ASC         
-LIMIT $2 OFFSET $3;
-`;
-
-    const result = await this.dataSource.query(query, [userId, pageSize, skip]);
-
-    // console.log(result);
   }
 }
