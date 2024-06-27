@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { OutputId } from '../../../domain/output.models';
 import { LayerNoticeInterceptor } from '../../auth/api/controllers';
-import { UserAccount } from '../../auth/infrastructure/settings';
 import { GameStatus } from '../api/models/input.models/statuses.model';
 import { UpdateQuestionData } from '../api/models/input.models/update-question.model';
 import { QuestionId } from '../api/models/output.models.ts/output.types';
@@ -13,8 +12,6 @@ import { QuizCorrectAnswer } from '../domain/entities/quiz-correct-answers.entit
 import { QuizGame } from '../domain/entities/quiz-game.entity';
 import { QuizPlayerProgress } from '../domain/entities/quiz-player-progress.entity';
 import { QuizQuestion } from '../domain/entities/quiz-questions.entity';
-import { QuizPairViewType } from '../api/models/output.models.ts/view.models.ts/quiz-game.view-type';
-import { getQuizPairViewModel } from '../api/models/output.models.ts/view.models.ts/quiz-pair.view-model';
 
 @Injectable()
 export class QuizRepository {
@@ -90,19 +87,24 @@ export class QuizRepository {
       return manager.save(answerDto);
     } catch (error) {
       console.log(`saveAnswer finished with errors: ${error}`);
-      throw new InternalServerErrorException();
+      throw new Error();
     }
   }
 
-  async finishGame(gameId: string, manager: EntityManager): Promise<void> {
+  async finishGame(
+    gameId: string,
+    winnerId: string | null,
+    manager: EntityManager,
+  ): Promise<void> {
     try {
-      const res = await manager.update(QuizGame, gameId, {
+      await manager.update(QuizGame, gameId, {
         finishGameDate: new Date(),
         status: GameStatus.Finished,
+        winnerId,
       });
     } catch (error) {
       console.log(`finishGame operation was interrupted with errors: ${error}`);
-      throw new InternalServerErrorException();
+      throw new Error();
     }
   }
 
@@ -226,18 +228,17 @@ export class QuizRepository {
   async getCurrentGameQuestion(
     gameId: string,
     order: number,
+    manager: EntityManager,
   ): Promise<CurrentGameQuestion> {
     try {
-      const result = await this.currentGameQuestions.findOne({
+      return await manager.findOne(CurrentGameQuestion, {
         where: {
           quizPair: { id: gameId },
           order,
         },
       });
-
-      return result;
     } catch (error) {
-      throw new InternalServerErrorException(`getNextQuestion: ${error}`);
+      throw new Error(`getNextQuestion: ${error}`);
     }
   }
 
@@ -268,14 +269,10 @@ export class QuizRepository {
     gameQuestions: CurrentGameQuestion[],
     manager: EntityManager,
   ): Promise<void> {
-    // | LayerNoticeInterceptor<null>
     try {
       await manager.save(CurrentGameQuestion, gameQuestions);
     } catch (error) {
-      // return new LayerNoticeInterceptor(null, `${error} occurred while save questions`)
-      throw new InternalServerErrorException(
-        `${error} occurred while save questions`,
-      );
+      throw new Error(`${error} occurred while save questions`);
     }
   }
 
@@ -298,67 +295,43 @@ export class QuizRepository {
       return null;
     }
   }
-  async getPairInformation(gameId: string): Promise<QuizPairViewType | null> {
-    try {
-      const result = await this.quizPairs
-        .createQueryBuilder('game')
-        .select([
-          'game.id',
-          'game.status',
-          'game.startGameDate',
-          'game.finishGameDate',
-          'game.created_at',
-          'game.firstPlayerId',
-          'game.secondPlayerId',
-        ])
-        .leftJoin('game.firstPlayerProgress', 'firstPlayerProgress')
-        .addSelect(['firstPlayerProgress.login', 'firstPlayerProgress.score'])
-        .leftJoin('game.secondPlayerProgress', 'secondPlayerProgress')
-        .addSelect(['secondPlayerProgress.login', 'secondPlayerProgress.score'])
-        .leftJoin('game.questions', 'questions')
-        .leftJoin('questions.question', 'allQuestions')
-        .addSelect([
-          'questions.questionId',
-          'allQuestions.id',
-          'allQuestions.body',
-        ])
-        .leftJoinAndSelect('firstPlayerProgress.answers', 'fpAnswers')
-        .leftJoinAndSelect('secondPlayerProgress.answers', 'spAnswers')
-        .orderBy('questions.order', 'ASC')
-        .addOrderBy('fpAnswers.created_at', 'ASC')
-        .addOrderBy('spAnswers.created_at', 'ASC')
-        .where('game.id = :gameId', { gameId })
-        .getOne();
-
-      return getQuizPairViewModel(result);
-    } catch (error) {
-      console.log(`getPairInformation finished with errors: ${error}`);
-      return null;
-    }
-  }
   async getCurrentGameByUserId(
     userId: string,
     manager: EntityManager,
-  ): Promise<QuizGame | null> {
+  ): Promise<QuizGame> {
     try {
-      return this.quizPairs
-        .createQueryBuilder('game')
-        .select()
+      return manager
+        .createQueryBuilder(QuizGame, 'game')
         .leftJoinAndSelect('game.firstPlayerProgress', 'firstPlayerProgress')
         .leftJoinAndSelect('game.secondPlayerProgress', 'secondPlayerProgress')
+        .leftJoin('firstPlayerProgress.player', 'firstPlayer')
+        .leftJoin('secondPlayerProgress.player', 'secondPlayer')
+        .addSelect(['firstPlayer.id', 'secondPlayer.id'])
         .leftJoinAndSelect('game.questions', 'questions')
-        .where(
-          '(game.firstPlayerId = :userId OR game.secondPlayerId = :userId) AND game.status = :status',
-          {
-            userId,
-            status: GameStatus.Active,
-          },
-        )
+        .where('game.status = :status', { status: GameStatus.Active })
+        .andWhere(':userId IN (game.firstPlayerId, game.secondPlayerId)', {
+          userId,
+        })
         .getOne();
     } catch (error) {
-      throw new InternalServerErrorException(
-        `getCurrentGameByUserId: ${error}`,
-      );
+      console.log(`getCurrentGameByUserId: ${error}`);
+      throw new Error(`getCurrentGameByUserId: ${error}`);
+    }
+  }
+  async getGameById(gameId: string, manager: EntityManager): Promise<QuizGame> {
+    try {
+      return manager
+        .createQueryBuilder(QuizGame, 'game')
+        .leftJoinAndSelect('game.firstPlayerProgress', 'fPP')
+        .leftJoinAndSelect('game.secondPlayerProgress', 'sPP')
+        .leftJoinAndSelect('game.questions', 'questions')
+        .leftJoinAndSelect('fPP.answers', 'fppAnswers')
+        .leftJoinAndSelect('sPP.answers', 'sppAnswers')
+        .where('game.id = :gameId', { gameId })
+        .getOne();
+    } catch (error) {
+      console.log(`getGameById: ${error}`);
+      throw new Error(`getGameById: ${error}`);
     }
   }
 

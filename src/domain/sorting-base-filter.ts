@@ -14,6 +14,8 @@ export enum convertSortBy {
   description = 'description',
   shortDescription = 'short_description',
   websiteUrl = 'website_url',
+  startGameDate = '"startGameDate"',
+  finishGameDate = '"finishGameDate"',
   pairCreatedDate = 'created_at',
   createdAt = 'created_at',
   created_at = 'created_at',
@@ -22,6 +24,7 @@ export enum convertSortBy {
   login = 'login',
   userLogin = 'user_login',
   updatedAt = 'updated_at',
+  status = 'status',
 }
 
 export const sortingKeys = Object.keys(convertSortBy);
@@ -29,7 +32,13 @@ export const sortingKeys = Object.keys(convertSortBy);
 export const sortingConstraints = {
   sa: ['id', 'login', 'email', 'createdAt'],
   quizQuestions: ['body', 'id', 'correctAnswers', 'published', 'updatedAt'],
-  quizGames: ['id', 'startGameDate', 'pairCreatedDate', 'finishGameDate'],
+  quizGames: [
+    'id',
+    'startGameDate',
+    'pairCreatedDate',
+    'finishGameDate',
+    'status',
+  ],
   blogs: [
     'id',
     'name',
@@ -51,17 +60,32 @@ export const sortingConstraints = {
   default: sortingKeys,
 };
 
+export const SortStatFields = [
+  'avgScores',
+  'sumScore',
+  'winsCount',
+  'lossesCount',
+  'drawsCount',
+  'gamesCount',
+];
 export type SortByType = keyof typeof sortingConstraints;
+
+export const DefaultSortValues = ['avgScores desc', 'sumScore desc'];
 
 export enum SortDirections {
   Asc = 'asc',
   Desc = 'desc',
+  ASC = 'ASC',
+  DESC = 'DESC',
+  asc = 'asc',
+  desc = 'desc',
 }
+export const SortDirectionValues = Object.keys(SortDirections);
 
 export abstract class BaseFilter {
   @IsOptional()
   @IsString()
-  abstract sortBy: string;
+  sortBy: string;
 
   // @IsEnum(SortDirections)
   @IsOptional()
@@ -108,7 +132,7 @@ export class PaginationViewModel<P> {
     this.pagesCount = Math.ceil(totalCount / pageSize);
     this.page = page;
     this.pageSize = pageSize;
-    this.totalCount = totalCount ? +totalCount : 0;
+    this.totalCount = +totalCount || 0;
 
     this.items = items;
   }

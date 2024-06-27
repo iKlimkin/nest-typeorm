@@ -1,5 +1,9 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import {
+  InjectDataSource,
+  InjectRepository,
+  getRepositoryToken,
+} from '@nestjs/typeorm';
 import { DataSource, Not, Repository } from 'typeorm';
 import { PaginationViewModel } from '../../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../../infra/utils/get-pagination';
@@ -17,6 +21,8 @@ import { QuizQuestionsQueryFilter } from '../input.models/quiz-questions-query.f
 import { GameStatus, publishedStatuses } from '../input.models/statuses.model';
 import {
   GameStats,
+  IUserStats,
+  PlayerStatsView,
   UserStats,
 } from '../output.models.ts/view.models.ts/quiz-game-analyze';
 import { QuizPairViewType } from '../output.models.ts/view.models.ts/quiz-game.view-type';
@@ -28,6 +34,7 @@ import { getQuestionViewModel } from '../output.models.ts/view.models.ts/quiz-qu
 import { QuizQuestionViewType } from '../output.models.ts/view.models.ts/quiz-question.view-type';
 import { getQuestionsViewModel } from '../output.models.ts/view.models.ts/quiz-questions.view-model';
 import { transformRawQuizDataToView } from '../output.models.ts/view.models.ts/quiz-raw.view-model';
+import { skip } from 'node:test';
 
 @Injectable()
 export class QuizQueryRepo {
@@ -181,147 +188,98 @@ export class QuizQueryRepo {
 
   async getUsersTop(queryOptions?: StatsQueryFilter) {
     try {
-      const { pageNumber, pageSize, sort } = getPagination(queryOptions);
+      const { pageNumber, pageSize, sort, skip } = getPagination(queryOptions);
 
       const gameQueryBuilder = this.quizPairs.createQueryBuilder('g');
-
-      const gamesQuantity = await gameQueryBuilder.getCount();
-
-      const userIds = await gameQueryBuilder
-        .select(['g.firstPlayerId', 'g.secondPlayerId'])
-        .getMany();
-
-      console.log({ userIds });
-
-      const uniqueUserIds = new Set();
-      userIds.forEach((id) => {
-        uniqueUserIds.add(id.firstPlayerId);
-        uniqueUserIds.add(id.secondPlayerId);
-      });
-      // const uniqueUserIds = new Map();
-      // userIds.forEach(async (id) => {
-      //   const progressIds = await gameQueryBuilder
-      //     .select(['g.firstPlayerProgressId', 'g.secondPlayerProgressId'])
-      //     .where('g.firstPlayerId = :id OR g.secondPlayerId = :id', { id })
-      //     .getMany();
-
-      //   uniqueUserIds.set(id.firstPlayerId, progressIds);
-      // });
-
       const progressQueryBuilder =
         this.playerProgresses.createQueryBuilder('progress');
 
-      const userStats = {};
-      const result = [];
-      for (const userId of uniqueUserIds) {
-        // const gamesQuantityQuery = progressQueryBuilder
-        //   .select('COUNT(progress.id)', 'gamesQuantity')
-        //   .where('progress.player = :userId', { userId })
-        //   .getRawOne();
-
-        // const sumScoreQuery = progressQueryBuilder
-        //   .select('SUM(progress.score)', 'sumScore')
-        //   .where('progress.player = :userId', { userId })
-        //   .getRawOne();
-
-        // const avgScoreQuery = progressQueryBuilder
-        //   .select('AVG(progress.score)', 'avgScore')
-        //   .where('progress.playerId = :userId', { userId })
-        //   .getRawOne();
-
-        // const winsQuery = gameQueryBuilder
-        //   .select('COUNT(g.id)', 'winsQuantity')
-        //   .where('g.winnerId = :userId', { userId })
-        //   .andWhere('g.status = :status', { status: GameStatus.Finished })
-        //   .getRawOne();
-
-        // const drawsQuery = gameQueryBuilder
-        //   .select('COUNT(g.id)', 'drawsQuantity')
-        //   .where('g.winnerId IS NULL')
-        //   .andWhere('g.status = :status', { status: GameStatus.Finished })
-        //   .getRawOne();
-
-        // const [
-        //   { gamesQuantity },
-        //   { sumScore },
-        //   { avgScore },
-        //   { winsQuantity },
-        //   { drawsQuantity },
-        // ] = await Promise.all([
-        //   gamesQuantityQuery,
-        //   sumScoreQuery,
-        //   avgScoreQuery,
-        //   winsQuery,
-        //   drawsQuery,
-        // ]);
-
-        // const losesQuantity = +gamesQuantity - (+winsQuantity + +drawsQuantity);
-
-        let statsQuery = `
-          SELECT
-            player.id,
-            player.login,
-            COALESCE(SUM(pp.score), 0) AS "sumScore",
-            COALESCE(AVG(pp.score), 0) AS "avgScores",
-            COUNT(player_games.id) AS "gamesCount",
-            COUNT(
-              CASE 
-                WHEN player_games."winnerId" = player.id AND player_games.status = 'Finished'
-                THEN 1 
-              END
-            ) AS "winsCount",
-            COUNT(
-              CASE 
-                WHEN player_games."winnerId" != player.id AND player_games."winnerId" IS NOT NULL 
-                THEN 1 
-              END
-            ) AS "lossesCount",
-            COUNT(
-              CASE 
-                WHEN player_games."winnerId" IS NULL AND player_games.status = 'Finished'
-                THEN 1 
-              END
-            ) AS "drawsCount"
+      let statsQuery = `
+        SELECT 
+          player.id,
+          player.login,
+          COALESCE(SUM(pp.score), 0) AS "sumScore",
+          COALESCE(AVG(pp.score), 0) AS "avgScores",
+          COUNT(games.id) AS "gamesCount",
+          COUNT(
+            CASE
+              WHEN games."winnerId" = player.id AND games.status = 'Finished'
+              THEN 1
+            END
+          ) AS "winsCount",
+          COUNT(
+            CASE
+              WHEN games."winnerId" != player.id AND games."winnerId" IS NOT NULL
+              THEN 1
+            END
+          ) AS "lossesCount",
+          COUNT(
+            CASE
+              WHEN games."winnerId" IS NULL AND games.status = 'Finished'
+              THEN 1
+            END
+          ) AS "drawsCount"
           FROM (
-            SELECT 
+            SELECT
               g.id,
-              g."winnerId"::uuid,
+              g."winnerId"::UUID,
               g.status,
               g."firstPlayerId"::uuid AS playerId,
               g."firstPlayerProgressId" AS progressId
             FROM quiz_game g
-            WHERE g."firstPlayerId" = $1
             UNION ALL
-            SELECT 
+            SELECT
               g.id,
-              g."winnerId"::uuid,
+              g."winnerId"::UUID,
               g.status,
               g."secondPlayerId"::uuid AS playerId,
               g."secondPlayerProgressId" AS progressId
             FROM quiz_game g
-            WHERE g."secondPlayerId" = $1
-          ) AS player_games
-          LEFT JOIN quiz_player_progress pp ON player_games.progressId = pp.id
-          LEFT JOIN user_account player ON player.id = player_games.playerId
+          ) AS games
+          LEFT JOIN quiz_player_progress pp ON pp.id = games.progressId
+          LEFT JOIN user_account player ON player.id = games.playerId
           GROUP BY player.id, player.login
-        `;
+          ORDER BY
+      `;
 
-        if (sort) {
-          statsQuery += `\nORDER BY`;
-          sort.forEach((sortRule) => {
-            const [sortBy, sortDirection] = sortRule.split(' ');
-            statsQuery += `\n ${sortBy} ${sortDirection},`;
-          });
-          statsQuery = statsQuery.slice(0, -1);
-        }
+      sort.forEach((sortRule, i) => {
+        let [sortBy, sortDir] = sortRule.split(' ');
+        sortDir = sortDir.toUpperCase();
+        statsQuery += ` "${sortBy}" ${sortDir},`;
+        i === sort.length - 1 && (statsQuery = statsQuery.slice(0, -1));
+      });
+      console.log({ sort: JSON.stringify(sort) });
 
-        const [stats] = await this.dataSource.query(statsQuery, [userId]);
-        userStats[userId as string] = new UserStats(stats);
-        result.push(new UserStats(stats));
-      }
+      const result = await this.dataSource.query(statsQuery);
 
-      const statsViewModel = new PaginationViewModel<UserStats>(
-        result,
+      const topStats = result.map((stat: IUserStats) => {
+        const {
+          avgScores,
+          drawsCount,
+          sumScore,
+          login,
+          lossesCount,
+          gamesCount,
+          id,
+          winsCount,
+        } = new UserStats(stat);
+
+        return {
+          sumScore,
+          avgScores,
+          gamesCount,
+          winsCount,
+          lossesCount,
+          drawsCount,
+          player: {
+            id,
+            login,
+          },
+        };
+      });
+
+      const statsViewModel = new PaginationViewModel<PlayerStatsView>(
+        topStats,
         pageNumber,
         pageSize,
         result.length,

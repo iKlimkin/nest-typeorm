@@ -12,15 +12,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import {
-  AccessTokenGuard,
-  CurrentUserInfo,
-  UserSessionDto,
-} from '../../../comments/api/controllers';
 import { RouterPaths } from '../../../../../test/tools/helpers/routing';
-import { QuizQueryRepo } from '../models/query-repositories/quiz.query.repo';
-import { ConnectPlayerCommand } from '../../application/commands/connect-player.command';
-import { CreatePairCommand } from '../../application/commands/create-pair.command';
+import { ValidateIdPipe } from '../../../../infra/pipes/id-validate.pipe';
 import {
   LayerNoticeInterceptor,
   OutputId,
@@ -28,15 +21,26 @@ import {
   handleErrors,
 } from '../../../blogs/api/controllers';
 import {
+  AccessTokenGuard,
+  CurrentUserInfo,
+  UserSessionDto,
+} from '../../../comments/api/controllers';
+import { ConnectPlayerCommand } from '../../application/commands/connect-player.command';
+import { CreatePairCommand } from '../../application/commands/create-pair.command';
+import { SetPlayerAnswerCommand } from '../../application/commands/set-player-answer.command';
+import { QuizTestService } from '../../application/quiz.test.service';
+import { InputAnswerModel } from '../models/input.models/answer.model';
+import {
+  QuizGamesQueryFilter,
+  StatsQueryFilter,
+} from '../models/input.models/quiz-games-query.filter';
+import { GameStatus } from '../models/input.models/statuses.model';
+import { PlayerStatsView } from '../models/output.models.ts/view.models.ts/quiz-game-analyze';
+import {
   AnswerResultViewType,
   QuizPairViewType,
 } from '../models/output.models.ts/view.models.ts/quiz-game.view-type';
-import { InputAnswerModel } from '../models/input.models/answer.model';
-import { SetPlayerAnswerCommand } from '../../application/commands/set-player-answer.command';
-import { QuizService } from '../../application/quiz.service';
-import { ValidateIdPipe } from '../../../../infra/pipes/id-validate.pipe';
-import { GameStatus } from '../models/input.models/statuses.model';
-import { QuizGamesQueryFilter } from '../models/input.models/quiz-games-query.filter';
+import { QuizQueryRepo } from '../models/query-repositories/quiz.query.repo';
 
 @UseGuards(AccessTokenGuard)
 @Controller(RouterPaths.quiz)
@@ -44,35 +48,25 @@ export class PairGameQuizController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly quizQueryRepo: QuizQueryRepo,
-    private readonly quizService: QuizService,
+    private readonly quizService: QuizTestService,
   ) {}
 
   @Get('users/top')
   async getTopUsers(
     @CurrentUserInfo() userInfo: UserSessionDto,
-    @Query() query: QuizGamesQueryFilter,
-  ): Promise<PaginationViewModel<QuizPairViewType>> {
-    const result = this.quizQueryRepo.getUserGames(userInfo.userId, query);
-
-    if (!result) {
-      throw new NotFoundException('User games not found');
-    }
-
-    return result;
+    @Query() query: StatsQueryFilter,
+  ): Promise<PaginationViewModel<PlayerStatsView>> {
+    return this.quizQueryRepo.getUsersTop(query);
   }
+
   @Get('pairs/my')
   async getAllUserGames(
     @CurrentUserInfo() userInfo: UserSessionDto,
     @Query() query: QuizGamesQueryFilter,
   ): Promise<PaginationViewModel<QuizPairViewType>> {
-    const result = this.quizQueryRepo.getUserGames(userInfo.userId, query);
-
-    if (!result) {
-      throw new NotFoundException('User games not found');
-    }
-
-    return result;
+    return this.quizQueryRepo.getUserGames(userInfo.userId, query);
   }
+
   @Get('users/my-statistic')
   async getUserStatistic(
     @CurrentUserInfo() userInfo: UserSessionDto,
@@ -169,11 +163,11 @@ export class PairGameQuizController {
   async sendAnswer(
     @CurrentUserInfo() userInfo: UserSessionDto,
     @Body() body: InputAnswerModel,
-  ): Promise<AnswerResultViewType | any> {
+  ): Promise<AnswerResultViewType> {
     const userInGameStatus = await this.quizQueryRepo.isUserInGame(
       userInfo.userId,
     );
-
+    
     if (
       !userInGameStatus ||
       userInGameStatus === GameStatus.PendingSecondPlayer

@@ -12,6 +12,10 @@ export * from '../infra/decorators/validate/is-valid-blogId';
 export * from '../features/blogs/api/query-repositories/blogs.query.repo';
 export * from '../features/quiz/infrastructure/quiz-game.repo';
 
+
+export * from '../infra/pipes/id-validate.pipe';
+export * from '../features/quiz/application/quiz.test.service';
+export * from '../features/quiz/application/quiz.service';
 export * from '../features/quiz/application/use-cases/create-question.use-case';
 export * from '../features/blogs/application/use-case/create-blog.use-case';
 export * from '../features/blogs/application/use-case/delete-blog.use-case';
@@ -29,6 +33,14 @@ export * from '../features/comments/api/query-repositories/feedbacks.query.repo'
 export * from '../features/comments/application/use-cases/update-comment.use-case';
 export * from '../features/comments/application/use-cases/update-comment-reaction.use-case';
 export * from '../features/comments/application/use-cases/delete-comment.use-case';
+export * from '../features/quiz/api/models/query-repositories/quiz.query.repo';
+export * from '../infra/decorators/validate/is-valid-answers';
+export * from '../features/quiz/application/use-cases/update-question.use-case';
+export * from '../features/quiz/application/use-cases/delete-question.use-case';
+export * from '../features/quiz/application/use-cases/publish-question.use-case';
+export * from '../features/quiz/application/use-cases/connect-player.use-case';
+export * from '../features/quiz/application/use-cases/create-pair.use-case';
+export * from '../features/quiz/application/use-cases/set-player-answer.use-case';
 
 export * from '../features/auth/domain/entities/temp-account.entity';
 export * from '../features/blogs/domain/entities/blog.entity';

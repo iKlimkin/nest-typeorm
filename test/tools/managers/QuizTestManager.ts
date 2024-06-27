@@ -3,9 +3,16 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import { PaginationViewModelType } from '../../../src/domain/pagination-view.model';
+import { SortDirections } from '../../../src/domain/sorting-base-filter';
 import { CreateQuestionData } from '../../../src/features/quiz/api/models/input.models/create-question.model';
+import { InputPublishData } from '../../../src/features/quiz/api/models/input.models/publish-question.model';
 import { GameStatus } from '../../../src/features/quiz/api/models/input.models/statuses.model';
 import { UpdateQuestionData } from '../../../src/features/quiz/api/models/input.models/update-question.model';
+import {
+  GameStatsData,
+  PlayerStatsView,
+  UserStats,
+} from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game-analyze';
 import { QuizPairViewType } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game.view-type';
 import { QuizQuestionViewType } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
 import {
@@ -16,17 +23,18 @@ import {
   QuizPlayerProgress,
   QuizQuestion,
 } from '../../../src/settings';
-import { NavigationEnum } from '../helpers/routing';
-import { QuizGamesQueryFilter } from '../../../src/features/quiz/api/models/input.models/quiz-games-query.filter';
-import { InputPublishData } from '../../../src/features/quiz/api/models/input.models/publish-question.model';
-import { GameStatsData } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game-analyze';
 import { ApiRouting } from '../routes/api.routing';
+import {
+  QuizGamesQueryFilter,
+  StatsQueryFilter,
+} from '../../../src/features/quiz/api/models/input.models/quiz-games-query.filter';
 
 export type QuestionsAndAnswersDB = {
   savedQuestion: QuizQuestion;
   answers: QuizCorrectAnswer[];
 }[];
-
+const type = 'bearer';
+const _basicAuthOptions = ['Authorization', 'Basic YWRtaW46cXdlcnR5'];
 export class QuizTestManager {
   constructor(
     protected readonly app: INestApplication,
@@ -132,7 +140,7 @@ export class QuizTestManager {
   async createPairOrConnect(accessToken: string, expectStatus = HttpStatus.OK) {
     const response = await request(this.application)
       .post(this.routing.pairs.connectOrCreate())
-      .auth(accessToken, { type: 'bearer' })
+      .auth(accessToken, { type })
       .expect(expectStatus);
 
     return response.body;
@@ -145,7 +153,7 @@ export class QuizTestManager {
   ) {
     const response = await request(this.application)
       .post(this.routing.pairs.sendAnswer())
-      .auth(accessToken, { type: 'bearer' })
+      .auth(accessToken, { type })
       .send({ answer })
       .expect(expectStatus);
 
@@ -159,7 +167,7 @@ export class QuizTestManager {
   ) {
     const response = await request(this.application)
       .get(this.routing.pairs.getGame(gameId))
-      .auth(accessToken, { type: 'bearer' })
+      .auth(accessToken, { type })
       .expect(expectStatus);
 
     return response.body;
@@ -171,7 +179,7 @@ export class QuizTestManager {
   ): Promise<QuizPairViewType> {
     const response = await request(this.application)
       .get(this.routing.pairs.getCurrentUnfinishedGame())
-      .auth(accessToken, { type: 'bearer' })
+      .auth(accessToken, { type })
       .expect(expectStatus);
 
     return response.body;
@@ -255,8 +263,9 @@ export class QuizTestManager {
           question: { id: savedQuestion.id },
         });
 
-        const savedAnswer =
-          await this.quizCorrectAnswersRepository.save(answer);
+        const savedAnswer = await this.quizCorrectAnswersRepository.save(
+          answer,
+        );
 
         answers.push(savedAnswer);
       }
@@ -272,16 +281,30 @@ export class QuizTestManager {
   ): Promise<PaginationViewModelType<QuizPairViewType>> {
     const response = await request(this.application)
       .get(this.routing.pairs.getUserGames())
-      .auth(accessToken, { type: 'bearer' })
+      .auth(accessToken, { type })
       .query(query)
       .expect(HttpStatus.OK);
 
     return response.body;
   }
+
+  async getTopUsers(
+    accessToken: string,
+    query?: StatsQueryFilter,
+  ): Promise<PaginationViewModelType<PlayerStatsView>> {
+    const response = await request(this.application)
+      .get(this.routing.pairs.getTopUsers())
+      .auth(accessToken, { type })
+      .query(query)
+      .expect(HttpStatus.OK);
+
+    return response.body;
+  }
+
   async getStatistics(accessToken: string): Promise<GameStatsData> {
     const response = await request(this.application)
       .get(this.routing.pairs.getUserStatistic())
-      .auth(accessToken, { type: 'bearer' })
+      .auth(accessToken, { type })
       .expect(HttpStatus.OK);
 
     return response.body;
@@ -371,25 +394,42 @@ export class QuizTestManager {
 
   checkConsistencyOfDataSorting(
     games: QuizPairViewType[],
-    sortDirection: string = 'DESC',
+    options?: {
+      sortDirection?: SortDirections;
+      sortField?: string;
+    },
+  ) {
+    const {
+      sortDirection = SortDirections.DESC,
+      sortField = 'pairCreatedDate',
+    } = options || {};
+    this.checkSortingByDateField(games, sortDirection, sortField);
+  }
+
+  private checkSortingByDateField(
+    games: QuizPairViewType[],
+    sortDirection: SortDirections,
+    sortField: string,
   ) {
     for (let i = 0; i < games.length - 1; i++) {
-      const currentGameTime = new Date(games[i].pairCreatedDate).getTime();
-      const nextGameTime = new Date(games[i + 1].pairCreatedDate).getTime();
+      const currentGameField = new Date(games[i][sortField]).getTime();
+      const nextGameField = new Date(games[i + 1][sortField]).getTime();
 
-      if (sortDirection === 'DESC') {
-        expect(nextGameTime).toBeLessThanOrEqual(currentGameTime);
-      } else {
-        expect(currentGameTime).toBeLessThanOrEqual(nextGameTime);
-      }
+      sortDirection === SortDirections.DESC
+        ? expect(nextGameField).toBeLessThanOrEqual(currentGameField)
+        : expect(currentGameField).toBeLessThanOrEqual(nextGameField);
     }
   }
 
   async simulateFinishGame(
     firstPlayerToken: string,
     secondPlayerToken: string,
-    correctAnswersForCurrentGame: any[],
+    correctAnswersForCurrentGame: any[] = [],
   ) {
+    if (!correctAnswersForCurrentGame.length) {
+      correctAnswersForCurrentGame = this.generateDefaultAnswers();
+    }
+
     for (let i = 0; i < 5; i++) {
       const answerIdx = Math.random() >= 0.5 ? 0 : 1;
       const currentPlayerToken =
@@ -415,6 +455,11 @@ export class QuizTestManager {
       }
     }
   }
+
+  private generateDefaultAnswers = () =>
+    Array(5)
+      .fill('a')
+      .flatMap((c) => [c, c]);
 
   async getCorrectAnswersForGame(
     gameId: string,

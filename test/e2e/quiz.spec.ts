@@ -20,20 +20,23 @@ import { wait } from '../tools/utils/delayUtils';
 import { initSettings } from '../tools/utils/initSettings';
 import { skipSettings } from '../tools/utils/testsSettings';
 import { QuizQuestionsQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
-import { QuizGamesQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-games-query.filter';
+import {
+  QuizGamesQueryFilter,
+  StatsQueryFilter,
+} from '../../src/features/quiz/api/models/input.models/quiz-games-query.filter';
 import { mockGameData } from '../tools/models/game-mock-data';
 import { SuperTestBody } from '../tools/models/body.response.model';
 import { QuizQuestionViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
 import { ApiRouting } from '../tools/routes/api.routing';
+import { PlayerStatsView } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game-analyze';
+import { log } from 'console';
+import { QuizPairViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game.view-type';
 
 aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   let app: INestApplication;
   let usersTestManager: UsersTestManager;
   let dataSource: DataSource;
   let httpServer: HttpServer;
-  let quizQuestionRepository: Repository<QuizQuestion>;
-  let quizAnswerRepository: Repository<QuizAnswer>;
-  let quizGameRepository: Repository<QuizGame>;
   let quizTestManager: QuizTestManager;
   let apiRouting: ApiRouting;
 
@@ -45,11 +48,6 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     httpServer = settings.httpServer;
     dataSource = settings.testingAppModule.get(DataSource);
 
-    // cut out
-    quizQuestionRepository = app.get(getRepositoryToken(QuizQuestion));
-    quizAnswerRepository = app.get(getRepositoryToken(QuizAnswer));
-    quizGameRepository = app.get(getRepositoryToken(QuizGame));
-
     apiRouting = new ApiRouting();
     quizTestManager = new QuizTestManager(app, apiRouting);
 
@@ -60,7 +58,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     // await cleanDatabase(httpServer);
     await app.close();
   });
-  describe.skip('q', () => {
+  describe('q', () => {
     describe('GET /sa/quiz/questions', () => {
       afterAll(async () => {
         await cleanDatabase(httpServer);
@@ -140,8 +138,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
           correctAnswers: ['Paris', 'paris'],
         };
 
-        const question =
-          await quizTestManager.createQuestionWithAnswers(createdBody);
+        const question = await quizTestManager.createQuestionWithAnswers(
+          createdBody,
+        );
 
         expect(question.body).toEqual(createdBody.body);
         expect(question.correctAnswers).toEqual(createdBody.correctAnswers);
@@ -268,8 +267,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
           correctAnswers: ['Paris', 'paris'],
         };
 
-        const question =
-          await quizTestManager.createQuestionWithAnswers(createdBody);
+        const question = await quizTestManager.createQuestionWithAnswers(
+          createdBody,
+        );
 
         expect.setState({ question });
       });
@@ -524,7 +524,8 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       await quizTestManager.restoreGameProgress(gameId);
     });
   });
-  describe('GET /pair-game-quiz/pairs/my-statistic / my', () => {
+
+  describe('GET /pair-game-quiz/pairs/my', () => {
     afterAll(async () => {
       // await cleanDatabase(httpServer);
     });
@@ -539,12 +540,12 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         fourthPlayerToken,
       ] = accessTokens;
 
-      console.log({
-        firstPlayerToken,
-        secondPlayerToken,
-        thirdPlayerToken,
-        fourthPlayerToken,
-      });
+      // console.log({
+      //   firstPlayerToken,
+      //   secondPlayerToken,
+      //   thirdPlayerToken,
+      //   fourthPlayerToken,
+      // });
 
       const numberOfGamesCreated = 10;
       await quizTestManager.simulateFinishedGames(
@@ -560,88 +561,567 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       });
     });
 
-    it('testing', async () => {
-      const {
+    it(`GET /pair-game-quiz/pairs/my; testing validate data consistency and order of finished firstPlayer's games`, async () => {
+      const { firstPlayerToken } = expect.getState();
+
+      const firstPlayerGames = await quizTestManager.getMyGames(
         firstPlayerToken,
-        secondPlayerToken,
-        thirdPlayerToken,
-        fourthPlayerToken,
-      } = expect.getState();
+      );
 
-      await quizTestManager.createPairOrConnect(firstPlayerToken);
-      const firstPlayerGames =
-        await quizTestManager.getMyGames(firstPlayerToken);
-    });
-
-    it.skip('GET /pair-game-quiz/pairs/my', async () => {
-      const {
-        firstPlayerToken,
-        secondPlayerToken,
-        thirdPlayerToken,
-        fourthPlayerToken,
-      } = expect.getState();
-
-      const query: QuizGamesQueryFilter = {
-        pageNumber: '1',
-        sortBy: 'createdAt',
-        sortDirection: SortDirections.Desc,
-        pageSize: '10',
-      };
-
-      const firstPlayerGames =
-        await quizTestManager.getMyGames(firstPlayerToken);
       const games = firstPlayerGames.items;
-      // console.log({ games });
+
+      const checkDefaultGameSorting =
+        quizTestManager.checkConsistencyOfDataSorting(games);
 
       expect(firstPlayerGames.totalCount).toBe(games.length);
 
       games.forEach((game, i) => {
         expect(game.status).toBe(GameStatus.Finished);
         expect(game).toEqual(mockGameData);
-        expect(game.questions).toHaveLength(5);
+
         expect(
-          game.firstPlayerProgress.answers && game.secondPlayerProgress.answers,
+          game.questions &&
+            game.firstPlayerProgress.answers &&
+            game.secondPlayerProgress.answers,
         ).toHaveLength(5);
 
         expect(game.firstPlayerProgress.answers[i].questionId).toBe(
           game.questions[i].id,
         );
       });
+    });
+
+    it(`GET /pair-game-quiz/pairs/my; validate data consistency and order of finished and pending pair firstPlayer\'s games and compare with different getGames views`, async () => {
+      const { firstPlayerToken, thirdPlayerToken } = expect.getState();
+
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+
+      const gameResponse = await quizTestManager.getMyGames(firstPlayerToken);
+
+      expect(gameResponse.totalCount).toBe(gameResponse.items.length);
+
+      const games = gameResponse.items;
+      const pendingPair = games[0];
+      expect(pendingPair.status).toBe(GameStatus.PendingSecondPlayer);
+      expect(
+        pendingPair.secondPlayerProgress &&
+          pendingPair.questions &&
+          pendingPair.startGameDate &&
+          pendingPair.finishGameDate,
+      ).toBeNull();
+
+      const unfinishedGame = await quizTestManager.getCurrentUnfinishedGame(
+        firstPlayerToken,
+      );
+      const gameById = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        pendingPair.id,
+      );
+
+      expect(pendingPair).toEqual(gameById);
+      expect(pendingPair).toEqual(unfinishedGame);
+
+      await quizTestManager.createPairOrConnect(thirdPlayerToken);
+
+      await quizTestManager.simulateFinishGame(
+        firstPlayerToken,
+        thirdPlayerToken,
+      );
+    });
+    it(`GET /pair-game-quiz/pairs/my; validate data consistency and order of finished and active firstPlayer\'s games`, async () => {
+      const { firstPlayerToken, secondPlayerToken, thirdPlayerToken } =
+        expect.getState();
 
       await quizTestManager.createPairOrConnect(firstPlayerToken);
       await quizTestManager.createPairOrConnect(thirdPlayerToken);
 
       for (let i = 0; i < 5; i++) {
-        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+        i === 1 &&
+          (await quizTestManager.sendAnswer(
+            secondPlayerToken,
+            'answer',
+            HttpStatus.FORBIDDEN,
+          ));
+
+        await quizTestManager.sendAnswer(thirdPlayerToken, 'answer');
       }
-      const unfinishedGame =
-        await quizTestManager.getCurrentUnfinishedGame(thirdPlayerToken);
-      const unfinishedGameById = await quizTestManager.getCurrentGameById(
+
+      const gameResponse = await quizTestManager.getMyGames(firstPlayerToken);
+
+      const games = gameResponse.items;
+      const currentActiveGame = games[0];
+
+      expect(currentActiveGame.status).toBe(GameStatus.Active);
+
+      const unfinishedGame = await quizTestManager.getCurrentUnfinishedGame(
         thirdPlayerToken,
-        unfinishedGame.id,
+      );
+      expect(currentActiveGame).toEqual({
+        ...unfinishedGame,
+        firstPlayerProgress: {
+          ...unfinishedGame.firstPlayerProgress,
+          answers: unfinishedGame.firstPlayerProgress.answers.map((a) => ({
+            ...a,
+            addedAt: expect.any(String),
+          })),
+        },
+        secondPlayerProgress: {
+          ...unfinishedGame.secondPlayerProgress,
+          answers: unfinishedGame.secondPlayerProgress.answers.map((a) => ({
+            ...a,
+            addedAt: expect.any(String),
+          })),
+        },
+      });
+    });
+    it(`GET /pair-game-quiz/pairs/my; testing sort fields`, async () => {
+      const { firstPlayerToken } = expect.getState();
+
+      const defaultQuerySort: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        pageSize: '10',
+        sortBy: 'default',
+        sortDirection: SortDirections.Asc,
+      };
+
+      const querySortStatusAsc: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        pageSize: '10',
+        sortBy: 'status',
+        sortDirection: SortDirections.Asc,
+      };
+      const querySortStatusDesc: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        pageSize: '10',
+        sortBy: 'status',
+        sortDirection: SortDirections.Desc,
+      };
+
+      const querySortFinishDateDesc: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        pageSize: '10',
+        sortBy: 'finishGameDate',
+        sortDirection: SortDirections.Desc,
+      };
+
+      const querySortFinishDateAsc: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        pageSize: '10',
+        sortBy: 'finishGameDate',
+        sortDirection: SortDirections.Asc,
+      };
+
+      const querySortAssembledDateDesc: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        pageSize: '10',
+        sortBy: 'startGameDate',
+        sortDirection: SortDirections.Desc,
+      };
+
+      const querySortAssembledDateAsc: QuizGamesQueryFilter = {
+        pageNumber: '1',
+        pageSize: '10',
+        sortBy: 'startGameDate',
+        sortDirection: SortDirections.Asc,
+      };
+
+      const { items: firstOutcome } = await quizTestManager.getMyGames(
+        firstPlayerToken,
+        querySortStatusAsc,
+      );
+      const { items: secondOutcome } = await quizTestManager.getMyGames(
+        firstPlayerToken,
+        querySortStatusDesc,
       );
 
-      unfinishedGame.firstPlayerProgress.answers.forEach((a, i) => {
-        expect(a.questionId).toBe(unfinishedGame.questions[i].id);
+      expect(firstOutcome).toEqual(firstOutcome);
+      expect(firstOutcome).not.toEqual(secondOutcome);
 
-        expect(
-          unfinishedGameById.firstPlayerProgress.answers[i].questionId,
-        ).toBe(unfinishedGameById.questions[i].id);
-      });
+      const { items: thirdOutcome } = await quizTestManager.getMyGames(
+        firstPlayerToken,
+        querySortFinishDateDesc,
+      );
 
-      const checkGamesSorting =
-        quizTestManager.checkConsistencyOfDataSorting(games);
+      const { items: fifthOutcome } = await quizTestManager.getMyGames(
+        firstPlayerToken,
+        querySortFinishDateAsc,
+      );
 
-      await quizTestManager.getMyGames(secondPlayerToken);
-      await quizTestManager.getMyGames(thirdPlayerToken);
-      await quizTestManager.getMyGames(fourthPlayerToken);
+      expect(thirdOutcome).not.toEqual(fifthOutcome);
+
+      const { items: sixthOutcome } = await quizTestManager.getMyGames(
+        firstPlayerToken,
+        querySortAssembledDateDesc,
+      );
+
+      const { items: seventhOutcome } = await quizTestManager.getMyGames(
+        firstPlayerToken,
+        querySortAssembledDateAsc,
+      );
+
+      expect(sixthOutcome).not.toEqual(seventhOutcome);
+
+      // console.log({ firstPlayerToken });
     });
   });
 
-  describe.only('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
+  describe('GET /pair-game-quiz/pairs/my-statistic', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
+
+    beforeAll(async () => {
+      const { accessTokens } = await usersTestManager.createUsers(4);
+
+      const [
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        fourthPlayerToken,
+      ] = accessTokens;
+
+      const numberOfGamesCreated = 10;
+      await quizTestManager.simulateFinishedGames(
+        accessTokens,
+        numberOfGamesCreated,
+      );
+
+      expect.setState({
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        fourthPlayerToken,
+      });
+    });
+
+    it(`should return correct stats`, async () => {
+      const { firstPlayerToken } = expect.getState();
+      console.log({ firstPlayerToken });
+
+      const stats = await quizTestManager.getStatistics(firstPlayerToken);
+      console.log({ stats });
+    });
+  });
+
+  describe('GET /pair-game-quiz/users/top', () => {
+    afterAll(async () => {
+      // await cleanDatabase(httpServer);
+    });
+
+    beforeAll(async () => {
+      const { users, accessTokens } = await usersTestManager.createUsers(4);
+
+      const [
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        fourthPlayerToken,
+      ] = accessTokens;
+
+      const numberOfGamesCreated = 10;
+      await quizTestManager.simulateFinishedGames(
+        accessTokens,
+        numberOfGamesCreated,
+      );
+
+      expect.setState({
+        users,
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        fourthPlayerToken,
+      });
+    });
+    it('Sorting by avgScores', async () => {
+      const { firstPlayerToken } = expect.getState();
+
+      const query = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['avgScores asc'],
+      };
+
+      const query2 = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['avgScores desc'],
+      };
+
+      const { items: sortedAvgScoresAsc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query,
+      );
+      const { items: sortedAvgScoresDesc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query2,
+      );
+
+      for (let i = 0; i < sortedAvgScoresAsc.length - 1; i++) {
+        expect(sortedAvgScoresAsc[i].avgScores).toBeLessThanOrEqual(
+          sortedAvgScoresAsc[i + 1].avgScores,
+        );
+        expect(sortedAvgScoresDesc[i].avgScores).toBeGreaterThanOrEqual(
+          sortedAvgScoresDesc[i + 1].avgScores,
+        );
+      }
+    });
+
+    it('sorting by sumScore', async () => {
+      const { firstPlayerToken } = expect.getState();
+
+      const query = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['sumScore desc'],
+      };
+
+      const query2 = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['sumScore asc'],
+      };
+
+      const { items: sumScoreDesc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query,
+      );
+
+      const { items: sumScoreAsc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query2,
+      );
+
+      for (let i = 0; i < sumScoreDesc.length - 1; i++) {
+        expect(sumScoreDesc[i].sumScore).toBeGreaterThanOrEqual(
+          sumScoreDesc[i + 1].sumScore as number,
+        );
+
+        expect(sumScoreAsc[i].sumScore).toBeLessThanOrEqual(
+          sumScoreAsc[i + 1].sumScore as number,
+        );
+      }
+    });
+
+    it('sorting by gamesCount', async () => {
+      const { firstPlayerToken } = expect.getState();
+
+      const query = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['gamesCount desc'],
+      };
+
+      const query2 = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['gamesCount asc'],
+      };
+
+      const { items: gamesCountDesc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query,
+      );
+
+      const { items: gamesCountAsc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query2,
+      );
+
+      for (let i = 0; i < gamesCountDesc.length - 1; i++) {
+        expect(gamesCountDesc[i].gamesCount).toBeGreaterThanOrEqual(
+          gamesCountDesc[i + 1].gamesCount as number,
+        );
+
+        expect(gamesCountAsc[i].gamesCount).toBeLessThanOrEqual(
+          gamesCountAsc[i + 1].gamesCount as number,
+        );
+      }
+    });
+    it('sorting by winsCount', async () => {
+      const { firstPlayerToken } = expect.getState();
+
+      const query = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['winsCount desc'],
+      };
+
+      const query2 = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['winsCount asc'],
+      };
+
+      const { items: winsCountDesc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query,
+      );
+
+      const { items: winsCountAsc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query2,
+      );
+
+      for (let i = 0; i < winsCountDesc.length - 1; i++) {
+        expect(winsCountDesc[i].winsCount).toBeGreaterThanOrEqual(
+          winsCountDesc[i + 1].winsCount as number,
+        );
+
+        expect(winsCountAsc[i].winsCount).toBeLessThanOrEqual(
+          winsCountAsc[i + 1].winsCount as number,
+        );
+      }
+    });
+    it('sorting by lossesCount', async () => {
+      const { firstPlayerToken } = expect.getState();
+
+      const query = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['lossesCount desc'],
+      };
+
+      const query2 = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['lossesCount asc'],
+      };
+
+      const { items: lossesCountDesc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query,
+      );
+
+      const { items: lossesCountAsc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query2,
+      );
+
+      for (let i = 0; i < lossesCountDesc.length - 1; i++) {
+        expect(lossesCountDesc[i].lossesCount).toBeGreaterThanOrEqual(
+          lossesCountDesc[i + 1].lossesCount as number,
+        );
+
+        expect(lossesCountAsc[i].lossesCount).toBeLessThanOrEqual(
+          lossesCountAsc[i + 1].lossesCount as number,
+        );
+      }
+    });
+    it('sorting by drawsCount', async () => {
+      const { firstPlayerToken } = expect.getState();
+
+      const query = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['drawsCount desc'],
+      };
+
+      const query2 = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['drawsCount asc'],
+      };
+
+      const { items: drawsCountDesc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query,
+      );
+
+      const { items: drawsCountAsc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query2,
+      );
+
+      for (let i = 0; i < drawsCountDesc.length - 1; i++) {
+        expect(drawsCountDesc[i].drawsCount).toBeGreaterThanOrEqual(
+          drawsCountDesc[i + 1].drawsCount as number,
+        );
+
+        expect(drawsCountAsc[i].drawsCount).toBeLessThanOrEqual(
+          drawsCountAsc[i + 1].drawsCount as number,
+        );
+      }
+    });
+
+    it(`testing query sort`, async () => {
+      const { firstPlayerToken } = expect.getState();
+      const query = {
+        pageNumber: '1',
+        pageSize: '10',
+        sort: ['avgScores asc'],
+      };
+      // ["avgScores desc","sumScore desc"]
+      const { items: defaultSort } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+      );
+
+      defaultSort.forEach((s, i, itself) => {
+        if (i > 0) {
+          expect(s.avgScores).toBeLessThanOrEqual(itself[i - 1].avgScores);
+        }
+      });
+
+      const { items: avgScoresAsc } = await quizTestManager.getTopUsers(
+        firstPlayerToken,
+        query,
+      );
+
+      avgScoresAsc.forEach((s, i, itself) => {
+        i > 0 &&
+          expect(s.avgScores).toBeGreaterThanOrEqual(itself[i - 1].avgScores);
+      });
+    });
+    const executePlayerStats = (stats, login) =>
+      stats.items.find((s) => s.player.login === login);
+    it(`should return correct stats for gamesCount and drawsCount`, async () => {
+      const { firstPlayerToken, secondPlayerToken } = expect.getState();
+      console.log({ firstPlayerToken });
+
+      const stats = await quizTestManager.getTopUsers(firstPlayerToken);
+
+      const firstPlayer = await usersTestManager.getProfile(
+        null,
+        firstPlayerToken,
+      );
+
+      let firstPlayerStats: PlayerStatsView;
+      stats.items.forEach((stat) => {
+        if (stat.player.login === firstPlayer.login) {
+          firstPlayerStats = stat;
+        }
+      });
+
+      await quizTestManager.createPairOrConnect(firstPlayerToken);
+      const stats2 = await quizTestManager.getTopUsers(firstPlayerToken);
+
+      const { id: gameId } = await quizTestManager.createPairOrConnect(
+        secondPlayerToken,
+      );
+
+      const stats3 = await quizTestManager.getTopUsers(secondPlayerToken);
+
+      expect(executePlayerStats(stats3, firstPlayer.login).gamesCount).toBe(
+        ++firstPlayerStats.gamesCount,
+      );
+
+      // drawsCount
+      for (let i = 0; i < 5; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+        await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
+      }
+      const stats4 = await quizTestManager.getTopUsers(firstPlayerToken);
+
+      expect(++firstPlayerStats.drawsCount).toBe(
+        executePlayerStats(stats4, firstPlayer.login).drawsCount,
+      );
+    });
+    it('should return correct ', async () => {});
+  });
+
+  describe.only('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
+    // afterAll(async () => {
+    //   await cleanDatabase(httpServer);
+    // });
 
     beforeAll(async () => {
       const { accessTokens, users } = await usersTestManager.createUsers(3);
@@ -661,7 +1141,24 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         questionsAndAnswers,
       });
     });
-    it('prepare for battle', async () => {
+    // beforeEach(async () => {
+    //     const { firstPlayerToken, secondPlayerToken, questionsAndAnswers } =
+    //     expect.getState();
+
+    //   const { correctAnswersForCurrentGame, gameId } =
+    //     await quizTestManager.prepareForBattle(
+    //       firstPlayerToken,
+    //       secondPlayerToken,
+    //       questionsAndAnswers,
+    //     );
+
+    //   expect.setState({
+    //     gameId,
+    //     correctAnswersForCurrentGame,
+    //   });
+    // })
+
+    it.only('prepare for battle', async () => {
       const { firstPlayerToken, secondPlayerToken, questionsAndAnswers } =
         expect.getState();
 
@@ -927,7 +1424,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       await quizTestManager.restoreGameProgress(gameId, true);
     });
 
-    it.only('POST -> ../connect, POST -> "../answers", GET -> "../pairs", GET -> "/../my-current": add answers to first game, created by user2, connected by user1: add answers by each user; get active game and call "../my-current by both users after each answer"; ../connect, ../answers, /my-current, ../:id, ../connect; create pair by first player, try add answer -> 403, first player`s number of games 3;', async () => {
+    it('POST -> ../connect, POST -> "../answers", GET -> "../pairs", GET -> "/../my-current": add answers to first game, created by user2, connected by user1: add answers by each user; get active game and call "../my-current by both users after each answer"; ../connect, ../answers, /my-current, ../:id, ../connect; create pair by first player, try add answer -> 403, first player`s number of games 3;', async () => {
       const {
         firstPlayerToken,
         secondPlayerToken,
@@ -938,8 +1435,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
       await quizTestManager.createPairOrConnect(secondPlayerToken);
 
-      const { id: firstPairId } =
-        await quizTestManager.createPairOrConnect(firstPlayerToken);
+      const { id: firstPairId } = await quizTestManager.createPairOrConnect(
+        firstPlayerToken,
+      );
 
       const { correctAnswersForCurrentGame: answers } =
         await quizTestManager.getCorrectAnswersForGame(
@@ -1016,15 +1514,122 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         'answer',
         HttpStatus.FORBIDDEN,
       );
-      const firstPlayerStats =
-        await quizTestManager.getMyGames(firstPlayerToken);
+      const firstPlayerStats = await quizTestManager.getMyGames(
+        firstPlayerToken,
+      );
       expect(firstPlayerStats.totalCount).toBe(3);
+    });
+
+    it(`POST /pair-game-quiz/pairs/my-current/answers testing autocomplete game after 10sec `, async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        correctAnswersForCurrentGame,
+        gameId,
+      } = expect.getState();
+
+      // give 2 correct answers
+      for (let i = 0; i < 3; i++) {
+        const correctAnswer = correctAnswersForCurrentGame[i + 1];
+        await quizTestManager.sendAnswer(firstPlayerToken, correctAnswer);
+        await quizTestManager.sendAnswer(secondPlayerToken, correctAnswer);
+      }
+      await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+      await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        correctAnswersForCurrentGame[correctAnswersForCurrentGame.length - 3],
+      );
+
+      const game: QuizGame = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        gameId,
+      );
+
+      const secondPlayerAnswersQuantityBefore =
+        game.secondPlayerProgress.answers.length;
+      expect(secondPlayerAnswersQuantityBefore).toBe(4);
+
+      await wait(10);
+
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        'answer',
+        HttpStatus.FORBIDDEN,
+      );
+      const gameAfterAutocomplete: QuizGame =
+        await quizTestManager.getCurrentGameById(secondPlayerToken, gameId);
+
+      const secondPlayerAnswersQuantityAfter =
+        gameAfterAutocomplete.secondPlayerProgress.answers.length;
+      expect(secondPlayerAnswersQuantityAfter).toBe(5);
+      expect(gameAfterAutocomplete.status).toBe(GameStatus.Finished);
+
+      await quizTestManager.restoreGameProgress(gameId, true)
+    });
+    it.only(`POST /pair-game-quiz/pairs/my-current/answers testing autocomplete game and handle bonuses`, async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        correctAnswersForCurrentGame,
+        gameId,
+      } = expect.getState();
+
+      // give 1 right answer by firstPlayer and 2 right answers by secondPlayer
+      for (let i = 0; i < 5; i++) {
+        const correctAnswer = correctAnswersForCurrentGame[i + 1];
+        await quizTestManager.sendAnswer(
+          firstPlayerToken,
+          correctAnswersForCurrentGame[!i ? i : 1],
+        );
+        i < 2 &&
+          (await quizTestManager.sendAnswer(secondPlayerToken, correctAnswer));
+      }
+      
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        correctAnswersForCurrentGame[correctAnswersForCurrentGame.length - 5],
+      );
+    
+      const game: QuizGame = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        gameId,
+      );
+
+      const secondPlayerAnswersQuantityBefore =
+        game.secondPlayerProgress.answers.length;
+      expect(secondPlayerAnswersQuantityBefore).toBe(3);
+
+      await wait(11);
+
+      const game2: QuizGame = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        gameId,
+      );
+      console.log(game2);
+      
+      // await quizTestManager.sendAnswer(
+      //   secondPlayerToken,
+      //   'answer',
+      //   HttpStatus.FORBIDDEN,
+      // );
+
+      const gameAfterAutocomplete: QuizGame =
+        await quizTestManager.getCurrentGameById(secondPlayerToken, gameId);
+
+      // const secondPlayerAnswersQuantityAfter =
+      //   gameAfterAutocomplete.secondPlayerProgress.answers.length;
+      // expect(secondPlayerAnswersQuantityAfter).toBe(5);
+      // expect(gameAfterAutocomplete.status).toBe(GameStatus.Finished);
     });
   });
 
-  describe('CONSTANT TESTS', () => {
+  describe.skip('CONSTANT TESTS', () => {
     beforeEach(async () => {
-      await cleanDatabase(httpServer);
+      // await cleanDatabase(httpServer);
 
       const questionsAndAnswers =
         await quizTestManager.createQuestionsForFurtherTests(10);
@@ -1042,23 +1647,107 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       });
     });
 
-    // it.only('', async () => {
-    //   const { firstPlayerToken, secondPlayerToken, thirdPlayerToken } =
-    //     expect.getState();
+    it.skip('t', async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        questionsAndAnswers,
+      } = expect.getState();
+      console.log({ firstPlayerToken });
 
-    //   console.log({
-    //     firstPlayerToken,
-    //     secondPlayerToken,
-    //     thirdPlayerToken,
-    //   });
-    // });
+      const { gameId } = await quizTestManager.prepareForBattle(
+        firstPlayerToken,
+        secondPlayerToken,
+        questionsAndAnswers,
+      );
+
+      for (let i = 0; i < 5; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+      }
+      await wait(11);
+      await quizTestManager.getCurrentUnfinishedGame(
+        firstPlayerToken,
+        HttpStatus.NOT_FOUND,
+      );
+      const game: QuizPairViewType = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        gameId,
+      );
+      const spAnswers = game.secondPlayerProgress.answers;
+
+      expect(game.status).toBe('Finished');
+      spAnswers.forEach((a, i) => {
+        expect(a.questionId).toBe(game.questions[i].id);
+      });
+    });
+    it('t', async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        questionsAndAnswers,
+      } = expect.getState();
+      console.log({ firstPlayerToken });
+
+      for (let i = 0; i < 4; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+      }
+      await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+
+      await wait(11);
+
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        'answer',
+        HttpStatus.FORBIDDEN,
+      );
+
+      await quizTestManager.getCurrentUnfinishedGame(
+        firstPlayerToken,
+        HttpStatus.NOT_FOUND,
+      );
+
+      // const { gameId } = await quizTestManager.prepareForBattle(
+      //   firstPlayerToken,
+      //   secondPlayerToken,
+      //   questionsAndAnswers,
+      // );
+
+      // const { correctAnswersForCurrentGame } =
+      //   await quizTestManager.getCorrectAnswersForGame(
+      //     gameId,
+      //     questionsAndAnswers,
+      //   );
+
+      // for (let i = 0; i < 4; i++) {
+      //   await quizTestManager.sendAnswer(
+      //     firstPlayerToken,
+      //     correctAnswersForCurrentGame[i + 1],
+      //   );
+
+      //   await quizTestManager.sendAnswer(
+      //     secondPlayerToken,
+      //     correctAnswersForCurrentGame[i + 2],
+      //   );
+      // }
+
+      const game = await quizTestManager.getCurrentUnfinishedGame(
+        firstPlayerToken,
+      );
+      console.log({ g: JSON.stringify(game) });
+    });
 
     it('testing', async () => {
-      const { firstPlayerToken, secondPlayerToken, thirdPlayerToken } =
-        expect.getState();
-      // await cleanDatabase(httpServer);
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        questionsAndAnswers,
+      } = expect.getState();
 
       const game = await quizTestManager.createPairOrConnect(firstPlayerToken);
+
       const fault = await quizTestManager.createPairOrConnect(
         firstPlayerToken,
         HttpStatus.FORBIDDEN,
@@ -1067,6 +1756,12 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       await quizTestManager.createPairOrConnect(secondPlayerToken);
 
       const gameId = game.id;
+
+      const { correctAnswersForCurrentGame } =
+        await quizTestManager.getCorrectAnswersForGame(
+          gameId,
+          questionsAndAnswers,
+        );
 
       await quizTestManager.createPairOrConnect(
         firstPlayerToken,
@@ -1080,7 +1775,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       console.log({ firstPlayerToken, secondPlayerToken, thirdPlayerToken });
 
       for (let i = 0; i < 5; i++) {
-        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+        await quizTestManager.sendAnswer(
+          firstPlayerToken,
+          correctAnswersForCurrentGame[i],
+        );
 
         await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
       }
@@ -1102,8 +1800,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       expect(finishedGame.status).toBe(GameStatus.Finished);
 
       await quizTestManager.createPairOrConnect(firstPlayerToken);
-      const { id: newGameId } =
-        await quizTestManager.createPairOrConnect(secondPlayerToken);
+      const { id: newGameId } = await quizTestManager.createPairOrConnect(
+        secondPlayerToken,
+      );
 
       for (let i = 0; i < 5; i++) {
         await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
@@ -1117,8 +1816,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       );
 
       await quizTestManager.createPairOrConnect(firstPlayerToken);
-      const { id: newGameId2 } =
-        await quizTestManager.createPairOrConnect(secondPlayerToken);
+      const { id: newGameId2 } = await quizTestManager.createPairOrConnect(
+        secondPlayerToken,
+      );
 
       for (let i = 0; i < 4; i++) {
         await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
@@ -1172,7 +1872,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
       expect.setState({ firstPlayerToken, secondPlayerToken });
     });
-    it.skip('GET STATS', async () => {
+    it('GET STATS', async () => {
       const {
         firstPlayerToken,
         secondPlayerToken,
@@ -1180,26 +1880,30 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         questionsAndAnswers,
       } = expect.getState();
 
-      const firstPlayerStats =
-        await quizTestManager.getMyGames(firstPlayerToken);
-      console.log({ firstPlayerStats: firstPlayerStats.items });
+      await quizTestManager.prepareForBattle(
+        firstPlayerToken,
+        secondPlayerToken,
+        questionsAndAnswers,
+      );
+
+      for (let i = 0; i < 4; i++) {
+        await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+
+        await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
+      }
+
+      const gamesResult = await quizTestManager.getMyGames(firstPlayerToken);
+      const byToken = await quizTestManager.getCurrentUnfinishedGame(
+        firstPlayerToken,
+      );
+      const games = gamesResult.items;
+      console.log({
+        fPGames: JSON.stringify(games),
+        byToken: JSON.stringify(byToken),
+      });
 
       // const secondPlayerStats = await quizTestManager.getMyGames(secondPlayerToken)
       // console.log({firstPlayerStats, secondPlayerStats});
-    });
-    it.skip('GET /pair-game-quiz/pairs/my - should return all user games', async () => {
-      const { firstPlayerToken } = expect.getState();
-
-      const query: QuizGamesQueryFilter = {
-        pageNumber: '1',
-        pageSize: '10',
-        sortBy: 'defaultSortBy',
-        sortDirection: SortDirections.Asc,
-      };
-      const games = await quizTestManager.getMyGames(firstPlayerToken, query);
-      // console.log(games.items);
-
-      expect(games.totalCount).toBe(2);
     });
   });
 });

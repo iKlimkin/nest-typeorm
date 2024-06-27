@@ -41,6 +41,9 @@ export class QuizGame extends BaseEntity {
   @Column({ type: 'timestamp', nullable: true })
   finishGameDate: Date | null;
 
+  @Column({ nullable: true })
+  winnerId: string | null;
+
   @VersionColumn({ default: 1 })
   version: number;
 

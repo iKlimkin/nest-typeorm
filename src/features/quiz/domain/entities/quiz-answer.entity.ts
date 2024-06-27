@@ -1,9 +1,7 @@
-import { Entity, ManyToOne, Column, JoinColumn, OneToMany } from 'typeorm';
-import type { QuizQuestion } from './quiz-questions.entity';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
-import type { QuizPlayerProgress } from './quiz-player-progress.entity';
 import { AnswerStatus } from '../../api/models/input.models/statuses.model';
-import { QuizCorrectAnswer } from './quiz-correct-answers.entity';
+import type { QuizPlayerProgress } from './quiz-player-progress.entity';
 
 interface CreateAnswerData {
   answerText: string;
@@ -14,7 +12,7 @@ interface CreateAnswerData {
 
 @Entity()
 export class QuizAnswer extends BaseEntity {
-  @Column()
+  @Column({ nullable: true })
   answerText: string;
 
   @Column()

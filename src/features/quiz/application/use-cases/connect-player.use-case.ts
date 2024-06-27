@@ -15,6 +15,7 @@ import { ConnectPlayerCommand } from '../commands/connect-player.command';
 export class ConnectPlayerUseCase
   implements ICommandHandler<ConnectPlayerCommand>
 {
+  private readonly location = 'ConnectPlayerUserCase';
   constructor(
     private readonly quizRepo: QuizRepository,
     private readonly usersRepo: UsersRepository,
@@ -25,8 +26,7 @@ export class ConnectPlayerUseCase
     command: ConnectPlayerCommand,
   ): Promise<LayerNoticeInterceptor<OutputId | null>> {
     const notice = new LayerNoticeInterceptor<OutputId>();
-    const quizRepo = this.quizRepo;
-    const location = 'ConnectPlayerUserCase';
+    const { quizRepo, location } = this;
     const { userId } = command.connectionData;
 
     try {

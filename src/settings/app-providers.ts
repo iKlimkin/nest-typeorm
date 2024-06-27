@@ -3,35 +3,36 @@ import {
   BlogIdExistConstraint,
   BlogsQueryRepo,
   BlogsRepository,
+  ConnectPlayerUseCase,
   CreateBlogUseCase,
   CreateCommentUseCase,
+  CreatePairUseCase,
   CreatePostUseCase,
   CreateQuestionUseCase,
   DeleteBlogUseCase,
   DeleteCommentUseCase,
   DeletePostUseCase,
+  DeleteQuestionUseCase,
   FeedbacksQueryRepo,
   FeedbacksRepository,
+  IsValidAnswersConstraint,
   PostsQueryRepo,
   PostsRepository,
+  PublishQuestionUseCase,
+  QuizQueryRepo,
   QuizRepository,
+  QuizService,
+  QuizTestService,
+  SetPlayerAnswerUseCase,
   TestDatabaseRepo,
   UpdateBlogUseCase,
   UpdateCommentReactionUseCase,
   UpdateCommentUseCase,
   UpdatePostReactionUseCase,
   UpdatePostUseCase,
+  UpdateQuestionUseCase,
+  ValidateIdPipe,
 } from '.';
-import { QuizQueryRepo } from '../features/quiz/api/models/query-repositories/quiz.query.repo';
-import { IsValidAnswersConstraint } from '../infra/decorators/validate/is-valid-answers';
-import { UpdateQuestionUseCase } from '../features/quiz/application/use-cases/update-question.use-case';
-import { DeleteQuestionUseCase } from '../features/quiz/application/use-cases/delete-question.use-case';
-import { PublishQuestionUseCase } from '../features/quiz/application/use-cases/publish-question.use-case';
-import { ConnectPlayerUseCase } from '../features/quiz/application/use-cases/connect-player.use-case';
-import { CreatePairUseCase } from '../features/quiz/application/use-cases/create-pair.use-case';
-import { SetPlayerAnswerUseCase } from '../features/quiz/application/use-cases/set-player-answer.use-case';
-import { QuizService } from '../features/quiz/application/quiz.service';
-import { ValidateIdPipe } from '../infra/pipes/id-validate.pipe';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -69,14 +70,19 @@ const useCases: Provider[] = [
   SetPlayerAnswerUseCase,
 ];
 
-const quizProviders = [QuizRepository, QuizQueryRepo];
+const quizProviders = [
+  QuizRepository,
+  QuizQueryRepo,
+  QuizService,
+  QuizTestService,
+];
 
 export const providers: Provider[] = [
   ...blogsProviders,
   ...postsProviders,
   ...feedbacksProviders,
   ...useCases,
-  QuizService,
+
   ...testProviders,
   ...quizProviders,
   BlogIdExistConstraint,

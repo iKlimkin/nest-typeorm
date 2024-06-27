@@ -1,4 +1,7 @@
-import { BaseFilter } from '../../domain/sorting-base-filter';
+import {
+  BaseFilter,
+  DefaultSortValues,
+} from '../../domain/sorting-base-filter';
 import { publishedStatuses } from '../../features/quiz/api/models/input.models/statuses.model';
 
 enum sortDirections {
@@ -14,14 +17,17 @@ export type PaginationType = {
   skip: number;
   sortBy: string;
   sortDirection: SortDirections;
+  sort?: string[];
 };
 
 interface CustomFilter extends Partial<BaseFilter> {
   publishedStatus?: publishedStatuses | '';
+  sort?: string[];
 }
 
 interface CustomOutputFilter {
   publishedStatus: publishedStatuses | '';
+  sort?: string[];
 }
 
 export const getPagination = <T extends CustomFilter>(
@@ -29,9 +35,11 @@ export const getPagination = <T extends CustomFilter>(
 ): PaginationType & CustomOutputFilter => {
   let sortDirection: SortDirections;
   let sortBy: string;
+  let sort: string[]
 
   sortDirection = inputData.sortDirection === 'asc' ? 'ASC' : 'DESC';
   sortBy = inputData.sortBy || 'created_at';
+  sort = inputData.sort || DefaultSortValues;
 
   const parsedPageNumber = parseInt(inputData.pageNumber, 10);
   const pageNumber = !isNaN(parsedPageNumber)
@@ -52,5 +60,6 @@ export const getPagination = <T extends CustomFilter>(
     sortBy,
     sortDirection,
     publishedStatus,
+    sort,
   };
 };

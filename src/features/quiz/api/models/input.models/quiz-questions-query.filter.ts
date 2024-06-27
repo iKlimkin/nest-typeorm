@@ -7,7 +7,7 @@ import {
   ValidSortDirection,
   ValidateAndConvertStatuses,
   ValidateSortBy,
-} from '../../../../../infra/decorators/transform/is-valid-field';
+} from '../../../../../infra/decorators/transform/transform-params';
 import { publishedStatuses } from './statuses.model';
 
 export class QuizQuestionsQueryFilter extends BaseFilter {

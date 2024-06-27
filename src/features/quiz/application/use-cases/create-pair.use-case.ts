@@ -14,7 +14,6 @@ import { CreatePairCommand } from '../commands/create-pair.command';
 @CommandHandler(CreatePairCommand)
 export class CreatePairUseCase implements ICommandHandler<CreatePairCommand> {
   private readonly location = 'CreatePairUseCase';
-  private readonly notice = new LayerNoticeInterceptor<OutputId>();
   constructor(
     private readonly quizRepo: QuizRepository,
     private readonly usersRepo: UsersRepository,
@@ -24,7 +23,8 @@ export class CreatePairUseCase implements ICommandHandler<CreatePairCommand> {
   async execute(
     command: CreatePairCommand,
   ): Promise<LayerNoticeInterceptor<OutputId>> {
-    const { notice, location, quizRepo, usersRepo } = this;
+    const notice = new LayerNoticeInterceptor<OutputId>();
+    const { location, quizRepo, usersRepo } = this;
     const { userId } = command.createData;
 
     try {

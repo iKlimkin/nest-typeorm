@@ -2,11 +2,8 @@ import { applyDecorators } from '@nestjs/common';
 import { Transform, TransformFnParams } from 'class-transformer';
 import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
 import {
-  DefaultSortValues,
   SortByType,
-  SortDirectionValues,
   SortDirections,
-  SortStatFields,
   convertSortBy,
   sortingConstraints,
 } from '../../../domain/sorting-base-filter';
@@ -31,45 +28,6 @@ export const iSValidField = ({ min, max }, regexOption?: RegExp) => {
 
   return applyDecorators(...decorators);
 };
-
-const isValidSortingParams = (field, dir) => {
-  const validSortField = SortStatFields.includes(field);
-  const validSortDirection = SortDirectionValues.includes(dir.toLowerCase());
-
-  return validSortField && validSortDirection;
-};
-const parseSortingValues = (value) => value.split(' ').map((v) => v.trim());
-
-export const ParseSortParams = () =>
-  Transform(({ value }: TransformFnParams) => {
-    if (value.constructor === String) {
-      const result = DefaultSortValues;
-      if (!value.trim()) return result;
-
-      let [sortField, sortDirection] = parseSortingValues(value);
-
-      if (!sortField || !sortDirection) return result;
-
-      if (isValidSortingParams(sortField, sortDirection)) {
-        return [`${sortField} ${sortDirection}`];
-      }
-
-      return result;
-    }
-
-    const parsedQuerySort = value.filter((param) => {
-      if (param.constructor !== String || !param.trim()) return false;
-
-      const [sortField, sortDir] = parseSortingValues(param);
-      if (!sortField || !sortDir) return false;
-
-      if (isValidSortingParams(sortField, sortDir)) {
-        return [`${sortField} ${sortDir}`];
-      }
-    });
-
-    return parsedQuerySort.length ? parsedQuerySort : DefaultSortValues;
-  });
 
 export const Trim = () =>
   Transform(({ value }: TransformFnParams) => value?.trim());

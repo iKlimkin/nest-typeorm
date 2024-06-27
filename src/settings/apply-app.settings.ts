@@ -6,7 +6,10 @@ import {
 import { AppModule } from '../app.module';
 import * as cookieParser from 'cookie-parser';
 import { ValidationError, useContainer } from 'class-validator';
-import { HttpExceptionFilter } from '../infra/exception.filter';
+import {
+  // AllExceptionsFilter,
+  HttpExceptionFilter,
+} from '../infra/exception.filter';
 
 export const applyAppSettings = (app: INestApplication) => {
   app.use(cookieParser());
@@ -54,5 +57,7 @@ const setAppPipes = (app: INestApplication) => {
 };
 
 const setAppExceptionsFilters = (app: INestApplication) => {
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(
+    new HttpExceptionFilter(), 
+  );
 };

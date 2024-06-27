@@ -93,7 +93,7 @@ export class AuthController {
       throw errors.error;
     }
 
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true,  });
 
     return { accessToken };
   }

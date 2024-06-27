@@ -6,7 +6,7 @@ import {
 import {
   ValidateSortBy,
   ValidSortDirection,
-} from '../../../../../infra/decorators/transform/is-valid-field';
+} from '../../../../../infra/decorators/transform/transform-params';
 
 export class PostsQueryFilter extends BaseFilter {
   pageNumber: string;

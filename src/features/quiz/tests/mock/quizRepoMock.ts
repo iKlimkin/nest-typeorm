@@ -71,7 +71,11 @@ export class QuizRepoMockForSetAnswer {
     return startGame(userId);
   }
 
-  async finishGame(gameId: string, manager: EntityManager): Promise<void> {}
+  async finishGame(
+    gameId: string,
+    winnerId: string | null,
+    manager: EntityManager,
+  ): Promise<void> {}
 
   async saveProgress(
     currentPlayerProgress: QuizPlayerProgress,
@@ -213,13 +217,13 @@ class GameOptions {
   sPFinishedGame: boolean;
   fPScore: number;
   sPScore: number;
-  constructor({ 
-    fPAnswerCount = 0, 
-    sPAnswerCount = 0, 
-    fPFinishedGame = false, 
-    sPFinishedGame = false, 
-    fPScore = 0, 
-    sPScore = 0 
+  constructor({
+    fPAnswerCount = 0,
+    sPAnswerCount = 0,
+    fPFinishedGame = false,
+    sPFinishedGame = false,
+    fPScore = 0,
+    sPScore = 0,
   }: Options = {}) {
     this.fPAnswerCount = fPAnswerCount;
     this.sPAnswerCount = sPAnswerCount;
@@ -251,7 +255,11 @@ export const startGame = (userId: string, options?: Options): QuizGame => {
 
   const secondUser = createUser({ email: 'email1', login: 'login1', userId });
 
-  const secondPlayerProgress = createProgress(secondUser, sPAnswerCount, sPScore);
+  const secondPlayerProgress = createProgress(
+    secondUser,
+    sPAnswerCount,
+    sPScore,
+  );
 
   sPFinishedGame
     ? (secondPlayerProgress.questCompletionDate = new Date())

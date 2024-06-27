@@ -7,6 +7,7 @@ import { entities } from './settings/entities';
 import { controllers } from './settings/app-controllers';
 import { providers } from './settings/app-providers';
 import { AuthModule } from './features/auth/auth.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AuthModule } from './features/auth/auth.module';
       useClass: TypeOrmOptions,
     }),
     TypeOrmModule.forFeature(entities),
+    ScheduleModule.forRoot(),
     AuthModule,
   ],
   controllers,

@@ -1,18 +1,16 @@
 import {
   Column,
   Entity,
-  JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
+  OneToOne
 } from 'typeorm';
-import type { Blog } from '../../../blogs/domain/entities/blog.entity';
-import type { PostReaction } from './post-reactions.entity';
-import type { Comment } from '../../../comments/domain/entities/comment.entity';
 import { BaseEntity } from '../../../../domain/base-entity';
-import type { PostReactionCounts } from './post-reaction-counts.entity';
 import type { UserAccount } from '../../../auth/infrastructure/settings';
-import { ForeignKeyMetadata } from 'typeorm/metadata/ForeignKeyMetadata';
+import type { Comment } from '../../../comments/domain/entities/comment.entity';
+import type { PostReactionCounts } from './post-reaction-counts.entity';
+import type { PostReaction } from './post-reactions.entity';
+
 
 @Entity()
 export class Post extends BaseEntity {
@@ -25,7 +23,7 @@ export class Post extends BaseEntity {
   @Column()
   blog_title: string;
 
-  @Column()
+  @Column({  })
   content: string;
 
   // @ManyToOne('Blog', 'posts')

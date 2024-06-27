@@ -1,6 +1,6 @@
 import { IsArray } from 'class-validator';
 import { questionLength } from '../../../../../domain/validation.constants';
-import { iSValidField } from '../../../../../infra/decorators/transform/is-valid-field';
+import { iSValidField } from '../../../../../infra/decorators/transform/transform-params';
 import {
   IsValidAnswers,
   IsValidAnswersConstraint,

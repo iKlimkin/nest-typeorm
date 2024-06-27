@@ -9,6 +9,7 @@ import { QuizAnswer } from '../../domain/entities/quiz-answer.entity';
 import { QuizPlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
 import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { SetPlayerAnswerCommand } from '../commands/set-player-answer.command';
+import { QuizService } from '../quiz.service';
 
 interface IPlayerWithAnswer {
   playerAnswer: QuizAnswer;
@@ -21,6 +22,12 @@ interface IHandleLastAnswerInput {
   manager: EntityManager;
   gameId: string;
 }
+// interface IGameResultHandler {
+//   firstPlayerProgress: QuizPlayerProgress;
+//   secondPlayerProgress: QuizPlayerProgress;
+//   manager: EntityManager;
+//   gameId: string;
+// }
 interface IGameResultHandler extends Omit<IHandleLastAnswerInput, 'answer'> {}
 
 @CommandHandler(SetPlayerAnswerCommand)
@@ -33,6 +40,7 @@ export class SetPlayerAnswerUseCase
   constructor(
     private readonly quizRepo: QuizRepository,
     private readonly dataSource: DataSource,
+    private readonly quizService: QuizService,
   ) {}
 
   async execute(
@@ -54,7 +62,6 @@ export class SetPlayerAnswerUseCase
           firstPlayerProgress,
           secondPlayerProgress,
           firstPlayerId,
-          secondPlayerId,
           id: gameId,
         } = await quizRepo.getCurrentGameByUserId(userId, manager);
 
@@ -64,14 +71,11 @@ export class SetPlayerAnswerUseCase
         if (firstPlayerId === userId) {
           currentPlayerProgress = firstPlayerProgress;
           otherPlayerProgress = secondPlayerProgress;
-        } else if (secondPlayerId === userId) {
+        } else {
           currentPlayerProgress = secondPlayerProgress;
           otherPlayerProgress = firstPlayerProgress;
-        } else {
-          notice.addError('incorrect player id', location, GetErrors.NotFound);
-          return notice;
         }
-        
+
         if (currentPlayerProgress.isExceededAnswerLimit(lastPoint)) {
           notice.addError(
             `player answers limit`,
@@ -87,8 +91,8 @@ export class SetPlayerAnswerUseCase
             {
               answer,
               currentPlayerProgress,
-              manager,
               otherPlayerProgress,
+              manager,
               gameId,
             },
             notice,
@@ -176,7 +180,7 @@ export class SetPlayerAnswerUseCase
         questionId: question.questionId,
         playerProgress: currentPlayerProgress,
       });
-
+      
       const savedPlayerAnswer = await quizRepo.saveAnswer(
         playerAnswer,
         manager,
@@ -200,13 +204,13 @@ export class SetPlayerAnswerUseCase
     inputHandleDto: IHandleLastAnswerInput,
     notice: LayerNoticeInterceptor<AnswerResultViewType>,
   ): Promise<LayerNoticeInterceptor<AnswerResultViewType>> {
-    const { location, quizRepo } = this;
+    const { location, quizRepo, quizService } = this;
     const {
       answer,
       currentPlayerProgress,
       manager,
-      otherPlayerProgress,
       gameId,
+      otherPlayerProgress,
     } = inputHandleDto;
 
     currentPlayerProgress.setCompletionDate();
@@ -231,10 +235,14 @@ export class SetPlayerAnswerUseCase
 
     await quizRepo.saveProgress(currentPlayerProgress, manager);
 
+    quizService.createCompletionCheckJob(gameId);
+    // const deleteJob = quizService.deleteCompletionCheckJob;
+
     const isCurrentGameCompleted =
       currentPlayerProgress.isGameCompleted(otherPlayerProgress);
 
     if (isCurrentGameCompleted) {
+      // deleteJob(gameId);
       await this.finishGameAndHandleBonuses({
         gameId,
         currentPlayerProgress,
@@ -266,8 +274,6 @@ export class SetPlayerAnswerUseCase
     const { gameId, currentPlayerProgress, otherPlayerProgress, manager } =
       gameResultDto;
     try {
-      await quizRepo.finishGame(gameId, manager);
-
       const isCurPlayerFinishedEarly =
         currentPlayerProgress.isCurrentPlayerFinishedEarlierThan(
           otherPlayerProgress,
@@ -284,6 +290,11 @@ export class SetPlayerAnswerUseCase
         otherPlayerProgress.incrementScore();
         await quizRepo.saveProgress(otherPlayerProgress, manager);
       }
+
+      const winnerId =
+        currentPlayerProgress.determineWinner(otherPlayerProgress);
+
+      await quizRepo.finishGame(gameId, winnerId, manager);
     } catch (error) {
       throw new Error('finish game and handle bonuses');
     }

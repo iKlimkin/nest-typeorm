@@ -21,7 +21,6 @@ export class QuizPlayerProgress extends BaseEntity {
   player: UserAccount;
 
   @OneToOne('QuizGame', { nullable: true, onDelete: 'CASCADE' })
-  // @JoinColumn()
   quizGame: QuizGame;
 
   @Column({ nullable: false })
@@ -81,5 +80,13 @@ export class QuizPlayerProgress extends BaseEntity {
 
   isPlayerDeservesBonus(isFinishedEarly: boolean): boolean {
     return isFinishedEarly && this.score > 0;
+  }
+
+  determineWinner(otherPlayerProgress: QuizPlayerProgress): null | string {
+    return this.score > otherPlayerProgress.score
+      ? this.player.id
+      : this.score < otherPlayerProgress.score
+      ? otherPlayerProgress.player.id
+      : null;
   }
 }
