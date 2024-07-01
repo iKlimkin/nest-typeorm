@@ -77,7 +77,8 @@ export const initSettings = async (
 
   // await cleanDatabase(httpServer);
   await truncateDBTables(app, dbOwner);
-
+  console.log(`base has been cleared`);
+  
   return {
     app,
     httpServer,

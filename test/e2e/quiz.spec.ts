@@ -1,36 +1,31 @@
 import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { SortDirections } from '../../src/domain/sorting-base-filter';
+import { QuizGamesQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-games-query.filter';
+import { QuizQuestionsQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
 import {
   AnswerStatus,
   GameStatus,
   publishedStatuses,
 } from '../../src/features/quiz/api/models/input.models/statuses.model';
+import { PlayerStatsView } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game-analyze';
+import { QuizPairViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game.view-type';
+import { QuizQuestionViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
 import { EmailManager } from '../../src/infra/managers/email-manager';
-import { QuizAnswer, QuizGame, QuizQuestion } from '../../src/settings';
+import { QuizGame } from '../../src/settings';
 import { EmailManagerMock } from '../tools/dummies/email.manager.mock';
-import { NavigationEnum, RouterPaths } from '../tools/helpers/routing';
+import { RouterPaths } from '../tools/helpers/routing';
 import { QuizTestManager } from '../tools/managers/QuizTestManager';
 import { UsersTestManager } from '../tools/managers/UsersTestManager';
+import { SuperTestBody } from '../tools/models/body.response.model';
+import { mockGameData } from '../tools/models/game-mock-data';
+import { ApiRouting } from '../tools/routes/api.routing';
 import { aDescribe } from '../tools/utils/aDescribe';
 import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
 import { wait } from '../tools/utils/delayUtils';
 import { initSettings } from '../tools/utils/initSettings';
 import { skipSettings } from '../tools/utils/testsSettings';
-import { QuizQuestionsQueryFilter } from '../../src/features/quiz/api/models/input.models/quiz-questions-query.filter';
-import {
-  QuizGamesQueryFilter,
-  StatsQueryFilter,
-} from '../../src/features/quiz/api/models/input.models/quiz-games-query.filter';
-import { mockGameData } from '../tools/models/game-mock-data';
-import { SuperTestBody } from '../tools/models/body.response.model';
-import { QuizQuestionViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
-import { ApiRouting } from '../tools/routes/api.routing';
-import { PlayerStatsView } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game-analyze';
-import { log } from 'console';
-import { QuizPairViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game.view-type';
 
 aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   let app: INestApplication;
@@ -53,12 +48,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
     usersTestManager = settings.usersTestManager;
   });
-
-  afterAll(async () => {
-    // await cleanDatabase(httpServer);
-    await app.close();
-  });
-  describe('q', () => {
+  describe('testing questions', () => {
     describe('GET /sa/quiz/questions', () => {
       afterAll(async () => {
         await cleanDatabase(httpServer);
@@ -85,7 +75,6 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         };
 
         const questions = await quizTestManager.getQuestions(query);
-        console.log(questions);
 
         expect(questions.items).toHaveLength(10);
       });
@@ -524,10 +513,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       await quizTestManager.restoreGameProgress(gameId);
     });
   });
-
   describe('GET /pair-game-quiz/pairs/my', () => {
     afterAll(async () => {
-      // await cleanDatabase(httpServer);
+      await cleanDatabase(httpServer);
     });
 
     beforeAll(async () => {
@@ -602,6 +590,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
       const games = gameResponse.items;
       const pendingPair = games[0];
+
       expect(pendingPair.status).toBe(GameStatus.PendingSecondPlayer);
       expect(
         pendingPair.secondPlayerProgress &&
@@ -760,11 +749,8 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       );
 
       expect(sixthOutcome).not.toEqual(seventhOutcome);
-
-      // console.log({ firstPlayerToken });
     });
   });
-
   describe('GET /pair-game-quiz/pairs/my-statistic', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
@@ -796,16 +782,13 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
     it(`should return correct stats`, async () => {
       const { firstPlayerToken } = expect.getState();
-      console.log({ firstPlayerToken });
 
       const stats = await quizTestManager.getStatistics(firstPlayerToken);
-      console.log({ stats });
     });
   });
-
   describe('GET /pair-game-quiz/users/top', () => {
     afterAll(async () => {
-      // await cleanDatabase(httpServer);
+      await cleanDatabase(httpServer);
     });
 
     beforeAll(async () => {
@@ -1117,11 +1100,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
     it('should return correct ', async () => {});
   });
-
-  describe.only('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
-    // afterAll(async () => {
-    //   await cleanDatabase(httpServer);
-    // });
+  describe('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
+    afterAll(async () => {
+      await cleanDatabase(httpServer);
+    });
 
     beforeAll(async () => {
       const { accessTokens, users } = await usersTestManager.createUsers(3);
@@ -1158,7 +1140,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     //   });
     // })
 
-    it.only('prepare for battle', async () => {
+    it('prepare for battle', async () => {
       const { firstPlayerToken, secondPlayerToken, questionsAndAnswers } =
         expect.getState();
 
@@ -1176,11 +1158,11 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
 
     it('POST /pair-game-quiz/pairs/my-current/answers - should not send answer if current user is not inside active pair, 403', async () => {
-      const { accessTokens } = expect.getState();
+      const { thirdPlayerToken } = expect.getState();
       const answer = 'answer';
 
       await quizTestManager.sendAnswer(
-        accessTokens[2],
+        thirdPlayerToken,
         answer,
         HttpStatus.FORBIDDEN,
       );
@@ -1354,6 +1336,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
       await quizTestManager.restoreGameProgress(gameId);
     });
+
     it('POST /pair-game-quiz/pairs/my-current/answers -  sending answer both players; first and second player get all correct answers, but secondPlayer finished earlier', async () => {
       const {
         firstPlayerToken,
@@ -1519,12 +1502,43 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       );
       expect(firstPlayerStats.totalCount).toBe(3);
     });
+  });
+  describe('Schedule cron autocomplete quiz', () => {
+    afterAll(async () => {
+      await cleanDatabase(httpServer);
+    });
 
+    beforeAll(async () => {
+      const { accessTokens, users } = await usersTestManager.createUsers(3);
+
+      const [firstPlayerToken, secondPlayerToken, thirdPlayerToken] =
+        accessTokens;
+
+      const questionsAndAnswers =
+        await quizTestManager.createQuestionsForFurtherTests(10);
+
+      const { correctAnswersForCurrentGame, gameId } =
+        await quizTestManager.prepareForBattle(
+          firstPlayerToken,
+          secondPlayerToken,
+          questionsAndAnswers,
+        );
+
+      expect.setState({
+        gameId,
+        correctAnswersForCurrentGame,
+        accessTokens,
+        firstPlayerToken,
+        secondPlayerToken,
+        thirdPlayerToken,
+        users,
+        questionsAndAnswers,
+      });
+    });
     it(`POST /pair-game-quiz/pairs/my-current/answers testing autocomplete game after 10sec `, async () => {
       const {
         firstPlayerToken,
         secondPlayerToken,
-        thirdPlayerToken,
         correctAnswersForCurrentGame,
         gameId,
       } = expect.getState();
@@ -1552,7 +1566,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         game.secondPlayerProgress.answers.length;
       expect(secondPlayerAnswersQuantityBefore).toBe(4);
 
-      await wait(10);
+      await wait(11);
 
       await quizTestManager.sendAnswer(
         secondPlayerToken,
@@ -1567,13 +1581,12 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       expect(secondPlayerAnswersQuantityAfter).toBe(5);
       expect(gameAfterAutocomplete.status).toBe(GameStatus.Finished);
 
-      await quizTestManager.restoreGameProgress(gameId, true)
+      await quizTestManager.restoreGameProgress(gameId);
     });
-    it.only(`POST /pair-game-quiz/pairs/my-current/answers testing autocomplete game and handle bonuses`, async () => {
+    it(`POST /pair-game-quiz/pairs/my-current/answers testing autocomplete game and handle bonuses`, async () => {
       const {
         firstPlayerToken,
         secondPlayerToken,
-        thirdPlayerToken,
         correctAnswersForCurrentGame,
         gameId,
       } = expect.getState();
@@ -1588,42 +1601,150 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         i < 2 &&
           (await quizTestManager.sendAnswer(secondPlayerToken, correctAnswer));
       }
-      
+
       await quizTestManager.sendAnswer(
         secondPlayerToken,
         correctAnswersForCurrentGame[correctAnswersForCurrentGame.length - 5],
       );
-    
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        correctAnswersForCurrentGame[correctAnswersForCurrentGame.length - 3],
+      );
+
       const game: QuizGame = await quizTestManager.getCurrentGameById(
         firstPlayerToken,
         gameId,
       );
 
+      const gameBySecondPlayer: QuizGame =
+        await quizTestManager.getCurrentGameById(secondPlayerToken, gameId);
+
+      expect(gameBySecondPlayer.firstPlayerProgress.answers.length).toBe(5);
+
       const secondPlayerAnswersQuantityBefore =
         game.secondPlayerProgress.answers.length;
-      expect(secondPlayerAnswersQuantityBefore).toBe(3);
+      expect(secondPlayerAnswersQuantityBefore).toBe(4);
 
       await wait(11);
 
-      const game2: QuizGame = await quizTestManager.getCurrentGameById(
-        firstPlayerToken,
-        gameId,
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        'answer',
+        HttpStatus.FORBIDDEN,
       );
-      console.log(game2);
-      
-      // await quizTestManager.sendAnswer(
-      //   secondPlayerToken,
-      //   'answer',
-      //   HttpStatus.FORBIDDEN,
-      // );
 
       const gameAfterAutocomplete: QuizGame =
         await quizTestManager.getCurrentGameById(secondPlayerToken, gameId);
 
-      // const secondPlayerAnswersQuantityAfter =
-      //   gameAfterAutocomplete.secondPlayerProgress.answers.length;
-      // expect(secondPlayerAnswersQuantityAfter).toBe(5);
-      // expect(gameAfterAutocomplete.status).toBe(GameStatus.Finished);
+      const secondPlayerAnswersQuantityAfter =
+        gameAfterAutocomplete.secondPlayerProgress.answers.length;
+      expect(secondPlayerAnswersQuantityAfter).toBe(5);
+      expect(gameAfterAutocomplete.status).toBe(GameStatus.Finished);
+
+      await quizTestManager.restoreGameProgress(gameId);
+    });
+    it(`send answer delay 5 sec between answers`, async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        correctAnswersForCurrentGame,
+        gameId,
+      } = expect.getState();
+
+      // give 1 right answer by firstPlayer and 2 right answers by secondPlayer
+      for (let i = 0; i < 5; i++) {
+        const correctAnswer = correctAnswersForCurrentGame[i + 1];
+        await quizTestManager.sendAnswer(
+          firstPlayerToken,
+          correctAnswersForCurrentGame[!i ? i : 1],
+        );
+        i < 2 &&
+          (await quizTestManager.sendAnswer(secondPlayerToken, correctAnswer));
+      }
+
+      await wait(5);
+
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        correctAnswersForCurrentGame[correctAnswersForCurrentGame.length - 5],
+      );
+
+      await wait(5);
+
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        correctAnswersForCurrentGame[correctAnswersForCurrentGame.length - 3],
+      );
+
+      await wait(2);
+
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        correctAnswersForCurrentGame[correctAnswersForCurrentGame.length - 3],
+        HttpStatus.FORBIDDEN,
+      );
+
+      const game: QuizGame = await quizTestManager.getCurrentGameById(
+        secondPlayerToken,
+        gameId,
+      );
+
+      expect(game.winnerId).toBe(game.secondPlayerId);
+      game.secondPlayerProgress.answers.forEach((answer, i) => {
+        expect(answer.questionId).toBe(game.questions[i].id);
+      });
+
+      await quizTestManager.restoreGameProgress(gameId);
+    });
+    it(`complete quest after launch cron job`, async () => {
+      const {
+        firstPlayerToken,
+        secondPlayerToken,
+        correctAnswersForCurrentGame,
+        gameId,
+      } = expect.getState();
+
+      // send 4 answers by first player and 3 answers by second
+      for (let i = 0; i < 4; i++) {
+        const correctAnswer = correctAnswersForCurrentGame[i + 1];
+        await quizTestManager.sendAnswer(
+          firstPlayerToken,
+          correctAnswersForCurrentGame[!i ? i : 1],
+        );
+        i < 3 &&
+          (await quizTestManager.sendAnswer(secondPlayerToken, correctAnswer));
+      }
+
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        correctAnswersForCurrentGame[correctAnswersForCurrentGame.length - 5],
+      );
+
+      await wait(11);
+
+      const game = await quizTestManager.getCurrentGameById(
+        firstPlayerToken,
+        gameId,
+      );
+      expect(game.status).toBe(GameStatus.Active);
+
+      // give last answer by second player; launch cron
+      await quizTestManager.sendAnswer(
+        secondPlayerToken,
+        correctAnswersForCurrentGame[correctAnswersForCurrentGame.length - 2],
+      );
+
+      await wait(11);
+      const completedGame = await quizTestManager.getCurrentGameById(
+        secondPlayerToken,
+        gameId,
+      );
+
+      expect(completedGame.status).toBe(GameStatus.Finished);
+      // expect(
+      //   game.firstPlayerProgress.answers.length &&
+      //     game.secondPlayerProgress.answers.length,
+      // ).toBe(5);
     });
   });
 
