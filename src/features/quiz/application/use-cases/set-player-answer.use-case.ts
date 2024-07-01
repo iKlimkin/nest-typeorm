@@ -9,7 +9,7 @@ import { QuizAnswer } from '../../domain/entities/quiz-answer.entity';
 import { QuizPlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
 import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { SetPlayerAnswerCommand } from '../commands/set-player-answer.command';
-import { QuizService } from '../quiz.service';
+import { QuizService } from '../services/quiz.service';
 
 interface IPlayerWithAnswer {
   playerAnswer: QuizAnswer;
@@ -180,7 +180,7 @@ export class SetPlayerAnswerUseCase
         questionId: question.questionId,
         playerProgress: currentPlayerProgress,
       });
-      
+
       const savedPlayerAnswer = await quizRepo.saveAnswer(
         playerAnswer,
         manager,

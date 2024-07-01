@@ -7,10 +7,10 @@ import {
   QuizAnswer,
   QuizPlayerProgress,
   QuizRepository,
-} from '../../../settings';
-import { runInTransaction } from '../../../domain/transaction-wrapper';
-import { LayerNoticeInterceptor } from '../../auth/api/controllers';
-import { GetErrors } from '../../../infra/utils/interlay-error-handler.ts/error-constants';
+} from '../../../../settings';
+import { runInTransaction } from '../../../../domain/transaction-wrapper';
+import { LayerNoticeInterceptor } from '../../../auth/api/controllers';
+import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 
 @Injectable()
 export class QuizService {
@@ -49,7 +49,6 @@ export class QuizService {
           targetProgress = firstPlayerProgress;
           finishedProgress = secondPlayerProgress;
         }
-        console.log({ targetProgress, finishedProgress });
 
         const completionDate = finishedProgress.questCompletionDate;
         const now = new Date().getTime();
@@ -57,36 +56,15 @@ export class QuizService {
 
         if (tenSecondsLater <= now) {
           targetProgress.setCompletionDate();
-          console.log({ diff: tenSecondsLater - now });
 
           await this.autocompleteAnswers(questions, targetProgress, manager);
 
-          const progressAfterAddAnswers = await quizRepo.getPlayerProgressById(
-            targetProgress.id,
-          );
-          console.log({ progressAfterAddAnswers });
-
-          // await this.handleBonuses(finishedProgress, manager);
-          const finishedEarlierProgress = true;
-          if (
-            finishedProgress.isPlayerDeservesBonus(finishedEarlierProgress)
-          ) {
-            finishedProgress.incrementScore();
-            await this.quizRepo.saveProgress(finishedProgress, manager);
-          }
-
-          const progressAfterBonuses = await quizRepo.getPlayerProgressById(
-            finishedProgress.id,
-          );
-          console.log({ progressAfterBonuses });
+          await this.handleBonuses(finishedProgress, manager);
 
           const winnerId = targetProgress.determineWinner(finishedProgress);
 
-          console.log({ targetProgress, finishedProgress, winnerId });
-
           await quizRepo.finishGame(gameId, winnerId, manager);
           this.deleteCompletionCheckJob(gameId);
-          console.log({ notice });
 
           return notice;
         } else return notice;
@@ -104,7 +82,6 @@ export class QuizService {
     manager: EntityManager,
   ) {
     try {
-      console.error(targetProgress)
       const answersCount = targetProgress.answersCount;
       const answersDiff = this.lastPoint - answersCount;
 
@@ -128,12 +105,6 @@ export class QuizService {
         targetProgress.answers.push(savedAnswer);
         targetProgress.answersCount++;
       }
-      console.error()
-      const targetSavedProgress = await this.quizRepo.saveProgress(
-        targetProgress,
-        manager,
-      );
-    console.log({ targetProgress, targetSavedProgress });
     } catch (error) {
       console.log({ error });
       throw new Error('Autocomplete answers error');
