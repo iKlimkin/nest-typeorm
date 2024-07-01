@@ -19,6 +19,7 @@ import {
   PostsQueryRepo,
   PostsRepository,
   PublishQuestionUseCase,
+  QuizCrudApiService,
   QuizQueryRepo,
   QuizRepository,
   QuizService,
@@ -75,6 +76,7 @@ const quizProviders = [
   QuizQueryRepo,
   QuizService,
   QuizTestService,
+  QuizCrudApiService,
 ];
 
 export const providers: Provider[] = [

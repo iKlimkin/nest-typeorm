@@ -27,7 +27,7 @@ export class ConnectPlayerUseCase
   ): Promise<LayerNoticeInterceptor<OutputId | null>> {
     const notice = new LayerNoticeInterceptor<OutputId>();
     const { quizRepo, location } = this;
-    const { userId } = command.connectionData;
+    const { userId } = command.data;
 
     try {
       await validateOrRejectModel(command, ConnectPlayerCommand);

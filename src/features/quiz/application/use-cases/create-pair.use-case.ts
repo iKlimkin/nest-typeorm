@@ -25,7 +25,7 @@ export class CreatePairUseCase implements ICommandHandler<CreatePairCommand> {
   ): Promise<LayerNoticeInterceptor<OutputId>> {
     const notice = new LayerNoticeInterceptor<OutputId>();
     const { location, quizRepo, usersRepo } = this;
-    const { userId } = command.createData;
+    const { userId } = command.data;
 
     try {
       await validateOrRejectModel(command, CreatePairCommand);

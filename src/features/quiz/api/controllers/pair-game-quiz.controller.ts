@@ -28,7 +28,7 @@ import {
 import { ConnectPlayerCommand } from '../../application/commands/connect-player.command';
 import { CreatePairCommand } from '../../application/commands/create-pair.command';
 import { SetPlayerAnswerCommand } from '../../application/commands/set-player-answer.command';
-import { QuizTestService } from '../../application/quiz.test.service';
+
 import { InputAnswerModel } from '../models/input.models/answer.model';
 import {
   QuizGamesQueryFilter,
@@ -41,6 +41,8 @@ import {
   QuizPairViewType,
 } from '../models/output.models.ts/view.models.ts/quiz-game.view-type';
 import { QuizQueryRepo } from '../models/query-repositories/quiz.query.repo';
+import { QuizCrudApiService } from '../../application/services/quiz-crud-api.service';
+import { QuizTestService } from '../../application/services/quiz.test.service';
 
 @UseGuards(AccessTokenGuard)
 @Controller(RouterPaths.quiz)
@@ -49,11 +51,11 @@ export class PairGameQuizController {
     private readonly commandBus: CommandBus,
     private readonly quizQueryRepo: QuizQueryRepo,
     private readonly quizService: QuizTestService,
+    private readonly quizCrudApiService: QuizCrudApiService,
   ) {}
 
   @Get('users/top')
   async getTopUsers(
-    @CurrentUserInfo() userInfo: UserSessionDto,
     @Query() query: StatsQueryFilter,
   ): Promise<PaginationViewModel<PlayerStatsView>> {
     return this.quizQueryRepo.getUsersTop(query);
@@ -127,35 +129,11 @@ export class PairGameQuizController {
     if (userInGame) throw new ForbiddenException('User already in active game');
 
     const pendingPair = await this.quizQueryRepo.getPendingPair();
+    const command = pendingPair
+      ? new ConnectPlayerCommand(userInfo)
+      : new CreatePairCommand(userInfo);
 
-    if (pendingPair) {
-      const command = new ConnectPlayerCommand(userInfo);
-
-      const result = await this.commandBus.execute<
-        ConnectPlayerCommand,
-        LayerNoticeInterceptor<OutputId | null>
-      >(command);
-
-      if (result.hasError) {
-        const { error } = handleErrors(result.code, result.extensions[0]);
-        throw error;
-      }
-
-      return this.quizQueryRepo.getPairInformation(result.data.id);
-    }
-
-    const command = new CreatePairCommand(userInfo);
-    const result = await this.commandBus.execute<
-      CreatePairCommand,
-      LayerNoticeInterceptor<OutputId | null>
-    >(command);
-
-    if (result.hasError) {
-      const errors = handleErrors(result.code, result.extensions[0]);
-      throw errors.error;
-    }
-
-    return this.quizQueryRepo.getPairInformation(result.data.id);
+    return this.quizCrudApiService.connectingOrCreatePair(command);
   }
 
   @Post('pairs/my-current/answers')
@@ -167,7 +145,7 @@ export class PairGameQuizController {
     const userInGameStatus = await this.quizQueryRepo.isUserInGame(
       userInfo.userId,
     );
-    
+
     if (
       !userInGameStatus ||
       userInGameStatus === GameStatus.PendingSecondPlayer

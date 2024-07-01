@@ -34,10 +34,32 @@ import { getQuestionViewModel } from '../output.models.ts/view.models.ts/quiz-qu
 import { QuizQuestionViewType } from '../output.models.ts/view.models.ts/quiz-question.view-type';
 import { getQuestionsViewModel } from '../output.models.ts/view.models.ts/quiz-questions.view-model';
 import { transformRawQuizDataToView } from '../output.models.ts/view.models.ts/quiz-raw.view-model';
-import { skip } from 'node:test';
+
+export interface BaseQueryRepository<T> {
+  // getUserGames(
+  //   userId: string,
+  //   queryOptions: QuizGamesQueryFilter,
+  // ): Promise<PaginationViewModel<T>>;
+  // getUsersTop(queryOptions: StatsQueryFilter): Promise<any>;
+  // getUserGameAnalytic(userId: string): Promise<GameStats>;
+  // getCurrentUnfinishedGame(userId: string): Promise<QuizPairViewType | null>;
+  getPairInformation(gameId: string): Promise<T | null>;
+  // getPendingPair(): Promise<T | null>;
+  // isUserInGame(userId: string, gameId: string): Promise<null | GameStatus>;
+}
+
+// export interface BaseQueryRepository<T> {
+//   getUserGames(
+//     userId: string,
+//     queryOptions: QuizGamesQueryFilter,
+//   ): Promise<PaginationViewModel<T>>;
+//   getUsersTop(queryOptions: StatsQueryFilter): Promise<PaginationViewModel<T>>;
+//   getPendingPair(): Promise<T | null>;
+//   getPairInformation(gameId: string): Promise<T | null>;
+// }
 
 @Injectable()
-export class QuizQueryRepo {
+export class QuizQueryRepo implements BaseQueryRepository<QuizPairViewType> {
   constructor(
     @InjectRepository(QuizGame)
     private readonly quizPairs: Repository<QuizGame>,
@@ -47,9 +69,6 @@ export class QuizQueryRepo {
 
     @InjectRepository(QuizPlayerProgress)
     private readonly playerProgresses: Repository<QuizPlayerProgress>,
-
-    @InjectRepository(QuizAnswer)
-    private readonly quizAnswers: Repository<QuizAnswer>,
 
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
