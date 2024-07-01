@@ -46,14 +46,10 @@ export const transformRawQuizDataToView = (item: any): QuizPairViewType => {
     secondPlayerProgressRaw,
   ].map(convertPlayerProgress);
 
+  const convertDate = (date?: Date) => (date ? date.toISOString() : null);
+
   const questionTxt = rawQuestions[0].body;
   const questions = questionTxt ? convertQuestions(rawQuestions) : null;
-
-  if (finishGameDate) {
-    finishGameDate = finishGameDate.toISOString();
-  } else {
-    finishGameDate = null;
-  }
 
   return {
     id,
@@ -62,7 +58,7 @@ export const transformRawQuizDataToView = (item: any): QuizPairViewType => {
     questions,
     status,
     pairCreatedDate: pairCreatedDate.toISOString(),
-    startGameDate: startGameDate.toISOString(),
-    finishGameDate,
+    startGameDate: convertDate(startGameDate),
+    finishGameDate: convertDate(finishGameDate),
   };
 };
