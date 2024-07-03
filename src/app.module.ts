@@ -16,7 +16,7 @@ import { ScheduleModule } from '@nestjs/schedule';
       inject: [ConfigService],
       useClass: TypeOrmOptions,
     }),
-    TypeOrmModule.forFeature(entities),
+    TypeOrmModule.forFeature([...entities]),
     ScheduleModule.forRoot(),
     AuthModule,
   ],
