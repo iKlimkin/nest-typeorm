@@ -16,7 +16,6 @@ import { RouterPaths } from '../../../../../test/tools/helpers/routing';
 import { ValidateIdPipe } from '../../../../infra/pipes/id-validate.pipe';
 import {
   LayerNoticeInterceptor,
-  OutputId,
   PaginationViewModel,
   handleErrors,
 } from '../../../blogs/api/controllers';
@@ -29,6 +28,8 @@ import { ConnectPlayerCommand } from '../../application/commands/connect-player.
 import { CreatePairCommand } from '../../application/commands/create-pair.command';
 import { SetPlayerAnswerCommand } from '../../application/commands/set-player-answer.command';
 
+import { QuizCrudApiService } from '../../application/services/quiz-crud-api.service';
+import { QuizTestService } from '../../application/services/quiz.test.service';
 import { InputAnswerModel } from '../models/input.models/answer.model';
 import {
   QuizGamesQueryFilter,
@@ -41,10 +42,7 @@ import {
   QuizPairViewType,
 } from '../models/output.models.ts/view.models.ts/quiz-game.view-type';
 import { QuizQueryRepo } from '../models/query-repositories/quiz.query.repo';
-import { QuizCrudApiService } from '../../application/services/quiz-crud-api.service';
-import { QuizTestService } from '../../application/services/quiz.test.service';
 
-@UseGuards(AccessTokenGuard)
 @Controller(RouterPaths.quiz)
 export class PairGameQuizController {
   constructor(
@@ -61,6 +59,7 @@ export class PairGameQuizController {
     return this.quizQueryRepo.getUsersTop(query);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get('pairs/my')
   async getAllUserGames(
     @CurrentUserInfo() userInfo: UserSessionDto,
@@ -69,6 +68,7 @@ export class PairGameQuizController {
     return this.quizQueryRepo.getUserGames(userInfo.userId, query);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get('users/my-statistic')
   async getUserStatistic(
     @CurrentUserInfo() userInfo: UserSessionDto,
@@ -76,6 +76,7 @@ export class PairGameQuizController {
     return this.quizQueryRepo.getUserGameAnalytic(userInfo.userId);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get('pairs/my-current')
   async getCurrentUnfinishedGame(
     @CurrentUserInfo() userInfo: UserSessionDto,
@@ -98,6 +99,7 @@ export class PairGameQuizController {
     return result;
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get('pairs/:id')
   async getGame(
     @CurrentUserInfo() userInfo: UserSessionDto,
@@ -119,6 +121,7 @@ export class PairGameQuizController {
     return game;
   }
 
+  @UseGuards(AccessTokenGuard)
   @Post('pairs/connection')
   @HttpCode(HttpStatus.OK)
   async connectOrCreatePair(
@@ -136,6 +139,7 @@ export class PairGameQuizController {
     return this.quizCrudApiService.connectingOrCreatePair(command);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Post('pairs/my-current/answers')
   @HttpCode(HttpStatus.OK)
   async sendAnswer(
