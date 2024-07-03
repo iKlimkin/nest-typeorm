@@ -29,50 +29,77 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
     const env = this.configService.getOrThrow('env');
 
     if (
-      env?.toUpperCase() === 'DEVELOPMENT' ||
-      env?.toUpperCase() === 'TESTING'
+      env.toUpperCase() === 'DEVELOPMENT' ||
+      env.toUpperCase() === 'TESTING'
     ) {
       return this.createLocalConnection();
     } else {
-      // make remote connection
+      return this.createRemoteConnection();
     }
   }
 
   private createLocalConnection(): TypeOrmModuleOptions {
-    const { url, username, password, database } = this.configService.getOrThrow('pg', { infer: true });
+    try {
+      const { url, username, password, database } =
+        this.configService.getOrThrow('pg', { infer: true });
 
-    return {
-      url,
-      type: 'postgres',
-      // logging: ['query', 'error'],
-      entities: [
-        TemporaryUserAccount,
-        Comment,
-        Post,
-        Blog,
-        UserSession,
-        PostReaction,
-        PostReactionCounts,
-        CommentReaction,
-        CommentReactionCounts,
-        UserAccount,
-        UserSession,
-        TemporaryUserAccount,
-        QuizAnswer,
-        QuizGame,
-        QuizQuestion,
-        QuizPlayerProgress,
-        QuizCorrectAnswer,
-        CurrentGameQuestion,
-      ],
-      // entities: ['src/**/*.entity.ts'],
-      // entities: [__dirname + '/../**/*.entity.js'],
-      username,
-      password,
-      database,
-      autoLoadEntities: false,
-      synchronize: false,
-      dropSchema: false,
-    };
+      return {
+        url,
+        type: 'postgres',
+        // logging: ['query', 'error'],
+        entities: this.getEntities(),
+        // entities: ['src/**/*.entity.ts'],
+        // entities: [__dirname + '/../**/*.entity.js'],
+        username,
+        password,
+        database,
+        autoLoadEntities: false,
+        synchronize: false,
+        dropSchema: false,
+      };
+    } catch (error) {
+      console.log(error);
+    }
   }
+
+  private createRemoteConnection(): TypeOrmModuleOptions {
+    try {
+      const { remoteUrl: url } = this.configService.getOrThrow('pg', {
+        infer: true,
+      });
+      console.log(`remote connection`);
+      
+      return {
+        url,
+        type: 'postgres',
+        entities: this.getEntities(),
+        autoLoadEntities: false,
+        synchronize: false,
+        dropSchema: false,
+      };
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  private getEntities = () => [
+    TemporaryUserAccount,
+    Comment,
+    Post,
+    Blog,
+    UserSession,
+    PostReaction,
+    PostReactionCounts,
+    CommentReaction,
+    CommentReactionCounts,
+    UserAccount,
+    UserSession,
+    TemporaryUserAccount,
+    QuizAnswer,
+    QuizGame,
+    QuizQuestion,
+    QuizPlayerProgress,
+    QuizCorrectAnswer,
+    CurrentGameQuestion,
+  ];
 }

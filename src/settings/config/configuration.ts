@@ -18,6 +18,7 @@ const getConfig = (
   },
   pg: {
     url: process.env.DATABASE_URL,
+    remoteUrl: process.env.DATABASE_REMOTE_URL,
     database: process.env.database,
     studyDbName: process.env.studyDbName,
     port: process.env.POSTGRES_PORT,
