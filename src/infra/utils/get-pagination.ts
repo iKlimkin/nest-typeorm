@@ -35,7 +35,7 @@ export const getPagination = <T extends CustomFilter>(
 ): PaginationType & CustomOutputFilter => {
   let sortDirection: SortDirections;
   let sortBy: string;
-  let sort: string[]
+  let sort: string[];
 
   sortDirection = inputData.sortDirection === 'asc' ? 'ASC' : 'DESC';
   sortBy = inputData.sortBy || 'created_at';

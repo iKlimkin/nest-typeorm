@@ -209,10 +209,6 @@ export class QuizQueryRepo implements BaseQueryRepository<QuizPairViewType> {
     try {
       const { pageNumber, pageSize, sort, skip } = getPagination(queryOptions);
 
-      const gameQueryBuilder = this.quizPairs.createQueryBuilder('g');
-      const progressQueryBuilder =
-        this.playerProgresses.createQueryBuilder('progress');
-
       let statsQuery = `
         SELECT 
           player.id,
@@ -267,9 +263,18 @@ export class QuizQueryRepo implements BaseQueryRepository<QuizPairViewType> {
         statsQuery += ` "${sortBy}" ${sortDir},`;
         i === sort.length - 1 && (statsQuery = statsQuery.slice(0, -1));
       });
-      console.log({ sort: JSON.stringify(sort) });
+
+      if (skip) {
+        statsQuery += `\nOFFSET ${skip}`;
+      }
+      statsQuery += `\nLIMIT ${pageSize}`;
 
       const result = await this.dataSource.query(statsQuery);
+
+      const [{ count }] = await this.dataSource.query(`
+        SELECT COUNT(DISTINCT pp."playerId")
+        FROM quiz_player_progress pp
+      `);
 
       const topStats = result.map((stat: IUserStats) => {
         const {
@@ -301,7 +306,7 @@ export class QuizQueryRepo implements BaseQueryRepository<QuizPairViewType> {
         topStats,
         pageNumber,
         pageSize,
-        result.length,
+        count,
       );
 
       return statsViewModel;
