@@ -44,7 +44,7 @@ export class UsersTestManager {
   }
 
   async createUsers(
-    numberOfUsers: number,
+    numberOfUsers: number = 3,
   ): Promise<{ users: AuthUserType[]; accessTokens: string[] }> {
     const users: AuthUserType[] = [];
     const accessTokens: string[] = [];

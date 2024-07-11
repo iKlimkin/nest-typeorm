@@ -34,7 +34,7 @@ export type QuestionsAndAnswersDB = {
   answers: QuizCorrectAnswer[];
 }[];
 const type = 'bearer';
-const _basicAuthOptions = ['Authorization', 'Basic YWRtaW46cXdlcnR5'];
+
 export class QuizTestManager {
   constructor(
     protected readonly app: INestApplication,
@@ -289,12 +289,10 @@ export class QuizTestManager {
   }
 
   async getTopUsers(
-    accessToken: string,
     query?: StatsQueryFilter,
   ): Promise<PaginationViewModelType<PlayerStatsView>> {
     const response = await request(this.application)
       .get(this.routing.pairs.getTopUsers())
-      .auth(accessToken, { type })
       .query(query)
       .expect(HttpStatus.OK);
 

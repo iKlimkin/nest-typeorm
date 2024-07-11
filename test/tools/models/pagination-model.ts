@@ -3,6 +3,16 @@ type SortOptions = {
   sortBy: string;
 };
 
+export interface IBlogsPagination {
+  pagesCount: number;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  items: Array<{
+    [key: string]: any;
+  }>;
+}
+
 export class PaginationModel<T> {
   getData(
     data: PaginationModelData<T>,
@@ -10,8 +20,8 @@ export class PaginationModel<T> {
     hideFieldOptions?: any,
   ): PaginationModelData<T> {
     const { pagesCount, page, pageSize, totalCount, items } = data;
-
-    let cItems = [...items];
+    
+    let cItems = [...items || []];
 
     if (query?.searchEmailTerm || query?.searchLoginTerm) {
       cItems = this.filterQueryTerms(cItems, query);
@@ -24,7 +34,7 @@ export class PaginationModel<T> {
       });
     }
 
-    if (query.hide === 'createdAt') {
+    if (query?.hide === 'createdAt') {
       cItems = cItems.map((item) => ({
         ...item,
         createdAt: expect.any(String),

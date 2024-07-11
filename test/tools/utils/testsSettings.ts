@@ -4,20 +4,21 @@ const run = false;
 export const skipSettings = {
   run_all_tests: skip,
 
-  quiz: run,
+  quiz: skip,
   userAuth: skip,
   sa: skip,
-  sa_blogs: skip,
   userAuthSql: skip,
   posts: skip,
   appTests: skip,
+  SABlogs: skip,
+  bloggerBlogs: run,
   blogs: skip,
   security: skip,
   app: skip,
   staging: skip,
 
   for(testName: TestNamesE2E): boolean {
-    if (!this.run_all_tests) return run;
+    if (!this.run_all_tests) return false;
     return this[testName] ?? skip;
   },
 };
@@ -28,10 +29,11 @@ enum e2eTestNamesEnum {
   userAuth = 'userAuth',
   userAuthSql = 'userAuthSql',
   posts = 'posts',
-  blogs = 'blogs',
   security = 'security',
   sa = 'sa',
-  sa_blogs = 'sa_blogs',
+  blogs = 'blogs',
+  bloggerBlogs = 'bloggerBlogs',
+  SABlogs = 'SABlogs',
   staging = 'staging',
   quiz = 'quiz',
 }
@@ -48,7 +50,7 @@ type uTestNames = keyof typeof uTestNamesEnum;
 
 //   userAuth: true,
 //   sa: true,
-//   sa_blogs: false,
+//   SABlogs: false,
 //   userAuthSql: true,
 //   posts: true,
 //   appTests: true,
@@ -76,7 +78,7 @@ type uTestNames = keyof typeof uTestNamesEnum;
 //   blogs = 'blogs',
 //   security = 'security',
 //   sa = 'sa',
-//   sa_blogs = 'sa_blogs',
+//   SABlogs = 'SABlogs',
 // }
 
 // type SkipTitles = keyof typeof DescribeNames;

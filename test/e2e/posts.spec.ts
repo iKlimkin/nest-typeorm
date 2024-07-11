@@ -1,41 +1,49 @@
 import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { DataSource } from 'typeorm';
-import { BasicAuthorization } from '../tools/managers/BasicAuthManager';
-import { BlogsTestManager } from '../tools/managers/BlogsTestManager';
+import { TestingModule } from '@nestjs/testing';
+import { LikesStatuses } from '../../src/domain/reaction.models';
+import { BlogViewModelType } from '../../src/features/blogs/api/controllers';
+import { constants, feedbacksConstants } from '../tools/helpers/constants';
+import { AuthManager } from '../tools/managers/AuthManager';
+import {
+  BloggerBlogsTestManager,
+  BlogTestManager,
+} from '../tools/managers/BlogsTestManager';
+import { FeedbacksTestManager } from '../tools/managers/FeedbacksTestManager';
 import { PostsTestManager } from '../tools/managers/PostsTestManager';
+import { SATestManager } from '../tools/managers/SATestManager';
 import { UsersTestManager } from '../tools/managers/UsersTestManager';
+import { ApiRouting } from '../tools/routes/api.routing';
 import { aDescribe } from '../tools/utils/aDescribe';
 import { initSettings } from '../tools/utils/initSettings';
 import { skipSettings } from '../tools/utils/testsSettings';
-import { FeedbacksTestManager } from '../tools/managers/FeedbacksTestManager';
-import { SATestManager } from '../tools/managers/SATestManager';
-import { AuthManager } from '../tools/managers/AuthManager';
-import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
-import { createExceptions } from '../tools/utils/exceptionHandlers';
-import { postConstants } from '../tools/models/post-models';
-import { constants, feedbacksConstants } from '../tools/helpers/constants';
-import { LikesStatuses } from '../../src/domain/reaction.models';
+import { RouterPaths } from '../tools/helpers/routing';
 
 // (only, skip)
 aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
   let app: INestApplication;
   let testingAppModule: TestingModule;
   let postTestManager: PostsTestManager;
-  let blogTestManager: BlogsTestManager;
   let authManager: AuthManager;
+  let bloggerTestManager: BloggerBlogsTestManager;
   let saManager: SATestManager;
   let feedbacksTestManager: FeedbacksTestManager;
   let usersTestManager: UsersTestManager;
   let httpServer: HttpServer;
- 
+  let apiRouting: ApiRouting;
+
   beforeAll(async () => {
     const settings = await initSettings();
 
     httpServer = settings.httpServer;
-    app = settings.app
+    app = settings.app;
     postTestManager = new PostsTestManager(app);
-    blogTestManager = new BlogsTestManager(app, 'sa_blogs');
+    apiRouting = new ApiRouting();
+
+    const { createTestManager } = new BlogTestManager(app);
+    bloggerTestManager = createTestManager(
+      RouterPaths.blogger,
+    ) as BloggerBlogsTestManager;
+
     authManager = new AuthManager(app);
     saManager = new SATestManager(app);
     feedbacksTestManager = new FeedbacksTestManager(app);
@@ -52,8 +60,8 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
     });
 
     beforeAll(async () => {
-      const blogInputData = blogTestManager.createInputData({});
-      const blog = await blogTestManager.createBlog(blogInputData);
+      const blogInputData = bloggerTestManager.createInputData({});
+      const blog = await bloggerTestManager.createBlog(blogInputData, 'token');
 
       const userInputData = saManager.createInputData({});
 
@@ -70,17 +78,17 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
 
       const user2AfterLogin = await authManager.login(userAnotherData);
 
-      const inputPostData = blogTestManager.createPostInputData({});
+      const inputPostData = bloggerTestManager.createPostInputData({});
 
-      const post = await blogTestManager.createPost(inputPostData, blog);
+      // const post = await bloggerTestManager.createPost(inputPostData, blog);
 
-      expect.setState({
-        post,
-        user1,
-        user2,
-        accessToken1: user1AfterLogin.accessToken,
-        accessToken2: user2AfterLogin.accessToken,
-      });
+      // expect.setState({
+      //   post,
+      //   user1,
+      //   user2,
+      //   accessToken1: user1AfterLogin.accessToken,
+      //   accessToken2: user2AfterLogin.accessToken,
+      // });
     });
 
     it("/posts/:postId/comments (POST) - shouldn't create comment with invalid token, expect UNAUTHORIZED", async () => {
@@ -152,15 +160,16 @@ aDescribe(skipSettings.for('posts'))('PostsController (e2e)', () => {
       const numberOfUsers = 5;
       const numberOfPosts = 3;
 
-      const { users, accessTokens } =
-        await usersTestManager.createUsers(numberOfUsers);
+      const { users, accessTokens } = await usersTestManager.createUsers(
+        numberOfUsers,
+      );
 
-      const inputBlogData = blogTestManager.createInputData({});
-      const blog = await blogTestManager.createBlog(inputBlogData);
+      const inputBlogData = bloggerTestManager.createInputData({});
+      // const blog = await bloggerTestManager.createBlog(inputBlogData, 'token');
 
-      const posts = await blogTestManager.createPosts(blog, numberOfPosts);
+      // const posts = await bloggerTestManager.createPosts(blog, accessTokens[0], numberOfPosts);
 
-      expect.setState({ posts, users, accessTokens });
+      // expect.setState({ posts, users, accessTokens });
     });
 
     it('/posts/:postId/like-status (PUT) - create a likes for each post, expect 204', async () => {

@@ -1,4 +1,7 @@
+import { LikesStatuses } from '../../../src/domain/reaction.models';
+import { CreationPostDtoByBlogId } from '../../../src/features/blogs/api/controllers';
 import { BlogViewModelType } from '../../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
+import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
 
 export const blogsData = {
   philosophers: [
@@ -38,10 +41,10 @@ export const blogsData = {
   },
 };
 
-export const createSABlogsDataForTests = () => {
-  let data: any[] = [];
+export const createBlogsDataForTests = (isMembership = false) => {
+  let data = [];
   let i = 1;
-
+  
   while (i !== blogsData.philosophers.length + 1) {
     const currentPhilosopher = blogsData.philosophers[i - 1];
 
@@ -50,8 +53,8 @@ export const createSABlogsDataForTests = () => {
       name: currentPhilosopher,
       description: blogsData.description[i],
       websiteUrl: blogsData.websiteUrl[i],
-      // userId: expect.any(String),
-      isMembership: true,
+      userId: expect.any(String),
+      isMembership,
       createdAt: new Date(new Date().getTime() + i * 1000).toISOString(),
     });
 
@@ -77,3 +80,23 @@ export const blogEqualTo = {
   isMembership: expect.any(Boolean),
   createdAt: expect.any(String),
 } as BlogViewModelType;
+
+export const createdPostStructureConsistency = (
+  inputData: CreationPostDtoByBlogId,
+  blogId?: string,
+) =>
+  ({
+    id: expect.any(String),
+    title: inputData.title,
+    shortDescription: inputData.shortDescription,
+    content: inputData.content,
+    blogId: blogId || expect.any(String),
+    blogName: expect.any(String),
+    createdAt: expect.any(String),
+    extendedLikesInfo: {
+      likesCount: 0,
+      dislikesCount: 0,
+      myStatus: LikesStatuses.None,
+      newestLikes: expect.any(Array),
+    },
+  }) as PostViewModelType;

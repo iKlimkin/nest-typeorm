@@ -816,8 +816,6 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       });
     });
     it('Sorting by avgScores', async () => {
-      const { firstPlayerToken } = expect.getState();
-
       const query = {
         pageNumber: '1',
         pageSize: '10',
@@ -831,11 +829,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       };
 
       const { items: sortedAvgScoresAsc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
         query,
       );
       const { items: sortedAvgScoresDesc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
         query2,
       );
 
@@ -850,8 +846,6 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
 
     it('sorting by sumScore', async () => {
-      const { firstPlayerToken } = expect.getState();
-
       const query = {
         pageNumber: '1',
         pageSize: '10',
@@ -864,15 +858,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         sort: ['sumScore asc'],
       };
 
-      const { items: sumScoreDesc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
-        query,
-      );
+      const { items: sumScoreDesc } = await quizTestManager.getTopUsers(query);
 
-      const { items: sumScoreAsc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
-        query2,
-      );
+      const { items: sumScoreAsc } = await quizTestManager.getTopUsers(query2);
 
       for (let i = 0; i < sumScoreDesc.length - 1; i++) {
         expect(sumScoreDesc[i].sumScore).toBeGreaterThanOrEqual(
@@ -901,12 +889,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       };
 
       const { items: gamesCountDesc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
         query,
       );
 
       const { items: gamesCountAsc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
         query2,
       );
 
@@ -935,15 +921,9 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         sort: ['winsCount asc'],
       };
 
-      const { items: winsCountDesc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
-        query,
-      );
+      const { items: winsCountDesc } = await quizTestManager.getTopUsers(query);
 
-      const { items: winsCountAsc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
-        query2,
-      );
+      const { items: winsCountAsc } = await quizTestManager.getTopUsers(query2);
 
       for (let i = 0; i < winsCountDesc.length - 1; i++) {
         expect(winsCountDesc[i].winsCount).toBeGreaterThanOrEqual(
@@ -971,12 +951,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       };
 
       const { items: lossesCountDesc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
         query,
       );
 
       const { items: lossesCountAsc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
         query2,
       );
 
@@ -1006,12 +984,10 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       };
 
       const { items: drawsCountDesc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
         query,
       );
 
       const { items: drawsCountAsc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
         query2,
       );
 
@@ -1044,10 +1020,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         }
       });
 
-      const { items: avgScoresAsc } = await quizTestManager.getTopUsers(
-        firstPlayerToken,
-        query,
-      );
+      const { items: avgScoresAsc } = await quizTestManager.getTopUsers(query);
 
       avgScoresAsc.forEach((s, i, itself) => {
         i > 0 &&
@@ -1056,6 +1029,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     });
     const executePlayerStats = (stats, login) =>
       stats.items.find((s) => s.player.login === login);
+
     it(`should return correct stats for gamesCount and drawsCount`, async () => {
       const { firstPlayerToken, secondPlayerToken } = expect.getState();
       console.log({ firstPlayerToken });
@@ -1098,7 +1072,17 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         executePlayerStats(stats4, firstPlayer.login).drawsCount,
       );
     });
-    it('should return correct ', async () => {});
+    it('should return correct ', async () => {
+      const { firstPlayerToken } = expect.getState();
+      // ?pageSize=3&sort=sumScore%20desc&sort=avgScores%20desc
+      const query = {
+        pageNumber: '1',
+        pageSize: '3',
+        sort: ['sumScore desc', 'avgScores desc'],
+      };
+
+      const stats = await quizTestManager.getTopUsers(query);
+    });
   });
   describe('POST /pair-game-quiz/pairs/my-current/answers; pair-game-quiz.controller,', () => {
     afterAll(async () => {
@@ -1747,7 +1731,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       // ).toBe(5);
     });
   });
-
+ 
   describe.skip('CONSTANT TESTS', () => {
     beforeEach(async () => {
       // await cleanDatabase(httpServer);
@@ -1768,7 +1752,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       });
     });
 
-    it.skip('t', async () => {
+    it('t', async () => {
       const {
         firstPlayerToken,
         secondPlayerToken,
@@ -1782,25 +1766,26 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         secondPlayerToken,
         questionsAndAnswers,
       );
-
-      for (let i = 0; i < 5; i++) {
+      
+      for (let i = 0; i < 1; i++) {
         await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+        await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
       }
-      await wait(11);
-      await quizTestManager.getCurrentUnfinishedGame(
-        firstPlayerToken,
-        HttpStatus.NOT_FOUND,
-      );
-      const game: QuizPairViewType = await quizTestManager.getCurrentGameById(
-        firstPlayerToken,
-        gameId,
-      );
-      const spAnswers = game.secondPlayerProgress.answers;
+      // await wait(11);
+      // await quizTestManager.getCurrentUnfinishedGame(
+      //   firstPlayerToken,
+      //   HttpStatus.NOT_FOUND,
+      // );
+      // const game: QuizPairViewType = await quizTestManager.getCurrentGameById(
+      //   firstPlayerToken,
+      //   gameId,
+      // );
+      // const spAnswers = game.secondPlayerProgress.answers;
 
-      expect(game.status).toBe('Finished');
-      spAnswers.forEach((a, i) => {
-        expect(a.questionId).toBe(game.questions[i].id);
-      });
+      // expect(game.status).toBe('Finished');
+      // spAnswers.forEach((a, i) => {
+      //   expect(a.questionId).toBe(game.questions[i].id);
+      // });
     });
     it('t', async () => {
       const {

@@ -3,7 +3,8 @@ export type PathMappings = keyof typeof RouterPaths;
 export const RouterPaths = {
   comments: '/comments',
   blogs: '/blogs',
-  sa_blogs: '/sa/blogs',
+  SABlogs: '/sa/blogs',
+  blogger: '/blogger/blogs',
   posts: '/posts',
   users: '/sa/users',
   auth: '/auth',
@@ -17,7 +18,7 @@ export const RouterPaths = {
 export enum NavigationEnum {
   comments = '/comments',
   blogs = '/blogs',
-  sa_blogs = '/sa/blogs',
+  SABlogs = '/sa/blogs',
   posts = '/posts',
   users = '/sa/users',
   auth = '/auth',
