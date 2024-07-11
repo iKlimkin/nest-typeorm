@@ -1,13 +1,40 @@
-export class BlogCreationDto {
+import { UserAccount } from '../../../../../settings';
+import { UpdatePostDto } from '../../../../posts/api/models/input.posts.models/create.post.model';
+
+export class BlogDtoBase {
   constructor(
     public title: string,
     public description: string,
     public websiteUrl: string,
-    public isMembership: boolean = false,
   ) {}
 }
 
-export class BlogSADto extends BlogCreationDto {
+export class BlogCreationDto extends BlogDtoBase {
+  constructor(
+    title: string,
+    description: string,
+    websiteUrl: string,
+    public user: UserAccount,
+    public isMembership = false,
+  ) {
+    super(title, description, websiteUrl);
+    this.isMembership = isMembership;
+  }
+}
+
+export class CreateBlogDto extends BlogCreationDto {
   public userId: string;
-  // public userLogin: string,
+}
+
+export class UpdateBlogDto {
+  constructor(
+    public name: string,
+    public description: string,
+    public websiteUrl: string,
+  ) {}
+}
+
+export class UpdateBloggerPostData extends UpdatePostDto {
+  blogId: string;
+  userId: string;
 }

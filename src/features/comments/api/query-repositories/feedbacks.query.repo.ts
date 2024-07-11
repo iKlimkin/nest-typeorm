@@ -180,7 +180,7 @@ export class FeedbacksQueryRepo {
         });
 
         myReaction = myStorageReaction
-          ? myStorageReaction.reaction_type
+          ? myStorageReaction.reactionType
           : LikesStatuses.None;
       }
 
@@ -213,7 +213,7 @@ export class FeedbacksQueryRepo {
 
       const reactionsResult = await this.dataSource.query(
         `
-          SELECT reaction_type, comment_id
+          SELECT reactionType, comment_id
             FROM comment_reactions cr
             WHERE user_id = $1
         `,

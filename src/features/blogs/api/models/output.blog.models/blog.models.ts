@@ -13,7 +13,7 @@ export type BlogsRawDbType = {
   user_id: string;
   title: string;
   description: string;
-  website_url: string;
+  websiteUrl: string;
   created_at: Date;
   is_membership: boolean;
 };

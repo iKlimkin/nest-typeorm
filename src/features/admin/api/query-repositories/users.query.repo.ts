@@ -27,32 +27,29 @@ export class UsersQueryRepo {
       `%${searchLoginTerm ? searchLoginTerm : ''}%`,
       `%${searchEmailTerm ? searchEmailTerm : ''}%`,
     ];
-    const queryBuilder = this.userAccounts.createQueryBuilder('user_accounts');
 
-    queryBuilder
-      .where(
-        'user_accounts.login ILIKE :login OR user_accounts.email ILIKE :email',
-        { login: searchTerms[0], email: searchTerms[1] },
-      )
+    const [users, usersCount] = await this.userAccounts
+      .createQueryBuilder('user')
+      .where('user.login ILIKE :login OR user.email ILIKE :email', {
+        login: searchTerms[0],
+        email: searchTerms[1],
+      })
       .orderBy(
         sortBy !== 'created_at'
-          ? `user_accounts.${sortBy} COLLATE "C"`
-          : 'user_accounts.created_at',
+          ? `user.${sortBy} COLLATE "C"`
+          : 'user.created_at',
         sortDirection,
       )
       .skip(skip)
-      .take(pageSize);
+      .take(pageSize)
+      .getManyAndCount();
 
-    const [users, usersCount] = await queryBuilder.getManyAndCount();
-
-    const userSAViewType = new PaginationViewModel<SAViewType>(
+    return new PaginationViewModel<SAViewType>(
       users.map(getSAViewModel),
       pageNumber,
       pageSize,
       usersCount,
     );
-
-    return userSAViewType;
   }
   catch(error) {
     throw new InternalServerErrorException(

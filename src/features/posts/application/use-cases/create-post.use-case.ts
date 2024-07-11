@@ -1,44 +1,47 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { DataSource } from 'typeorm';
 import { OutputId } from '../../../../domain/output.models';
+import { runInTransaction } from '../../../../domain/transaction-wrapper';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
-import { PostCreationDto } from '../../api/models/dto/post-sql.model';
-import { CreatePostCommand } from './commands/create-post.command';
+import { BlogService, Post } from '../../../../settings';
 import { PostsRepository } from '../../infrastructure/posts.repository';
-import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
+import { CreatePostCommand } from './commands/create-post.command';
 
 @CommandHandler(CreatePostCommand)
 export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
-  constructor(private postsRepo: PostsRepository) {}
+  private location: string;
+  constructor(
+    private postsRepo: PostsRepository,
+    private dataSource: DataSource,
+    private blogService: BlogService,
+  ) {
+    this.location = 'CreatePostUseCase';
+  }
 
   async execute(
     command: CreatePostCommand,
   ): Promise<LayerNoticeInterceptor<OutputId | null>> {
-    const notice = new LayerNoticeInterceptor<OutputId>();
+    const { postsRepo, dataSource } = this;
+    const { blogId, userId, ...createPostData } = command.data;
 
-    try {
-      await validateOrRejectModel(command, CreatePostCommand);
-    } catch (error) {
-      notice.addError(
-        'Input data incorrect',
-        'CreatePostUseCase',
-        GetErrors.IncorrectModel,
-      );
-      return notice;
-    }
+    return runInTransaction(dataSource, async (manager) => {
+      const notice = new LayerNoticeInterceptor<OutputId | null>();
+      const blogServiceNotice =
+        await this.blogService.validateBlogAndUserRights(blogId, userId);
 
-    const { createPostData } = command;
+      if (blogServiceNotice.hasError)
+        return blogServiceNotice as LayerNoticeInterceptor<null>;
 
-    const postDto = new PostCreationDto(createPostData);
+      const { blog } = blogServiceNotice.data;
 
-    const result = await this.postsRepo.createPost(postDto);
+      const createdPostNotice = await Post.create({ ...createPostData, blog });
 
-    if (result) {
+      if (createdPostNotice.hasError) return createdPostNotice;
+
+      const result = await postsRepo.save(createdPostNotice.data, manager);
+
       notice.addData(result);
-    } else {
-      notice.addError('Post not created', 'db', GetErrors.DatabaseFail);
-    }
-
-    return notice;
+      return notice;
+    });
   }
 }

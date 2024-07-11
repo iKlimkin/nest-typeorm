@@ -1,12 +1,10 @@
-import { IsOptional, IsString } from 'class-validator';
-import { iSValidField } from '../../../../../infra/decorators/transform/transform-params';
-import { BlogIdIsExist } from '../../../../../infra/decorators/validate/is-valid-blogId';
+import { IsString } from 'class-validator';
 import {
-  titleLength,
-  frequentLength,
   contentLength,
-  blogIdLength,
+  frequentLength,
+  titleLength,
 } from '../../../../../domain/validation.constants';
+import { iSValidField } from '../../../../../infra/decorators/transform/transform-params';
 
 export type CreatePostByBlog = Omit<CreatePostModel, 'blogId'>;
 
@@ -32,32 +30,32 @@ export type CreatePostModel = {
   blogId: string;
 };
 
-export class CreationPostDto {
-  /**
-   *  post's title
-   */
-  @iSValidField(titleLength)
-  title: string;
+// export class CreationPostDto {
+//   /**
+//    *  post's title
+//    */
+//   @iSValidField(titleLength)
+//   title: string;
 
-  /**
-   * shortDescription of the post
-   */
-  @iSValidField(frequentLength)
-  shortDescription: string;
+//   /**
+//    * shortDescription of the post
+//    */
+//   @iSValidField(frequentLength)
+//   shortDescription: string;
 
-  /**
-   * content of existing post
-   */
-  @iSValidField(contentLength)
-  content: string;
+//   /**
+//    * content of existing post
+//    */
+//   @iSValidField(contentLength)
+//   content: string;
 
-  /**
-   * search blog id
-   */
-  @iSValidField(blogIdLength)
-  @BlogIdIsExist("blogId doesn't exist")
-  blogId: string;
-}
+//   /**
+//    * search blog id
+//    */
+//   @iSValidField(blogIdLength)
+//   @BlogIdIsExist("blogId doesn't exist")
+//   blogId: string;
+// }
 
 export class CreationPostDtoByBlogId {
   /**
@@ -82,11 +80,16 @@ export class CreatePostByBlogIdModel extends CreationPostDtoByBlogId {
   @IsString()
   blogId: string;
 
+  userId: string;
+
   @IsString()
-  blogTitle: string;
+  blogTitle?: string;
 }
 
 export class UpdatePostDto extends CreationPostDtoByBlogId {
   @IsString()
   postId: string;
 }
+
+export class UpdateBloggerPostDto extends CreationPostDtoByBlogId {}
+

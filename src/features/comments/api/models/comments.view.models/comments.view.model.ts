@@ -12,7 +12,7 @@ const convertStatus = (
     return (
       (myReactions
         .filter((r) => r.comment.id === commentId)
-        .map((r) => r.reaction_type)
+        .map((r) => r.reactionType)
         .join('') as LikesStatuses) || LikesStatuses.None
     );
   }

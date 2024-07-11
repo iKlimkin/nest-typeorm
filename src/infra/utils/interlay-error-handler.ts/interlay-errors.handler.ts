@@ -11,6 +11,15 @@ export const handleErrors = (
   code: number,
   extension: LayerInterceptorExtension,
 ) => {
+  const {
+    DatabaseFail,
+    Forbidden,
+    IncorrectModel,
+    IncorrectPassword,
+    NotCreated,
+    NotFound,
+    Transaction,
+  } = GetErrors;
   const { key, message } = extension;
   const descriptionOrOptions = {
     cause: extension.key,
@@ -24,22 +33,27 @@ export const handleErrors = (
   };
 
   switch (code) {
-    case GetErrors.DatabaseFail:
+    case DatabaseFail || Transaction || NotCreated:
       return {
         error: new InternalServerErrorException(errorObject),
       };
-    case GetErrors.NotFound:
+    case NotFound:
       return {
         message: extension.message,
         error: new NotFoundException(errorObject),
       };
-    case GetErrors.IncorrectModel:
+    case IncorrectModel:
       return {
         message: extension.message,
         error: new BadRequestException(errorObject),
       };
 
-    case GetErrors.Forbidden:
+    case Forbidden:
+      return {
+        message: extension.message,
+        error: new ForbiddenException(errorObject),
+      };
+    case IncorrectPassword:
       return {
         message: extension.message,
         error: new ForbiddenException(errorObject),

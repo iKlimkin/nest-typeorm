@@ -3,10 +3,6 @@ import { PostReaction } from '../../../domain/entities/post-reactions.entity';
 import { Post } from '../../../domain/entities/post.entity';
 import { PostViewModelType } from './post-view-model.type';
 
-export class TransReaction extends Post {
-  post_id: string;
-}
-
 const convertStatus = (
   myReactions: PostReaction[] | LikesStatuses,
   post: Post,
@@ -17,7 +13,7 @@ const convertStatus = (
       (myReactions
         .filter((r) => r.post.id === post.id)
         .map((r) =>
-          r.post.id === post.id ? r.reaction_type : LikesStatuses.None,
+          r.post.id === post.id ? r.reactionType : LikesStatuses.None,
         )
         .join('') as LikesStatuses) || LikesStatuses.None
     );
@@ -32,7 +28,7 @@ const filterNewestLikes = (reactions: PostReaction[], postId: string) => {
     .map((like) => ({
       addedAt: like.created_at.toISOString(),
       userId: like.user.id,
-      login: like.user_login,
+      login: like.userLogin,
     }))
     .slice(0, 3);
 };
@@ -45,11 +41,10 @@ export const getPostViewModel = (
   return {
     id: post.id,
     title: post.title,
-    shortDescription: post.short_description,
+    shortDescription: post.shortDescription,
     content: post.content,
-    // blogId: post.blog.id,
-    blogId: post.blogId,
-    blogName: post.blog_title,
+    blogId: post.blogId || 'add relation',
+    blogName: post.blogTitle,
     createdAt: post.created_at.toISOString(),
     extendedLikesInfo: {
       likesCount: post.postReactionCounts?.likes_count || 0,

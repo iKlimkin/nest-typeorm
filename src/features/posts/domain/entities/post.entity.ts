@@ -1,35 +1,49 @@
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne
+  OneToOne,
 } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
+import {
+  contentLength,
+  frequentLength,
+  titleLength,
+} from '../../../../domain/validation.constants';
+import { iSValidField } from '../../../../infra/decorators/transform/transform-params';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
+import type { Blog } from '../../../../settings';
 import type { UserAccount } from '../../../auth/infrastructure/settings';
 import type { Comment } from '../../../comments/domain/entities/comment.entity';
+import { CreatePostDto } from '../../api/models/dto/post.dto.model';
 import type { PostReactionCounts } from './post-reaction-counts.entity';
 import type { PostReaction } from './post-reactions.entity';
-
+import { UpdateBloggerPostDto } from '../../api/models/input.posts.models/create.post.model';
 
 @Entity()
 export class Post extends BaseEntity {
   @Column()
+  @iSValidField(titleLength)
   title: string;
 
   @Column()
-  short_description: string;
+  @iSValidField(frequentLength)
+  shortDescription: string;
 
   @Column()
-  blog_title: string;
+  blogTitle: string;
 
-  @Column({  })
+  @Column()
+  @iSValidField(contentLength)
   content: string;
 
-  // @ManyToOne('Blog', 'posts')
-  // @JoinColumn({ name: 'blog_id' })
+  @ManyToOne('Blog', 'posts')
+  @JoinColumn()
+  blog: Blog;
 
-  @Column({ unique: true })
+  @Column()
   blogId: string;
 
   @ManyToOne('UserAccount', 'posts')
@@ -43,4 +57,36 @@ export class Post extends BaseEntity {
 
   @OneToOne('PostReactionCounts', 'post')
   postReactionCounts: PostReactionCounts;
+
+  static async create(createPostDto: CreatePostDto) {
+    const { blog, content, shortDescription, title } = createPostDto;
+    const notice = new LayerNoticeInterceptor<Post>();
+
+    const newPost = new Post();
+    newPost.content = content;
+    newPost.shortDescription = shortDescription;
+    newPost.title = title;
+    newPost.blogTitle = blog.title;
+    newPost.blog = blog;
+    newPost.blogId = blog.id;
+
+    await notice.validateFields(newPost);
+    notice.addData(newPost);
+    return notice;
+  }
+
+  async updatePost(
+    updatePostDto: UpdateBloggerPostDto,
+  ): Promise<LayerNoticeInterceptor<Post>> {
+    const { content, shortDescription, title } = updatePostDto;
+    const notice = new LayerNoticeInterceptor<Post>();
+
+    this.content = content;
+    this.shortDescription = shortDescription;
+    this.title = title;
+
+    await notice.validateFields(this);
+    notice.addData(this);
+    return notice;
+  }
 }

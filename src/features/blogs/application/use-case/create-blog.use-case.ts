@@ -1,47 +1,44 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { CreateBlogCommand } from './commands/create-blog.command';
-import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
-import { BlogsRepository } from '../../infrastructure/blogs.repository';
-import { BlogCreationDto } from '../../api/models/dtos/blog-dto.model';
+import { DataSource } from 'typeorm';
+import { OutputId } from '../../../../domain/output.models';
+import { runInTransaction } from '../../../../domain/transaction-wrapper';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { OutputId } from '../../../../domain/output.models';
+import { UsersRepository } from '../../../admin/infrastructure/users.repo';
+import { BlogCreationDto } from '../../api/models/dtos/blog-dto.model';
+import { Blog } from '../../domain/entities/blog.entity';
+import { BlogsRepository } from '../../infrastructure/blogs.repository';
+import { CreateBlogCommand } from './commands/create-blog.command';
 
 @CommandHandler(CreateBlogCommand)
 export class CreateBlogUseCase implements ICommandHandler<CreateBlogCommand> {
-  constructor(private blogsRepo: BlogsRepository) {}
+  constructor(
+    private blogsRepo: BlogsRepository,
+    private userRepo: UsersRepository,
+    private dataSource: DataSource,
+  ) {}
 
   async execute(
     command: CreateBlogCommand,
-  ): Promise<LayerNoticeInterceptor<OutputId | null>> {
-    const notice = new LayerNoticeInterceptor<OutputId | null>();
-
-    try {
-      await validateOrRejectModel(command, CreateBlogCommand);
-    } catch (e) {
-      notice.addError(
-        'incorrect model',
-        'CreateBlogUseCase',
-        GetErrors.IncorrectModel,
+  ): Promise<LayerNoticeInterceptor<OutputId>> {
+    return runInTransaction(this.dataSource, async (manager) => {
+      const notice = new LayerNoticeInterceptor<OutputId>();
+      const { description, name, websiteUrl, userId } = command.data;
+      const user = await this.userRepo.getUserById(userId);
+      const createBlogDto = new BlogCreationDto(
+        name,
+        description,
+        websiteUrl,
+        user,
       );
-    }
+      const createdBlogNotice = await Blog.create(createBlogDto);
 
-    const { description, name, websiteUrl } = command.createData;
+      if (createdBlogNotice.hasError) return createdBlogNotice;
 
-    const blogDto = new BlogCreationDto(name, description, websiteUrl);
+      const result = await this.blogsRepo.save(createdBlogNotice.data, manager);
 
-    const result = await this.blogsRepo.createBlog(blogDto);
-
-    if (!result) {
-      notice.addError(
-        `blog not created `,
-        'CreateBlogUseCase',
-        GetErrors.DatabaseFail,
-      );
-    } else {
       notice.addData(result);
-    }
-
-    return notice;
+      return notice;
+    });
   }
 }

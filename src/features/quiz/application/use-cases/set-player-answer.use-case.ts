@@ -9,7 +9,7 @@ import { QuizAnswer } from '../../domain/entities/quiz-answer.entity';
 import { QuizPlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
 import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { SetPlayerAnswerCommand } from '../commands/set-player-answer.command';
-import { QuizService } from '../services/quiz.service';
+import { QuizScheduleService } from '../services/quiz.schedule.service';
 
 interface IPlayerWithAnswer {
   playerAnswer: QuizAnswer;
@@ -22,12 +22,6 @@ interface IHandleLastAnswerInput {
   manager: EntityManager;
   gameId: string;
 }
-// interface IGameResultHandler {
-//   firstPlayerProgress: QuizPlayerProgress;
-//   secondPlayerProgress: QuizPlayerProgress;
-//   manager: EntityManager;
-//   gameId: string;
-// }
 interface IGameResultHandler extends Omit<IHandleLastAnswerInput, 'answer'> {}
 
 @CommandHandler(SetPlayerAnswerCommand)
@@ -40,7 +34,7 @@ export class SetPlayerAnswerUseCase
   constructor(
     private readonly quizRepo: QuizRepository,
     private readonly dataSource: DataSource,
-    private readonly quizService: QuizService,
+    private readonly quizService: QuizScheduleService,
   ) {}
 
   async execute(
@@ -48,101 +42,85 @@ export class SetPlayerAnswerUseCase
   ): Promise<LayerNoticeInterceptor<AnswerResultViewType>> {
     const { quizRepo, lastPoint, location } = this;
     const { answer, userId } = command.inputData;
-    const notice = new LayerNoticeInterceptor<AnswerResultViewType>();
-    try {
-      await validateOrRejectModel(command, SetPlayerAnswerCommand);
-    } catch (e) {
-      notice.addError('incorrect model', location, GetErrors.IncorrectModel);
-      return notice;
-    }
 
-    try {
-      return runInTransaction(this.dataSource, async (manager) => {
-        const {
-          firstPlayerProgress,
-          secondPlayerProgress,
-          firstPlayerId,
-          id: gameId,
-        } = await quizRepo.getCurrentGameByUserId(userId, manager);
+    return runInTransaction(this.dataSource, async (manager) => {
+      const notice = new LayerNoticeInterceptor<AnswerResultViewType>();
+      const {
+        firstPlayerProgress,
+        secondPlayerProgress,
+        firstPlayerId,
+        id: gameId,
+      } = await quizRepo.getCurrentGameByUserId(userId, manager);
 
-        let currentPlayerProgress: QuizPlayerProgress;
-        let otherPlayerProgress: QuizPlayerProgress;
+      let currentPlayerProgress: QuizPlayerProgress;
+      let otherPlayerProgress: QuizPlayerProgress;
 
-        if (firstPlayerId === userId) {
-          currentPlayerProgress = firstPlayerProgress;
-          otherPlayerProgress = secondPlayerProgress;
-        } else {
-          currentPlayerProgress = secondPlayerProgress;
-          otherPlayerProgress = firstPlayerProgress;
-        }
+      if (firstPlayerId === userId) {
+        currentPlayerProgress = firstPlayerProgress;
+        otherPlayerProgress = secondPlayerProgress;
+      } else {
+        currentPlayerProgress = secondPlayerProgress;
+        otherPlayerProgress = firstPlayerProgress;
+      }
 
-        if (currentPlayerProgress.isExceededAnswerLimit(lastPoint)) {
-          notice.addError(
-            `player answers limit`,
-            location,
-            GetErrors.Forbidden,
-          );
-          return notice;
-        }
-        currentPlayerProgress.incrementAnswersCount();
-
-        if (currentPlayerProgress.isLastAnswer(lastPoint)) {
-          return await this.handleLastAnswer(
-            {
-              answer,
-              currentPlayerProgress,
-              otherPlayerProgress,
-              manager,
-              gameId,
-            },
-            notice,
-          );
-        }
-
-        const result = await this.checkAndCreateAnswer(
-          answer,
-          gameId,
-          currentPlayerProgress,
-          manager,
-        );
-
-        if (result.hasError) {
-          notice.addError(result.errorMessage, location, result.code);
-          return notice;
-        }
-
-        const { playerAnswer, savedPlayerAnswer } = result.data;
-
-        if (playerAnswer.isCorrectAnswer()) {
-          currentPlayerProgress.incrementScore();
-        }
-
-        await quizRepo.saveProgress(currentPlayerProgress, manager);
-
-        const { created_at, answerStatus, questionId } = savedPlayerAnswer;
-
-        const responseData: AnswerResultViewType = {
-          addedAt: created_at.toISOString(),
-          answerStatus,
-          questionId,
-        };
-
-        if (!savedPlayerAnswer) {
-          notice.addError(
-            'Answer not realized',
-            location,
-            GetErrors.DatabaseFail,
-          );
-        } else {
-          notice.addData(responseData);
-        }
-
+      if (currentPlayerProgress.isExceededAnswerLimit(lastPoint)) {
+        notice.addError(`player answers limit`, location, GetErrors.Forbidden);
         return notice;
-      });
-    } catch (error) {
-      notice.addError('transaction error', location, GetErrors.Transaction);
+      }
+      currentPlayerProgress.incrementAnswersCount();
+
+      if (currentPlayerProgress.isLastAnswer(lastPoint)) {
+        return await this.handleLastAnswer(
+          {
+            answer,
+            currentPlayerProgress,
+            otherPlayerProgress,
+            manager,
+            gameId,
+          },
+          notice,
+        );
+      }
+
+      const result = await this.checkAndCreateAnswer(
+        answer,
+        gameId,
+        currentPlayerProgress,
+        manager,
+      );
+
+      if (result.hasError) {
+        notice.addError(result.errorMessage, location, result.code);
+        return notice;
+      }
+
+      const { playerAnswer, savedPlayerAnswer } = result.data;
+
+      if (playerAnswer.isCorrectAnswer()) {
+        currentPlayerProgress.incrementScore();
+      }
+
+      await quizRepo.saveProgress(currentPlayerProgress, manager);
+
+      const { created_at, answerStatus, questionId } = savedPlayerAnswer;
+
+      const responseData: AnswerResultViewType = {
+        addedAt: created_at.toISOString(),
+        answerStatus,
+        questionId,
+      };
+
+      if (!savedPlayerAnswer) {
+        notice.addError(
+          'Answer not realized',
+          location,
+          GetErrors.DatabaseFail,
+        );
+      } else {
+        notice.addData(responseData);
+      }
       return notice;
-    }
+    });
   }
 
   private async checkAndCreateAnswer(
@@ -195,6 +173,8 @@ export class SetPlayerAnswerUseCase
         return notice;
       }
     } catch (error) {
+      console.log({ error });
+
       notice.addError('Answer not realized', location, GetErrors.DatabaseFail);
       return notice;
     }
@@ -236,13 +216,11 @@ export class SetPlayerAnswerUseCase
     await quizRepo.saveProgress(currentPlayerProgress, manager);
 
     quizService.createCompletionCheckJob(gameId);
-    // const deleteJob = quizService.deleteCompletionCheckJob;
 
     const isCurrentGameCompleted =
       currentPlayerProgress.isGameCompleted(otherPlayerProgress);
 
     if (isCurrentGameCompleted) {
-      // deleteJob(gameId);
       await this.finishGameAndHandleBonuses({
         gameId,
         currentPlayerProgress,
@@ -293,10 +271,13 @@ export class SetPlayerAnswerUseCase
 
       const winnerId =
         currentPlayerProgress.determineWinner(otherPlayerProgress);
-
       await quizRepo.finishGame(gameId, winnerId, manager);
     } catch (error) {
-      throw new Error('finish game and handle bonuses');
+      throw new Error(
+        error
+          ? error?.message || 'finish game and handle bonuses'
+          : 'Internal Server Error',
+      );
     }
   }
 }

@@ -26,7 +26,7 @@ export class UsersRepository {
 
   async getUserById(userId: string): Promise<UserAccount | null> {
     try {
-      return this.userAccounts.findOneBy({ id: userId });
+      return await this.userAccounts.findOneBy({ id: userId });
     } catch (error) {
       console.log(`${error}`);
       return null;

@@ -29,8 +29,10 @@ import {
   UpdateCommentReactionCommand,
   UserSessionDto,
 } from '.';
+import { RouterPaths } from '../../../../../test/tools/helpers/routing';
 
-@Controller('comments')
+
+@Controller(RouterPaths.comments)
 export class FeedbacksController {
   constructor(
     private feedbacksQueryRepo: FeedbacksQueryRepo,

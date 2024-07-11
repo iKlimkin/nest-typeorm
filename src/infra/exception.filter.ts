@@ -5,11 +5,16 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
+import { ConfigurationType } from '../settings/config/configuration';
 
+type ErrorResponse = {
+  errorsMessages: ErrorsMessageType[];
+};
 type ErrorsMessageType = {
-  message: string;
-  field: string;
+  message?: string;
+  field?: string;
 };
 
 // @Catch(Error)
@@ -18,12 +23,11 @@ type ErrorsMessageType = {
 //     const ctx = host.switchToHttp();
 //     const response = ctx.getResponse<Response>();
 //     const request = ctx.getRequest<Request>();
-    
 
 //     const statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
 //     const errorMessage = error.message || 'Internal Server Error';
 //     console.log({errorMessage, statusCode});
-    
+
 //     response.status(statusCode).json({
 //       statusCode,
 //       timestamp: new Date().toISOString(),
@@ -35,34 +39,45 @@ type ErrorsMessageType = {
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
+  constructor(private config: ConfigService<ConfigurationType>) {}
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
     const { message, key, statusCode } = exception.getResponse() as any;
 
+    let devErrorResponse = {
+      statusCode,
+      timestamp: new Date().toISOString(),
+      location: key,
+      error: message,
+      path: request.url,
+      errorName: exception?.name,
+    };
+
     if (statusCode === HttpStatus.BAD_REQUEST) {
-      const errorResponse: any = {
+      const prodErrorResponse: ErrorResponse = {
         errorsMessages: [],
       };
-
       if (Array.isArray(message)) {
-        message.forEach((m: ErrorsMessageType) =>
-          errorResponse.errorsMessages.push(m),
-        );
+        message.forEach((m: ErrorsMessageType) => {
+          prodErrorResponse.errorsMessages.push(m);
+        });
       } else {
-        errorResponse.errorsMessages.push({ message });
+        prodErrorResponse.errorsMessages.push({ message });
       }
+
+      const env = this.config.getOrThrow('env').toUpperCase();
+
+      const envCondition = env === 'DEVELOPMENT' || env === 'TESTING';
+
+      const errorResponse = !envCondition
+        ? devErrorResponse
+        : prodErrorResponse;
 
       response.status(statusCode).send(errorResponse);
     } else {
-      response.status(statusCode).json({
-        statusCode,
-        timestamp: new Date().toISOString(),
-        location: key,
-        error: message,
-        path: request.url,
-      });
+      response.status(statusCode).json(devErrorResponse);
     }
   }
 }

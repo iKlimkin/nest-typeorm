@@ -35,7 +35,7 @@ import { QuizQuestionViewType } from '../output.models.ts/view.models.ts/quiz-qu
 import { getQuestionsViewModel } from '../output.models.ts/view.models.ts/quiz-questions.view-model';
 import { transformRawQuizDataToView } from '../output.models.ts/view.models.ts/quiz-raw.view-model';
 
-export interface BaseQueryRepository<T> {
+export interface QuizQueryRepository<T> {
   // getUserGames(
   //   userId: string,
   //   queryOptions: QuizGamesQueryFilter,
@@ -59,7 +59,7 @@ export interface BaseQueryRepository<T> {
 // }
 
 @Injectable()
-export class QuizQueryRepo implements BaseQueryRepository<QuizPairViewType> {
+export class QuizQueryRepo implements QuizQueryRepository<QuizPairViewType> {
   constructor(
     @InjectRepository(QuizGame)
     private readonly quizPairs: Repository<QuizGame>,

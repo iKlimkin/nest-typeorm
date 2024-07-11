@@ -34,13 +34,13 @@ export type PostType = {
 
 export type UserPostReactionsRawType = {
   liked_at: Date;
-  user_login: string;
+  userLogin: string;
   user_id: string;
   post_id: string;
-  reaction_type: LikesStatuses;
+  reactionType: LikesStatuses;
 };
 
 export type UserReactionsOutType = Pick<
   UserPostReactionsRawType,
-  'reaction_type'
+  'reactionType'
 > & { post_id: string };

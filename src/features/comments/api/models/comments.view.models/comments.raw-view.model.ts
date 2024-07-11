@@ -40,7 +40,7 @@ const convertStatus = (
     return (
       (myReactions
         .filter((r) => r.comment_id === commentId)
-        .map((r) => r.reaction_type)
+        .map((r) => r.reactionType)
         .join('') as LikesStatuses) || LikesStatuses.None
     );
   }
@@ -62,7 +62,7 @@ export const getCommentsRawViewModel = (
     content: comment.content,
     commentatorInfo: {
       userId: comment.user_id,
-      userLogin: comment.user_login,
+      userLogin: comment.userLogin,
     },
     createdAt: comment.created_at.toISOString(),
     likesInfo: {

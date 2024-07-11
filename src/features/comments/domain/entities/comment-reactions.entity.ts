@@ -8,13 +8,13 @@ import type { Comment } from './comment.entity';
 // @Unique(['userAccount', 'comment'])
 export class CommentReaction extends BaseEntity {
   @Column()
-  reaction_type: LikesStatuses;
+  reactionType: LikesStatuses;
 
   @ManyToOne('Comment', 'commentReactions', { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'comment_id' })
+  @JoinColumn()
   comment: Comment;
 
   @ManyToOne('UserAccount', 'commentReactions')
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn()
   userAccount: UserAccount;
 }

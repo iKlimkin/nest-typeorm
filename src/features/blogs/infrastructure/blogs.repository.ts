@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Blog } from '../domain/entities/blog.entity';
-import { BlogCreationDto } from '../api/models/dtos/blog-dto.model';
-import { UpdateBlogDto } from '../api/models/input.blog.models/update-blog-models';
+import { EntityManager, Repository } from 'typeorm';
 import { OutputId } from '../api/controllers';
+import { UpdateBlogDto } from '../api/models/input.blog.models/update-blog-models';
+import { Blog } from '../domain/entities/blog.entity';
 
 @Injectable()
 export class BlogsRepository {
@@ -12,35 +11,25 @@ export class BlogsRepository {
     @InjectRepository(Blog) private readonly blogs: Repository<Blog>,
   ) {}
 
-  async createBlog(blogDto: BlogCreationDto): Promise<OutputId | null> {
+  async save(blogDto: Blog, manager: EntityManager): Promise<Blog> {
     try {
-      const blog = this.blogs.create({
-        title: blogDto.title,
-        description: blogDto.description,
-        website_url: blogDto.websiteUrl,
-        is_membership: blogDto.isMembership,
-      });
-
-      const result = await this.blogs.save(blog);
-
-      return {
-        id: result.id,
-      };
+      return await manager.save(Blog, blogDto);
     } catch (error) {
-      console.error(`Database fails operate during creation blog ${error}`);
-      return null;
+      throw new Error(`blog is not saved: ${error}`);
     }
   }
-
   async getBlogById(blogId: string): Promise<Blog | null> {
     try {
-      const result = await this.blogs.findOneBy({ id: blogId });
-
-      if (!result) return null;
-
-      return result;
+      return await this.blogs.findOne({
+        where: {
+          id: blogId,
+        },
+        relations: {
+          user: true,
+        },
+      });
     } catch (error) {
-      console.error(`Database fails operate during get blog by id ${error}`);
+      console.log(`Database fails operate during get blog by id ${error}`);
       return null;
     }
   }
@@ -51,7 +40,7 @@ export class BlogsRepository {
 
       const result = await this.blogs.update(
         { id: blogId },
-        { title: name, description, website_url: websiteUrl },
+        { title: name, description, websiteUrl },
       );
 
       return result.affected !== 0;
@@ -61,14 +50,13 @@ export class BlogsRepository {
     }
   }
 
-  async deleteBlog(blogId: string): Promise<boolean> {
+  async deleteBlog(blogId: string, manager: EntityManager): Promise<boolean> {
     try {
-      const result = await this.blogs.delete({ id: blogId });
+      const result = await manager.delete(Blog, { id: blogId });
 
       return result.affected !== 0;
     } catch (error) {
-      console.error(`Database fails operate during the delete blog`, error);
-      return false;
+      throw new Error(`Database fails operate during the delete blog ${error}`);
     }
   }
 }

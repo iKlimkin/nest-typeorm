@@ -43,7 +43,6 @@ export class QuizPlayerProgress extends BaseEntity {
     const playerProgress = new QuizPlayerProgress();
     playerProgress.login = user.login;
     playerProgress.player = user;
-
     return playerProgress;
   }
 

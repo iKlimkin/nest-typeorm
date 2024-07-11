@@ -51,7 +51,7 @@ export type CommentSqlDbType = {
   id: string;
   content: string;
   user_id: string;
-  user_login: string;
+  userLogin: string;
   created_at: Date;
   likes_count: number | null;
   dislikes_count: number | null;
@@ -70,7 +70,7 @@ export class CommentReactionRawCounter extends ReactionsCounterRaw {
 
 export type CommentReactionsRawType = Pick<
   UserCommentReactionsRawType,
-  'reaction_type'
+  'reactionType'
 > & { comment_id: string };
 
-export type ReactionType = { reaction_type: LikesStatuses }[];
+export type ReactionType = { reactionType: LikesStatuses }[];

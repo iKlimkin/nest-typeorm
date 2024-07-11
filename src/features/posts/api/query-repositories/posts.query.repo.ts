@@ -46,8 +46,8 @@ export class PostsQueryRepo {
           sortBy === 'blog_id'
             ? 'posts.blog.id'
             : sortBy === 'created_at'
-              ? `posts.created_at`
-              : `posts.${sortBy}`,
+            ? `posts.created_at`
+            : `posts.${sortBy}`,
           sortDirection,
         )
         .skip(skip)
@@ -72,12 +72,12 @@ export class PostsQueryRepo {
 
       const latestReactions = await this.postReactions
         .createQueryBuilder('pr')
-        .select(['pr.user_login', 'pr.created_at'])
+        .select(['pr.userLogin', 'pr.created_at'])
         .leftJoin('pr.post', 'post')
         .addSelect('post.id')
         .leftJoin('pr.user', 'user')
         .addSelect('user.id')
-        .where('pr.reaction_type = :reactionType', {
+        .where('pr.reactionType = :reactionType', {
           reactionType: LikesStatuses.Like,
         })
         .orderBy('pr.created_at', 'DESC')
@@ -118,16 +118,11 @@ export class PostsQueryRepo {
       queryBuilder
         .where('posts.content ILIKE :searchTerm', { searchTerm })
         .andWhere('posts.blogId = :blogId', { blogId })
-        // .leftJoin('posts.blog', 'blog')
         .leftJoin(
-          (qb) =>
-            qb
-              .select('blog.id', 'id')
-              .addSelect('blog.title', 'title')
-              .from(Blog, 'blog'),
+          (qb) => qb.select('blog.id', 'id').from(Blog, 'blog'),
           'blog',
           'blog.id = posts.blogId',
-          // { is_membership: true } 
+          // { is_membership: true }
         )
         .leftJoin('posts.postReactionCounts', 'reactionCounter')
         .addSelect([
@@ -139,29 +134,22 @@ export class PostsQueryRepo {
           sortBy === 'blog_id'
             ? 'blog.id'
             : 'created_at'
-              ? `posts.created_at`
-              : `posts.${sortBy}`,
+            ? `posts.created_at`
+            : `posts.${sortBy}`,
           sortDirection,
         )
         .skip(skip)
         .take(pageSize);
 
-      const result = await queryBuilder.getManyAndCount();
-
-      const posts = result[0];
-      const postsCount = result[1];
+      const [posts, postsCount] = await queryBuilder.getManyAndCount();
 
       let myReactions: PostReaction[];
 
       if (userId) {
         const reactions = await this.postReactions.find({
           where: {
-            user: {
-              id: userId,
-            },
-            post: {
-              blogId,
-            },
+            user: { id: userId },
+            post: { blogId },
           },
           relations: ['post'],
         });
@@ -171,15 +159,15 @@ export class PostsQueryRepo {
 
       const latestReactions = await this.postReactions
         .createQueryBuilder('pr')
-        .select(['pr.user_login', 'pr.created_at'])
+        .select(['pr.userLogin', 'pr.created_at'])
         .leftJoin('pr.post', 'posts')
         .addSelect('posts.id')
         .leftJoin('pr.user', 'user')
         .addSelect('user.id')
-        .where('pr.reaction_type = :reactionType', {
+        .where('pr.reactionType = :reactionType', {
           reactionType: LikesStatuses.Like,
         })
-        .andWhere('posts.blog_id = :blogId', { blogId })
+        .andWhere('posts.blogId = :blogId', { blogId })
         .orderBy('pr.created_at', 'DESC')
         .getMany();
 
@@ -199,48 +187,33 @@ export class PostsQueryRepo {
     }
   }
 
-  async getPostById(
-    postId: string,
-    userId?: string,
-  ): Promise<PostViewModelType | null> {
+  async getById(postId: string, userId?: string): Promise<PostViewModelType> {
     try {
       let myReaction: LikesStatuses = LikesStatuses.None;
 
       const queryBuilder = this.posts.createQueryBuilder('posts');
 
       queryBuilder
-        .where('posts.id = :postId', { postId })
-        .leftJoinAndSelect('posts.postReactionCounts', 'prc')
-        .leftJoin(
-          (qb) =>
-            qb
-              .select('blog.id', 'id')
-              .addSelect('blog.title', 'title')
-              .from(Blog, 'blog'),
-          'blog',
-          'blog.id = posts.blogId',
-          // { is_membership: true } 
-        )
-        .addSelect('b.id');
+      .where('posts.id = :postId', { postId })
+      .leftJoinAndSelect('posts.postReactionCounts', 'prc')
+      .addSelect('posts.blogId')
 
       const post = await queryBuilder.getOne();
-        
-      if (!post) return null;
-
+      
       const latestReactions = await this.postReactions
         .createQueryBuilder('pr')
         .select([
-          'pr.reaction_type',
-          'pr.user_login',
+          'pr.reactionType',
+          'pr.userLogin',
           'pr.created_at',
-          'pr.post_id',
+          'pr.postId',
           'post.id',
         ])
         .leftJoin('pr.user', 'user')
         .addSelect('user.id')
         .leftJoin('pr.post', 'post')
-        .where('pr.post_id = :postId', { postId })
-        .andWhere('pr.reaction_type = :reactionType', {
+        .where('pr.postId = :postId', { postId })
+        .andWhere('pr.reactionType = :reactionType', {
           reactionType: LikesStatuses.Like,
         })
         .orderBy('pr.created_at', 'DESC')
@@ -260,7 +233,7 @@ export class PostsQueryRepo {
           relations: ['post'],
         });
 
-        myReaction = reaction ? reaction.reaction_type : LikesStatuses.None;
+        myReaction = reaction ? reaction.reactionType : LikesStatuses.None;
       }
 
       return getPostViewModel(post, latestReactions, myReaction);
@@ -319,12 +292,12 @@ export class PostsQueryRepo {
 
       const latestReactions = await this.postReactions
         .createQueryBuilder('pr')
-        .select(['pr.user_login', 'pr.created_at'])
+        .select(['pr.userLogin', 'pr.created_at'])
         .leftJoin('pr.post', 'post')
         .addSelect('post.id')
         .leftJoin('pr.user', 'user')
         .addSelect('user.id')
-        .where('pr.reaction_type = :reactionType', {
+        .where('pr.reactionType = :reactionType', {
           reactionType: LikesStatuses.Like,
         })
         .orderBy('pr.created_at', 'DESC')

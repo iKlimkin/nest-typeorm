@@ -1,4 +1,8 @@
-import { CreatePostByBlogIdModel } from "../input.posts.models/create.post.model";
+import { Blog } from '../../../../../settings';
+import {
+  CreatePostByBlog,
+  CreatePostByBlogIdModel,
+} from '../input.posts.models/create.post.model';
 
 export class PostCreationDto {
   public createPostDto: CreatePostSqlType;
@@ -13,6 +17,10 @@ export class PostCreationDto {
   }
 }
 
+export interface CreatePostDto extends CreatePostByBlog {
+  blog: Blog;
+}
+
 type CreatePostSqlType = {
   title: string;
   blogId: string;
@@ -20,5 +28,3 @@ type CreatePostSqlType = {
   short_description: string;
   content: string;
 };
-
-

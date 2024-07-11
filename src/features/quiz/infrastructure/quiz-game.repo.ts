@@ -104,7 +104,7 @@ export class QuizRepository {
       });
     } catch (error) {
       console.log(`finishGame operation was interrupted with errors: ${error}`);
-      throw new Error();
+      throw new Error(error);
     }
   }
 

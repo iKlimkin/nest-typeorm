@@ -1,3 +1,6 @@
+import { validateOrReject, ValidationError } from 'class-validator';
+import { GetErrors } from './error-constants';
+
 export class LayerNoticeInterceptor<D = null> {
   public data: D | null = null;
   public extensions: LayerInterceptorExtension[];
@@ -9,6 +12,19 @@ export class LayerNoticeInterceptor<D = null> {
   ) {
     this.data = data;
     this.extensions = [];
+  }
+
+  async validateFields(model: any) {
+    try {
+      await validateOrReject(model);
+    } catch (errors) {
+      (errors as ValidationError[]).forEach((e) => {
+        const constraints = Object.values(e.constraints || {});
+        for (const constraint of constraints) {
+          this.addError(constraint, e.property, GetErrors.IncorrectModel);
+        }
+      });
+    }
   }
 
   public addData(data: D): void {

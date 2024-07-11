@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
   ReactionPostDto,
   LikesStatuses,
 } from '../../../domain/reaction.models';
 import { UpdatePostDto } from '../api/models/input.posts.models/create.post.model';
-import { PostCreationDto } from '../api/models/dto/post-sql.model';
 import { PostReactionCounts } from '../domain/entities/post-reaction-counts.entity';
 import { PostReaction } from '../domain/entities/post-reactions.entity';
 import { Post } from '../domain/entities/post.entity';
@@ -21,29 +20,36 @@ export class PostsRepository {
     @InjectDataSource() private dataSource: DataSource,
   ) {}
 
-  async createPost(
-    postDto: Readonly<PostCreationDto>,
-  ): Promise<OutputId | null> {
+  // async createPost(
+  //   postDto: Post,
+  // ): Promise<OutputId | null> {
+  //   try {
+  //     const { title, short_description, content, blogId, blog_title } =
+  //       postDto.createPostDto;
+
+  //     const post = this.posts.create({
+  //       blogId,
+  //       blog_title,
+  //       title,
+  //       short_description,
+  //       content,
+  //     });
+
+  //     const result = await this.posts.save(post);
+
+  //     return {
+  //       id: result.id,
+  //     };
+  //   } catch (error) {
+  //     console.error(`Database fails during save post sql operate ${error}`);
+  //     return null;
+  //   }
+  // }
+  async save(post: Post, manager: EntityManager): Promise<Post> {
     try {
-      const { title, short_description, content, blogId, blog_title } =
-        postDto.createPostDto;
-
-      const post = this.posts.create({
-        blogId,
-        blog_title,
-        title,
-        short_description,
-        content,
-      });
-
-      const result = await this.posts.save(post);
-
-      return {
-        id: result.id,
-      };
+      return await manager.save(Post, post);
     } catch (error) {
-      console.error(`Database fails during save post sql operate ${error}`);
-      return null;
+      throw new Error(`post is not saved: ${error}`);
     }
   }
 
@@ -54,14 +60,14 @@ export class PostsRepository {
     try {
       const result = await this.postReactions
         .createQueryBuilder('pr')
-        .select('reaction_type')
+        .select('reactionType')
         .where('pr.user_id = :userId', { userId })
         .andWhere('pr.post_id = :postId', { postId })
         .getRawOne();
 
       if (!result) return null;
 
-      return result.reaction_type;
+      return result.reactionType;
     } catch (error) {
       console.error(
         `Database fails operate with find user's reactions on post`,
@@ -78,7 +84,7 @@ export class PostsRepository {
         {
           id: postId,
         },
-        { title, content, short_description: shortDescription },
+        { title, content, shortDescription: shortDescription },
       );
 
       return result.affected !== 0;
@@ -103,12 +109,12 @@ export class PostsRepository {
         .createQueryBuilder('postReactions')
         .insert()
         .values({
-          user_login: userLogin,
+          userLogin: userLogin,
           user: { id: userId },
           post: { id: postId },
-          reaction_type: inputStatus as LikesStatuses,
+          reactionType: inputStatus as LikesStatuses,
         })
-        .orUpdate(['reaction_type'], ['user_id', 'post_id'])
+        .orUpdate(['reactionType'], ['userId', 'postId'])
         .execute();
 
       // await this.postReactionCounts
@@ -156,6 +162,15 @@ export class PostsRepository {
     } catch (error) {
       console.error(`Database fails during delete post sql operate ${error}`);
       return false;
+    }
+  }
+
+  async getPost(postId: string): Promise<Post | null> {
+    try {
+      return await this.posts.findOneBy({ id: postId });
+    } catch (error) {
+      console.log(`Database fails during find post operation ${error.message}`);
+      return null;
     }
   }
 }

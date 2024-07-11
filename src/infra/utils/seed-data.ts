@@ -97,8 +97,8 @@ const seedBlogs = async (dataSource: DataSource) => {
       const blog = new Blog();
       blog.title = `Blog ${j}`;
       blog.description = `Description for Blog${j}`;
-      blog.website_url = `https://example${j}.com/blog${j}`;
-      blog.is_membership = false;
+      blog.websiteUrl = `https://example${j}.com/blog${j}`;
+      blog.isMembership = false;
 
       doPush(blog);
     }
@@ -182,33 +182,33 @@ const seedPostReactions = async (dataSource: DataSource) => {
 
   const reaction1 = new PostReaction();
   reaction1.post = post1.id;
-  reaction1.reaction_type = LikesStatuses.Like;
+  reaction1.reactionType = LikesStatuses.Like;
   reaction1.user = user1.id;
-  reaction1.user_login = user1.login;
+  reaction1.userLogin = user1.login;
 
   const reaction2 = new PostReaction();
   reaction2.post = post1.id;
-  reaction2.reaction_type = LikesStatuses.Like;
+  reaction2.reactionType = LikesStatuses.Like;
   reaction2.user = user2.id;
-  reaction2.user_login = user2.login;
+  reaction2.userLogin = user2.login;
 
   const reaction3 = new PostReaction();
   reaction3.post = post1.id;
-  reaction3.reaction_type = LikesStatuses.Like;
+  reaction3.reactionType = LikesStatuses.Like;
   reaction3.user = user3.id;
-  reaction3.user_login = user3.login;
+  reaction3.userLogin = user3.login;
 
   const reaction4 = new PostReaction();
   reaction4.post = post1.id;
-  reaction4.reaction_type = LikesStatuses.Dislike;
+  reaction4.reactionType = LikesStatuses.Dislike;
   reaction4.user = user4.id;
-  reaction4.user_login = user4.login;
+  reaction4.userLogin = user4.login;
 
   const reaction5 = new PostReaction();
   reaction5.post = post1.id;
-  reaction5.reaction_type = LikesStatuses.Like;
+  reaction5.reactionType = LikesStatuses.Like;
   reaction5.user = user5.id;
-  reaction5.user_login = user5.login;
+  reaction5.userLogin = user5.login;
 
   await reactionRepo.save([
     reaction1,
@@ -259,27 +259,27 @@ const seedComments = async (dataSource: DataSource) => {
 
   const commentReaction1 = new CommentReaction();
   commentReaction1.comment = comment1;
-  commentReaction1.reaction_type = LikesStatuses.Like;
+  commentReaction1.reactionType = LikesStatuses.Like;
   commentReaction1.userAccount = user1.id;
 
   const commentReaction2 = new CommentReaction();
   commentReaction2.comment = comment1;
-  commentReaction2.reaction_type = LikesStatuses.Like;
+  commentReaction2.reactionType = LikesStatuses.Like;
   commentReaction2.userAccount = user2.id;
 
   const commentReaction3 = new CommentReaction();
   commentReaction3.comment = comment1;
-  commentReaction3.reaction_type = LikesStatuses.Like;
+  commentReaction3.reactionType = LikesStatuses.Like;
   commentReaction3.userAccount = user3.id;
 
   const commentReaction4 = new CommentReaction();
   commentReaction4.comment = comment1;
-  commentReaction4.reaction_type = LikesStatuses.Dislike;
+  commentReaction4.reactionType = LikesStatuses.Dislike;
   commentReaction4.userAccount = user4.id;
 
   const commentReaction5 = new CommentReaction();
   commentReaction5.comment = comment1;
-  commentReaction5.reaction_type = LikesStatuses.Like;
+  commentReaction5.reactionType = LikesStatuses.Like;
   commentReaction5.userAccount = user5.id;
 
   await commentReactions.save([

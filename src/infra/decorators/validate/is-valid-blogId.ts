@@ -14,7 +14,7 @@ export class BlogIdExistConstraint implements ValidatorConstraintInterface {
   constructor(private readonly blogsQueryRepo: BlogsQueryRepo) {}
 
   async validate(value: any, args: ValidationArguments) {
-    const existBlog = await this.blogsQueryRepo.getBlogById(value);
+    const existBlog = await this.blogsQueryRepo.getById(value);
 
     return !!existBlog;
   }

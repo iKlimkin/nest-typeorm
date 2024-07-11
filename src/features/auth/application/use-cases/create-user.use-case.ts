@@ -1,6 +1,4 @@
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
-import { add } from 'date-fns';
-import { v4 as uuidv4 } from 'uuid';
 import { BcryptAdapter } from '../../../../infra/adapters/bcrypt-adapter';
 import {
   CreateUserErrors,
@@ -8,11 +6,11 @@ import {
 } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
+import { UserIdType } from '../../../admin/api/models/outputSA.models.ts/user-models';
 import { UsersRepository } from '../../../admin/infrastructure/users.repo';
+import { UserAccount } from '../../infrastructure/settings';
 import { CreateUserCommand } from './commands/create-user.command';
 import { EmailNotificationEvent } from './events/email-notification-event';
-import { UserIdType } from '../../../admin/api/models/outputSA.models.ts/user-models';
-import { UserAccount } from '../../infrastructure/settings';
 
 @CommandHandler(CreateUserCommand)
 export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
@@ -40,8 +38,9 @@ export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
       return notice;
     }
 
-    const { passwordSalt, passwordHash } =
-      await this.bcryptAdapter.createHash(password);
+    const { passwordSalt, passwordHash } = await this.bcryptAdapter.createHash(
+      password,
+    );
 
     const userDto = {
       login,

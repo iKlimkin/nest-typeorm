@@ -27,8 +27,7 @@ import {
 import { ConnectPlayerCommand } from '../../application/commands/connect-player.command';
 import { CreatePairCommand } from '../../application/commands/create-pair.command';
 import { SetPlayerAnswerCommand } from '../../application/commands/set-player-answer.command';
-
-import { QuizCrudApiService } from '../../application/services/quiz-crud-api.service';
+import { QuizService } from '../../application/services/quiz-crud-api.service';
 import { QuizTestService } from '../../application/services/quiz.test.service';
 import { InputAnswerModel } from '../models/input.models/answer.model';
 import {
@@ -49,7 +48,7 @@ export class PairGameQuizController {
     private readonly commandBus: CommandBus,
     private readonly quizQueryRepo: QuizQueryRepo,
     private readonly quizService: QuizTestService,
-    private readonly quizCrudApiService: QuizCrudApiService,
+    private readonly quizCrudApiService: QuizService,
   ) {}
 
   @Get('users/top')
@@ -136,7 +135,7 @@ export class PairGameQuizController {
       ? new ConnectPlayerCommand(userInfo)
       : new CreatePairCommand(userInfo);
 
-    return this.quizCrudApiService.connectingOrCreatePair(command);
+    return this.quizCrudApiService.joinOrCreatePair(command);
   }
 
   @UseGuards(AccessTokenGuard)

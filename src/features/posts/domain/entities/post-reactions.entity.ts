@@ -8,16 +8,16 @@ import type { Post } from './post.entity';
 // @Unique(['user', 'post'])
 export class PostReaction extends BaseEntity {
   @Column()
-  reaction_type: LikesStatuses;
+  reactionType: LikesStatuses;
 
   @Column()
-  user_login: string;
+  userLogin: string;
 
   @ManyToOne('Post', 'postReactions', { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'post_id' })
+  @JoinColumn()
   post: Post;
 
   @ManyToOne('UserAccount', 'postReactions')
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn()
   user: UserAccount;
 }

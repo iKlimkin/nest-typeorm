@@ -1,6 +1,9 @@
 import { Provider } from '@nestjs/common';
 import {
+  BlogCrudApiService,
   BlogIdExistConstraint,
+  BlogPostsCrudApiService,
+  BlogService,
   BlogsQueryRepo,
   BlogsRepository,
   ConnectPlayerUseCase,
@@ -22,6 +25,7 @@ import {
   QuizCrudApiService,
   QuizQueryRepo,
   QuizRepository,
+  QuizScheduleService,
   QuizService,
   QuizTestService,
   SetPlayerAnswerUseCase,
@@ -34,12 +38,24 @@ import {
   UpdateQuestionUseCase,
   ValidateIdPipe,
 } from '.';
+import { BindUserWithBlogUseCase } from '../features/blogs/application/use-case/bind-user-with-blog.use-case';
+import { DeleteBloggerPostUseCase } from '../features/blogs/application/use-case/delete-blogger-post.use-case';
+import { UpdateBloggerPostUseCase } from '../features/blogs/application/use-case/blogger-update-post.use-case';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
-const blogsProviders: Provider[] = [BlogsQueryRepo, BlogsRepository];
+const blogsProviders: Provider[] = [
+  BlogsQueryRepo,
+  BlogsRepository,
+  BlogCrudApiService,
+  BlogService,
+];
 
-const postsProviders: Provider[] = [PostsRepository, PostsQueryRepo];
+const postsProviders: Provider[] = [
+  PostsRepository,
+  PostsQueryRepo,
+  BlogPostsCrudApiService,
+];
 
 const feedbacksProviders: Provider[] = [
   FeedbacksRepository,
@@ -50,6 +66,9 @@ const useCases: Provider[] = [
   CreateBlogUseCase,
   UpdateBlogUseCase,
   DeleteBlogUseCase,
+  BindUserWithBlogUseCase,
+  DeleteBloggerPostUseCase,
+  UpdateBloggerPostUseCase,
 
   CreatePostUseCase,
   UpdatePostUseCase,
@@ -75,6 +94,7 @@ const quizProviders = [
   QuizRepository,
   QuizQueryRepo,
   QuizService,
+  QuizScheduleService,
   QuizTestService,
   QuizCrudApiService,
 ];

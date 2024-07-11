@@ -58,11 +58,11 @@ export class PostsController {
 
   @Get(':id')
   @UseGuards(SetUserIdGuard)
-  async getPostById(
+  async getById(
     @Param('id') postId: string,
     @CurrentUserId() userId: string,
   ): Promise<PostViewModelType> {
-    const post = await this.postsQueryRepo.getPostById(postId, userId);
+    const post = await this.postsQueryRepo.getById(postId, userId);
 
     if (!post) {
       throw new NotFoundException('post not found');
@@ -82,7 +82,7 @@ export class PostsController {
     const { userId } = userInfo;
     const { likeStatus } = body;
 
-    const post = await this.postsQueryRepo.getPostById(postId, userId);
+    const post = await this.postsQueryRepo.getById(postId, userId);
 
     if (!post) throw new NotFoundException('Post not found');
 
@@ -105,7 +105,7 @@ export class PostsController {
     @CurrentUserId() userId: string,
     @Query() query: PostsQueryFilter,
   ): Promise<PaginationViewModel<CommentsViewModel>> {
-    const post = await this.postsQueryRepo.getPostById(postId);
+    const post = await this.postsQueryRepo.getById(postId);
 
     if (!post) {
       throw new NotFoundException('Post not found');
@@ -135,7 +135,7 @@ export class PostsController {
     const { content } = body;
     const { userId } = userInfo;
 
-    const existPost = await this.postsQueryRepo.getPostById(postId);
+    const existPost = await this.postsQueryRepo.getById(postId);
 
     if (!existPost) {
       throw new NotFoundException('Post not found');
@@ -174,7 +174,7 @@ export class PostsController {
     @Param('id') postId: string,
     @Body() data: CreationPostDtoByBlogId,
   ) {
-    const post = await this.postsQueryRepo.getPostById(postId);
+    const post = await this.postsQueryRepo.getById(postId);
 
     if (!post) throw new NotFoundException();
 

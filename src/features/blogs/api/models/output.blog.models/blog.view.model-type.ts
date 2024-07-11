@@ -30,8 +30,8 @@ export type BlogViewModelType = {
   isMembership: boolean;
 };
 
-type OwnerBlogInfo = { userId: string };
+export type BlogOwnerInfoType = { userId: string; userLogin: string };
 
-export type SABlogViewModelType = BlogViewModelType & {
-  ownerInfo: OwnerBlogInfo;
+export type SABlogsViewType = BlogViewModelType & {
+  blogOwnerInfo: BlogOwnerInfoType;
 };

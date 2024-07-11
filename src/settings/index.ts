@@ -1,5 +1,5 @@
 export * from '../data-testing/test.db.controller';
-export * from '../features/blogs/api/controllers/blogs.controller';
+export * from '../features/blogs/api/controllers/blogger.controller';
 export * from '../features/blogs/api/controllers/sa-blogs.controller';
 export * from '../features/comments/api/controllers/feedbacks.controller';
 export * from '../features/posts/api/controllers/posts.controller';
@@ -10,13 +10,16 @@ export * from '../features/quiz/api/controllers/quiz-questions.controller';
 export * from '../data-testing/test.db.repo';
 export * from '../infra/decorators/validate/is-valid-blogId';
 export * from '../features/blogs/api/query-repositories/blogs.query.repo';
+export * from '../features/blogs/api/controllers/blogs.controller';
+export * from '../features/blogs/application/blog.service';
+export * from '../features/blogs/application/base.crud.api.service';
 export * from '../features/quiz/infrastructure/quiz-game.repo';
 
 export * from '../infra/pipes/id-validate.pipe';
 
 export * from '../features/quiz/application/services/quiz-crud-api.service';
 export * from '../features/quiz/application/services/quiz.test.service';
-export * from '../features/quiz/application/services/quiz.service';
+export * from '../features/quiz/application/services/quiz.schedule.service';
 export * from '../features/quiz/application/use-cases/create-question.use-case';
 export * from '../features/blogs/application/use-case/create-blog.use-case';
 export * from '../features/blogs/application/use-case/delete-blog.use-case';

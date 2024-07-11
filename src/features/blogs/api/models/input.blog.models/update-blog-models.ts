@@ -31,4 +31,5 @@ export class UpdateBlogInputDto {
 
 export class UpdateBlogDto extends UpdateBlogInputDto {
   blogId: string;
+  userId: string;
 }

@@ -29,7 +29,7 @@ export class CreateBlogInputDto {
   websiteUrl: string;
 }
 
-export class InputBlogSAModel extends CreateBlogInputDto {
+export class CreateBlogDto extends CreateBlogInputDto {
   userId: string;
 
   // @iSValidField(loginLength, loginMatch)

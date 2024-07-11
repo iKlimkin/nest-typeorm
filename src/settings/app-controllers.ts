@@ -1,5 +1,6 @@
 import {
   AppController,
+  BloggerController,
   BlogsController,
   FeedbacksController,
   PairGameQuizController,
@@ -10,13 +11,13 @@ import {
 } from '.';
 
 export const controllers = [
+  BloggerController,
+  SABlogsController,
   BlogsController,
 
   PostsController,
 
   FeedbacksController,
-
-  SABlogsController,
 
   AppController,
 

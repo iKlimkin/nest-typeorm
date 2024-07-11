@@ -67,11 +67,11 @@ export class FeedbacksRepository {
         .createQueryBuilder()
         .insert()
         .values({
-          reaction_type: inputStatus as LikesStatuses,
+          reactionType: inputStatus as LikesStatuses,
           userAccount: { id: userId },
           comment: { id: commentId },
         })
-        .orUpdate(['reaction_type'], ['user_id', 'comment_id'])
+        .orUpdate(['reactionType'], ['user_id', 'comment_id'])
         .execute();
 
       // await this.commentReactionCounts
@@ -112,14 +112,14 @@ export class FeedbacksRepository {
     try {
       const result = await this.commentReactions
         .createQueryBuilder('cr')
-        .select('reaction_type')
+        .select('reactionType')
         .where('cr.user_id = :userId', { userId })
         .andWhere('cr.comment_id = :commentId', { commentId })
         .getRawOne();
 
       if (!result) return null;
 
-      return result.reaction_type;
+      return result.reactionType;
     } catch (error) {
       console.error(`Database fails during get user's reaction in feedback",
       ${error}`);
