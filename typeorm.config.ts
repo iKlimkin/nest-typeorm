@@ -21,29 +21,45 @@ import {
 
 config();
 
+export const getEntities = () => [
+  TemporaryUserAccount,
+  Comment,
+  Post,
+  Blog,
+  UserSession,
+  PostReaction,
+  PostReactionCounts,
+  CommentReaction,
+  CommentReactionCounts,
+  UserAccount,
+  UserSession,
+  TemporaryUserAccount,
+  QuizAnswer,
+  QuizGame,
+  QuizQuestion,
+  QuizPlayerProgress,
+  QuizCorrectAnswer,
+  CurrentGameQuestion,
+];
+
+const connectionUrl = (): string => {
+  let url = '';
+
+  if (process.env.DB_CONNECTION === 'local') {
+    url = process.env.DATABASE_URL;
+  } else {
+    url = process.env.DATABASE_REMOTE_URL;
+  }
+
+  const connectionLog = url.startsWith('postgres:') ? 'local' : 'remote';
+  console.log(`Migration to ${connectionLog} database`);
+
+  return url;
+};
 export default new DataSource({
-  url: process.env.DATABASE_REMOTE_URL,
+  url: connectionUrl(),
   type: 'postgres',
   migrations: ['migrations/*.ts'],
-  // entities: [__dirname + '/../**/*.entity.js']
-  entities: [
-    TemporaryUserAccount,
-    Comment,
-    Post,
-    Blog,
-    UserSession,
-    PostReaction,
-    PostReactionCounts,
-    CommentReaction,
-    CommentReactionCounts,
-    UserAccount,
-    UserSession,
-    TemporaryUserAccount,
-    QuizAnswer,
-    QuizGame,
-    QuizQuestion,
-    QuizPlayerProgress,
-    QuizCorrectAnswer,
-    CurrentGameQuestion,
-  ],
+  entities: getEntities(),
+  synchronize: false,
 });
