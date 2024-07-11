@@ -9,9 +9,8 @@ import {
 (async () => {
   const app = await NestFactory.create(AppModule);
 
-  const configService = app.get(ConfigService);
-  const PORT = configService.getOrThrow('Port');
-
+  const PORT = app.get(ConfigService).getOrThrow('port');
+  
   applyAppSettings(app);
 
   await app.listen(PORT, () => {
