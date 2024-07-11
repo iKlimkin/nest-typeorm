@@ -1,55 +1,40 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
-import { ConfigurationType } from './config/configuration';
-import {
-  Blog,
-  CommentReaction,
-  CommentReactionCounts,
-  CurrentGameQuestion,
-  Post,
-  PostReaction,
-  PostReactionCounts,
-  QuizAnswer,
-  QuizCorrectAnswer,
-  QuizGame,
-  QuizPlayerProgress,
-  QuizQuestion,
-  TemporaryUserAccount,
-  UserSession,
-  Comment,
-  UserAccount,
-} from '.';
+import { ConfigurationType, PgConnectionType } from './config/configuration';
+import { getEntities } from '../../typeorm.config';
+import { EntityClassOrSchema } from '@nestjs/typeorm/dist/interfaces/entity-class-or-schema.type';
 
 @Injectable()
 export class TypeOrmOptions implements TypeOrmOptionsFactory {
   constructor(private configService: ConfigService<ConfigurationType>) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
-    const env = this.configService.getOrThrow('env');
+    const env = this.configService.getOrThrow('env').toUpperCase();
+    const pgConnection = this.configService.getOrThrow('pg');
+    let connectionOptions: TypeOrmModuleOptions;
+    const entities = getEntities();
 
-    if (
-      env.toUpperCase() === 'DEVELOPMENT' ||
-      env.toUpperCase() === 'TESTING'
-    ) {
-      return this.createLocalConnection();
+    if (env === 'DEVELOPMENT' || env === 'TESTING') {
+      connectionOptions = this.createLocalConnection(pgConnection, entities);
     } else {
-      return this.createRemoteConnection();
+      connectionOptions = this.createRemoteConnection(pgConnection, entities);
     }
+
+    return connectionOptions;
   }
 
-  private createLocalConnection(): TypeOrmModuleOptions {
+  private createLocalConnection(
+    connection: PgConnectionType,
+    entities: EntityClassOrSchema[],
+  ): TypeOrmModuleOptions {
     try {
-      const { url, username, password, database } =
-        this.configService.getOrThrow('pg', { infer: true });
+      const { url, username, password, database, type } = connection;
 
       return {
         url,
-        type: 'postgres',
-        // logging: ['query', 'error'],
-        entities: this.getEntities(),
-        // entities: ['src/**/*.entity.ts'],
-        // entities: [__dirname + '/../**/*.entity.js'],
+        type,
+        entities,
         username,
         password,
         database,
@@ -62,44 +47,18 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
     }
   }
 
-  private createRemoteConnection(): TypeOrmModuleOptions {
-    try {
-      const { remoteUrl: url } = this.configService.getOrThrow('pg', {
-        infer: true,
-      });
-      console.log(`remote connection`);
-      
-      return {
-        url,
-        type: 'postgres',
-        entities: this.getEntities(),
-        autoLoadEntities: false,
-        synchronize: false,
-        dropSchema: false,
-      };
-    } catch (error) {
-      console.log(error);
-    }
+  private createRemoteConnection(
+    connection: PgConnectionType,
+    entities: EntityClassOrSchema[],
+  ): TypeOrmModuleOptions {
+    console.log(`remote connection`);
+    return {
+      url: connection.url,
+      type: connection.type,
+      entities,
+      autoLoadEntities: false,
+      synchronize: false,
+      dropSchema: false,
+    };
   }
-
-  private getEntities = () => [
-    TemporaryUserAccount,
-    Comment,
-    Post,
-    Blog,
-    UserSession,
-    PostReaction,
-    PostReactionCounts,
-    CommentReaction,
-    CommentReactionCounts,
-    UserAccount,
-    UserSession,
-    TemporaryUserAccount,
-    QuizAnswer,
-    QuizGame,
-    QuizQuestion,
-    QuizPlayerProgress,
-    QuizCorrectAnswer,
-    CurrentGameQuestion,
-  ];
 }

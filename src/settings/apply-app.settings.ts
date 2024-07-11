@@ -10,6 +10,7 @@ import {
   // AllExceptionsFilter,
   HttpExceptionFilter,
 } from '../infra/exception.filter';
+import { ConfigService } from '@nestjs/config';
 
 export const applyAppSettings = (app: INestApplication) => {
   app.use(cookieParser());
@@ -57,7 +58,6 @@ const setAppPipes = (app: INestApplication) => {
 };
 
 const setAppExceptionsFilters = (app: INestApplication) => {
-  app.useGlobalFilters(
-    new HttpExceptionFilter(), 
-  );
+  const configService = app.get(ConfigService);
+  app.useGlobalFilters(new HttpExceptionFilter(configService));
 };
