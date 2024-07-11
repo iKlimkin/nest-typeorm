@@ -13,7 +13,7 @@ import { LayerNoticeInterceptor } from '../../../auth/api/controllers';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 
 @Injectable()
-export class QuizService {
+export class QuizScheduleService {
   private readonly lastPoint = 5;
   private readonly location = 'QuizService';
   constructor(

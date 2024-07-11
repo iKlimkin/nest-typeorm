@@ -8,7 +8,7 @@ export * from '../../../posts/api/models/output.post.models/posts-query.filter';
 export * from '../../../posts/api/models/post.view.models/post-view-model.type';
 export * from '../../../posts/api/query-repositories/posts.query.repo';
 export * from '../../application/use-case/commands/create-blog.command';
-export * from '../../application/use-case/commands/delete-blog.command';
+export * from '../../application/use-case/commands/delete-blogger-blog.command';
 export * from '../../application/use-case/commands/update-blog.command';
 export * from '../models/input.blog.models/blogs-query.filter';
 export * from '../models/input.blog.models/create.blog.model';

@@ -64,9 +64,7 @@ export class SAController {
     >(command);
 
     if (result.hasError) {
-      if (result.code === CreateUserErrors.DatabaseFail) {
-        throw new InternalServerErrorException(result.extensions);
-      }
+      throw new InternalServerErrorException(result.extensions);
     }
 
     const foundNewestUser = await this.usersQueryRepo.getUserById(
@@ -81,12 +79,6 @@ export class SAController {
   async deleteSA(@Param('id') userId: string): Promise<void> {
     const command = new DeleteSACommand(userId);
 
-    const result = await this.commandBus.execute<DeleteSACommand, boolean>(
-      command,
-    );
-
-    if (!result) {
-      throw new NotFoundException('User not found');
-    }
+    await this.commandBus.execute<DeleteSACommand, boolean>(command);
   }
 }

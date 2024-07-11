@@ -1,7 +1,7 @@
 import { CommandBus } from '@nestjs/cqrs';
 import { BaseEntity } from '../../../../domain/base-entity';
 import {
-  BaseQueryRepository,
+  QuizQueryRepository,
   QuizQueryRepo,
 } from '../../api/models/query-repositories/quiz.query.repo';
 import {
@@ -16,21 +16,12 @@ export interface BaseViewModel {
   id: string;
 }
 
-// export class ItemCreatedNotification<TViewModel> extends LayerNoticeInterceptor<{
-//     item: TViewModel;
-//   }> {
-//     constructor(viewModel: TViewModel) {
-//       super();
-//       this.addData({ item: viewModel });
-//     }
-//   }
-
-export class BaseCrudApiService<TCommand, TViewModel extends BaseViewModel> {
+export class QuizCrudApiService<TCommand, TViewModel extends BaseViewModel> {
   constructor(
     private readonly commandBus: CommandBus,
-    private readonly queryRepo: BaseQueryRepository<TViewModel>,
+    private readonly queryRepo: QuizQueryRepository<TViewModel>,
   ) {}
-  async connectingOrCreatePair(command: TCommand): Promise<TViewModel> {
+  async joinOrCreatePair(command: TCommand): Promise<TViewModel> {
     const notification = await this.commandBus.execute<
       TCommand,
       LayerNoticeInterceptor<TViewModel>
@@ -49,7 +40,7 @@ export class BaseCrudApiService<TCommand, TViewModel extends BaseViewModel> {
 }
 
 @Injectable()
-export class QuizCrudApiService extends BaseCrudApiService<
+export class QuizService extends QuizCrudApiService<
   ConnectPlayerCommand,
   QuizPairViewType
 > {
