@@ -19,16 +19,21 @@ export async function runInTransaction<T>(
     if (result.hasError) {
       await queryRunner.rollbackTransaction();
       console.log(
-        `Transaction rolled back with error: ${result.extensions[0].message}`,
+        `Transaction rolled back with error: ${result.extensions[0]?.message}`,
       );
       return result;
     }
     await queryRunner.commitTransaction();
     return result;
   } catch (error) {
+    console.warn({ error: error.message });
     await queryRunner.rollbackTransaction();
     const notice = new LayerNoticeInterceptor();
-    notice.addError(error, 'runInTransaction', GetErrors.Transaction);
+    notice.addError(
+      error?.message || 'unexpected error',
+      'runInTransaction',
+      GetErrors.Transaction,
+    );
     return notice;
   } finally {
     await queryRunner.release();
