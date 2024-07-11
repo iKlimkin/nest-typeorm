@@ -90,7 +90,7 @@ CREATE TABLE public.blog (
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     title character varying NOT NULL,
     description character varying NOT NULL,
-    website_url character varying NOT NULL,
+    websiteUrl character varying NOT NULL,
     is_membership boolean NOT NULL,
     "userId" uuid
 );
@@ -121,7 +121,7 @@ ALTER TABLE public.comment OWNER TO "NodeJS";
 CREATE TABLE public.comment_reaction (
     id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
-    reaction_type character varying NOT NULL,
+    reactionType character varying NOT NULL,
     comment_id uuid,
     user_id uuid
 );
@@ -236,8 +236,8 @@ ALTER TABLE public.post OWNER TO "NodeJS";
 CREATE TABLE public.post_reaction (
     id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
-    reaction_type character varying NOT NULL,
-    user_login character varying NOT NULL,
+    reactionType character varying NOT NULL,
+    userLogin character varying NOT NULL,
     post_id uuid,
     user_id uuid
 );
@@ -417,7 +417,7 @@ COPY public.api_requests (id, ip, url, "timestamp") FROM stdin;
 -- Data for Name: blog; Type: TABLE DATA; Schema: public; Owner: NodeJS
 --
 
-COPY public.blog (id, created_at, title, description, website_url, is_membership, "userId") FROM stdin;
+COPY public.blog (id, created_at, title, description, websiteUrl, is_membership, "userId") FROM stdin;
 \.
 
 
@@ -433,7 +433,7 @@ COPY public.comment (id, created_at, content, post_id, user_id, "userLogin") FRO
 -- Data for Name: comment_reaction; Type: TABLE DATA; Schema: public; Owner: NodeJS
 --
 
-COPY public.comment_reaction (id, created_at, reaction_type, comment_id, user_id) FROM stdin;
+COPY public.comment_reaction (id, created_at, reactionType, comment_id, user_id) FROM stdin;
 \.
 
 
@@ -481,7 +481,7 @@ COPY public.post (id, created_at, title, short_description, blog_title, content,
 -- Data for Name: post_reaction; Type: TABLE DATA; Schema: public; Owner: NodeJS
 --
 
-COPY public.post_reaction (id, created_at, reaction_type, user_login, post_id, user_id) FROM stdin;
+COPY public.post_reaction (id, created_at, reactionType, userLogin, post_id, user_id) FROM stdin;
 \.
 
 
