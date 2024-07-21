@@ -21,7 +21,7 @@ export class BlogService {
     private readonly userRepo: UsersRepository,
     private readonly postRepo: PostsRepository,
   ) {
-    this.location = 'BlogService';
+    this.location = this.constructor.name;
   }
 
   async validateBlogAndUserRights(

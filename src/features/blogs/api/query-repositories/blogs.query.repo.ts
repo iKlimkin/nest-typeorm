@@ -13,7 +13,7 @@ import {
   BlogViewModelType,
   SABlogsViewType,
 } from '../models/output.blog.models/blog.view.model-type';
-import { UserAccount } from '../../../../settings';
+import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
 
 @Injectable()
 export class BlogsQueryRepo {

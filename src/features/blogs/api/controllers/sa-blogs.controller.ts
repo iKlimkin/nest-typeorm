@@ -11,13 +11,11 @@ import {
 import { RouterPaths } from '../../../../../test/tools/helpers/routing';
 import { BlogCrudApiService } from '../../application/base.crud.api.service';
 import { BindUserWithBlogCommand } from '../../application/use-case/commands/bind-user-with-blog.command';
-import {
-  BasicSAAuthGuard,
-  BlogViewModelType,
-  BlogsQueryFilter,
-  BlogsQueryRepo,
-  PaginationViewModel,
-} from './index';
+import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
+import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
+import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
+import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
+import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
 
 @UseGuards(BasicSAAuthGuard)
 @Controller(RouterPaths.SABlogs)

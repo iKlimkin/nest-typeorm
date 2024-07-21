@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { OutputId } from '../api/controllers';
 import { UpdateBlogDto } from '../api/models/input.blog.models/update-blog-models';
 import { Blog } from '../domain/entities/blog.entity';
 

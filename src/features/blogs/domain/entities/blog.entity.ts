@@ -1,20 +1,13 @@
+import { Length, Matches } from 'class-validator';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
   OneToMany,
-  Index,
+  OneToOne,
 } from 'typeorm';
-import type { UserAccount } from '../../../admin/domain/entities/user-account.entity';
-import type { Post } from '../../../posts/domain/entities/post.entity';
 import { BaseEntity } from '../../../../domain/base-entity';
-import { IsFQDN, Length, Matches } from 'class-validator';
-import {
-  BlogCreationDto,
-  UpdateBlogDto,
-} from '../../api/models/dtos/blog-dto.model';
-import { LayerNoticeInterceptor } from '../../api/controllers';
 import {
   descriptionLength,
   nameLength,
@@ -22,6 +15,14 @@ import {
   urlMatching,
 } from '../../../../domain/validation.constants';
 import { iSValidField } from '../../../../infra/decorators/transform/transform-params';
+import type { UserAccount } from '../../../admin/domain/entities/user-account.entity';
+import type { Post } from '../../../posts/domain/entities/post.entity';
+import {
+  BlogCreationDto,
+  UpdateBlogDto,
+} from '../../api/models/dtos/blog-dto.model';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
+import type { UserBloggerBans } from './user-blogger-bans.entity';
 
 @Entity()
 export class Blog extends BaseEntity {
@@ -42,9 +43,16 @@ export class Blog extends BaseEntity {
   @Column()
   isMembership: boolean;
 
-  @ManyToOne('UserAccount', 'blogs', { nullable: true })
+  @ManyToOne('UserAccount', 'blogs', {
+    nullable: true,
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'ownerId' })
   user: UserAccount;
+
+  @OneToOne('UserBloggerBans', 'blog')
+  bloggerBan: UserBloggerBans;
 
   @OneToMany('Post', 'blog')
   posts: Post[];

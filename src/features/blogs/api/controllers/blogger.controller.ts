@@ -6,7 +6,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  InternalServerErrorException,
   NotFoundException,
   Param,
   Post,
@@ -14,38 +13,54 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
-import { RouterPaths } from '../../../../../test/tools/helpers/routing';
-import {
-  AccessTokenGuard,
-  CurrentUserInfo,
-  UserSessionDto,
-} from '../../../auth/api/controllers';
+// import {
+//   AccessTokenGuard,
+//   // BlogCrudApiService,
+//   // BlogPostsCrudApiService,
+//   BlogViewModelType,
+//   BlogsQueryFilter,
+//   BlogsQueryRepo,
+//   CreateBlogCommand,
+//   CreateBlogInputDto,
+//   CreatePostCommand,
+//   CreationPostDtoByBlogId,
+//   CurrentUserInfo,
+//   DeleteBlogCommand,
+//   DeleteBloggerPostCommand,
+//   PaginationViewModel,
+//   PostViewModelType,
+//   PostsQueryFilter,
+//   PostsQueryRepo,
+//   RouterPaths,
+//   UpdateBlogCommand,
+//   UpdateBlogInputDto,
+//   UpdateBloggerPostCommand,
+//   UserSessionDto,
+// } from './index';
 import {
   BlogCrudApiService,
   BlogPostsCrudApiService,
 } from '../../application/base.crud.api.service';
-import {
-  BlogViewModelType,
-  BlogsQueryFilter,
-  BlogsQueryRepo,
-  CreateBlogCommand,
-  CreateBlogInputDto,
-  CreatePostCommand,
-  CreationPostDtoByBlogId,
-  CurrentUserId,
-  DeleteBloggerPostCommand,
-  PaginationViewModel,
-  PostViewModelType,
-  PostsQueryFilter,
-  PostsQueryRepo,
-  SetUserIdGuard,
-  UpdateBlogCommand,
-  UpdateBlogInputDto,
-  UpdatePostCommand,
-} from './index';
-import { DeleteBlogCommand } from '../../application/use-case/commands/delete-blog.command';
+import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
+import { RouterPaths } from '../../../../../test/tools/helpers/routing';
+import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
+import { PostsQueryRepo } from '../../../posts/api/query-repositories/posts.query.repo';
+import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
+import { UserSessionDto } from '../../../security/api/models/security-input.models/security-session-info.model';
+import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
+import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
+import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
+import { PostsQueryFilter } from '../../../posts/api/models/output.post.models/posts-query.filter';
+import { PostViewModelType } from '../../../posts/api/models/post.view.models/post-view-model.type';
+import { CreationPostDtoByBlogId } from '../../../posts/api/models/input.posts.models/create.post.model';
+import { CreatePostCommand } from '../../../posts/application/use-cases/commands/create-post.command';
+import { CreateBlogCommand } from '../../application/use-case/commands/create-blog.command';
+import { CreateBlogInputDto } from '../models/input.blog.models/create.blog.model';
+import { UpdateBlogCommand } from '../../application/use-case/commands/update-blog.command';
+import { UpdateBlogInputDto } from '../models/input.blog.models/update-blog-models';
 import { UpdateBloggerPostCommand } from '../../application/use-case/commands/blogger-update-post.command';
+import { DeleteBloggerPostCommand } from '../../application/use-case/commands/delete-blogger-blog.command';
+import { DeleteBlogCommand } from '../../application/use-case/commands/delete-blog.command';
 
 @UseGuards(AccessTokenGuard)
 @Controller(RouterPaths.blogger)
@@ -65,11 +80,10 @@ export class BloggerController {
     return this.blogsQueryRepo.getBlogsByBlogger(userInfo.userId, query);
   }
 
-  @Get(':blogId/posts')
+  @Get(':id/posts')
   async getPosts(
     @CurrentUserInfo() userInfo: UserSessionDto,
-    @CurrentUserId() userId: string,
-    @Param('blogId') blogId: string,
+    @Param('id') blogId: string,
     @Query() query: PostsQueryFilter,
   ): Promise<PaginationViewModel<PostViewModelType>> {
     const blog = await this.blogsQueryRepo.getBlogWithUserInfo(blogId);
@@ -79,7 +93,11 @@ export class BloggerController {
     if (userInfo.userId !== blog.user.id)
       throw new ForbiddenException(`User doesn't have permissions`);
 
-    return this.postsQueryRepo.getPostsByBlogId(blogId, query, userId);
+    return this.postsQueryRepo.getPostsByBlogId({
+      blogId: blog.id,
+      queryOptions: query,
+      userId: userInfo?.userId,
+    });
   }
 
   @Post(':id/posts')

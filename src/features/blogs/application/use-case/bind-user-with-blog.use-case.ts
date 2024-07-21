@@ -2,10 +2,11 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { DataSource } from 'typeorm';
 import { runInTransaction } from '../../../../domain/transaction-wrapper';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
-import { UsersRepository } from '../../../../settings';
-import { LayerNoticeInterceptor, OutputId } from '../../api/controllers';
 import { BlogsRepository } from '../../infrastructure/blogs.repository';
 import { BindUserWithBlogCommand } from './commands/bind-user-with-blog.command';
+import { UsersRepository } from '../../../admin/infrastructure/users.repo';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
+import { OutputId } from '../../../../domain/output.models';
 
 @CommandHandler(BindUserWithBlogCommand)
 export class BindUserWithBlogUseCase

@@ -1,4 +1,4 @@
-import { UserAccount } from '../../../../../settings';
+import { UserAccount } from '../../../../admin/domain/entities/user-account.entity';
 import { UpdatePostDto } from '../../../../posts/api/models/input.posts.models/create.post.model';
 
 export class BlogDtoBase {
