@@ -7,7 +7,10 @@ export class UserSession extends BaseEntity {
   @Column()
   ip: string;
 
-  @ManyToOne('UserAccount', 'userSessions')
+  @ManyToOne('UserAccount', 'userSessions', {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'user_id' })
   userAccount: UserAccount;
 

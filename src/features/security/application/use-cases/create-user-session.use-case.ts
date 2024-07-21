@@ -1,11 +1,11 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { OutputId } from '../../../../domain/output.models';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
-import { UserSessionDto } from '../../../auth/api/models/dtos/user-session.dto';
 import { CreateSessionCommand } from './commands/create-session.command';
 import { SecurityRepository } from '../../infrastructure/security.repository';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
+import { UserSessionRawDto } from '../../../auth/api/models/dtos/user-session.dto';
 
 @CommandHandler(CreateSessionCommand)
 export class CreateUserSessionUseCase
@@ -37,7 +37,7 @@ export class CreateUserSessionUseCase
       userPayload,
     } = command.inputData;
 
-    const sessionDto = new UserSessionDto(
+    const sessionDto = new UserSessionRawDto(
       ipAddress,
       `Device type: ${deviceType}, Application: ${browser}`,
       userId,

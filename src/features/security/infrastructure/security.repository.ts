@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
-import { UserSessionDto } from '../../auth/api/models/dtos/user-session.dto';
+import { EntityManager, Not, Repository } from 'typeorm';
+import { UserSessionRawDto } from '../../auth/api/models/dtos/user-session.dto';
 import { UserSession } from '../domain/entities/security.entity';
 import { OutputId } from '../../../domain/output.models';
 
@@ -12,7 +12,7 @@ export class SecurityRepository {
     private readonly userSessions: Repository<UserSession>,
   ) {}
   async createSession(
-    sessionDto: Readonly<UserSessionDto>,
+    sessionDto: Readonly<UserSessionRawDto>,
   ): Promise<OutputId | null> {
     try {
       const session = this.userSessions.create({
@@ -31,6 +31,14 @@ export class SecurityRepository {
       console.error(`
       Database fails operate with create session ${error}`);
       return null;
+    }
+  }
+
+  async deleteRefreshTokensBannedUser(userId: string, manager: EntityManager) {
+    try {
+      await manager.delete(UserSession, { userAccount: { id: userId } });
+    } catch (error) {
+      throw new Error(`Database fails during delete operation ${error}`);
     }
   }
 
