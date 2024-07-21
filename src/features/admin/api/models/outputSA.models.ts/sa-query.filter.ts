@@ -1,4 +1,4 @@
-import { IsOptional } from 'class-validator';
+import { IsEnum, IsOptional } from 'class-validator';
 import {
   BaseFilter,
   SortDirections,
@@ -7,6 +7,12 @@ import {
   ValidateSortBy,
   ValidSortDirection,
 } from '../../../../../infra/decorators/transform/transform-params';
+
+export enum BanStatus {
+  all = 'all',
+  banned = 'banned',
+  notBanned = 'notBanned',
+}
 
 export class SAQueryFilter extends BaseFilter {
   pageNumber: string;
@@ -21,4 +27,8 @@ export class SAQueryFilter extends BaseFilter {
 
   searchEmailTerm: string;
   searchLoginTerm: string;
+
+  @IsOptional()
+  @IsEnum(BanStatus)
+  banStatus: BanStatus;
 }

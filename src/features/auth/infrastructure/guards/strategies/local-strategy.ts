@@ -33,7 +33,8 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
       LayerNoticeInterceptor<UserIdType | null>
     >(command);
 
-    if (!result) throw new UnauthorizedException();
+    if (result.hasError)
+      throw new UnauthorizedException(result.extensions[0].message);
 
     return result.data;
   }

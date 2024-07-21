@@ -8,9 +8,9 @@ import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-h
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
 import { UserIdType } from '../../../admin/api/models/outputSA.models.ts/user-models';
 import { UsersRepository } from '../../../admin/infrastructure/users.repo';
-import { UserAccount } from '../../infrastructure/settings';
 import { CreateUserCommand } from './commands/create-user.command';
 import { EmailNotificationEvent } from './events/email-notification-event';
+import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
 
 @CommandHandler(CreateUserCommand)
 export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
@@ -47,6 +47,7 @@ export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
       email,
       passwordSalt,
       passwordHash,
+      isConfirmed: false,
     };
 
     const user = UserAccount.create(userDto);

@@ -26,8 +26,11 @@ import {
   DeleteActiveSessionCommand,
   ErrorType,
   GetClientInfo,
+  getDeviceInfo,
+  handleErrors,
   LayerNoticeInterceptor,
   LocalAuthGuard,
+  makeErrorsMessages,
   OutputId,
   PasswordRecoveryCommand,
   RecoveryPassDto,
@@ -41,12 +44,10 @@ import {
   UpdatePasswordCommand,
   UserProfileType,
   UserSessionDto,
-  getDeviceInfo,
-  handleErrors,
-  makeErrorsMessages,
+  RouterPaths,
 } from '.';
 
-@Controller('auth')
+@Controller(RouterPaths.auth)
 export class AuthController {
   constructor(
     private authRepo: AuthQueryRepository,
@@ -93,7 +94,7 @@ export class AuthController {
       throw errors.error;
     }
 
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true,  });
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
 
     return { accessToken };
   }
@@ -256,9 +257,9 @@ export class AuthController {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const { email, login, id } = user.accountData;
+    const { email, login, id: userId } = user.accountData;
 
-    return { email, login, userId: id };
+    return { email, login, userId };
   }
 
   @UseGuards(RefreshTokenGuard)

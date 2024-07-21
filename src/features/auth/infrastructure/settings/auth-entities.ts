@@ -1,3 +1,15 @@
-import { TemporaryUserAccount, UserAccount, UserSession } from '.';
+import {
+  TemporaryUserAccount,
+  UserAccount,
+  UserBans,
+  UserBloggerBans,
+  UserSession,
+} from '.';
 
-export const authEntities = [UserAccount, UserSession, TemporaryUserAccount];
+export const authEntities = [
+  TemporaryUserAccount,
+  UserAccount,
+  UserSession,
+  UserBans,
+  UserBloggerBans,
+];

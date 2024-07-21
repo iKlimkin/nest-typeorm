@@ -1,28 +1,31 @@
-import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
+import { add } from 'date-fns';
+import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
+import { BaseEntity } from '../../../../domain/base-entity';
+import type { UserBans } from '../../../auth/domain/entities/user-bans.entity';
 import type { Blog } from '../../../blogs/domain/entities/blog.entity';
 import type { CommentReaction } from '../../../comments/domain/entities/comment-reactions.entity';
 import type { Comment } from '../../../comments/domain/entities/comment.entity';
 import type { PostReaction } from '../../../posts/domain/entities/post-reactions.entity';
-import type { UserSession } from '../../../security/domain/entities/security.entity';
-import { BaseEntity } from '../../../../domain/base-entity';
-import { add } from 'date-fns';
-import { v4 as uuidv4 } from 'uuid';
-import type { QuizPlayerProgress } from '../../../quiz/domain/entities/quiz-player-progress.entity';
 import type { Post } from '../../../posts/domain/entities/post.entity';
+import type { QuizPlayerProgress } from '../../../quiz/domain/entities/quiz-player-progress.entity';
+import type { UserSession } from '../../../security/domain/entities/security.entity';
+import type { UserBloggerBans } from '../../../blogs/domain/entities/user-blogger-bans.entity';
 
 type UserDataType = {
   login: string;
   email: string;
   passwordSalt: string;
   passwordHash: string;
+  isConfirmed: boolean;
 };
 
 @Entity()
 export class UserAccount extends BaseEntity {
-  @Column()
+  @Column({ unique: true, collation: 'C' })
   login: string;
 
-  @Column()
+  @Column({ unique: true, collation: 'C' })
   email: string;
 
   @Column()
@@ -67,7 +70,13 @@ export class UserAccount extends BaseEntity {
   @OneToMany('QuizPlayerProgress', 'player', { nullable: true })
   gameProgress: QuizPlayerProgress[];
 
-  static create(userData: UserDataType): UserAccount {
+  @OneToOne('UserBans', 'user', { nullable: true })
+  userBan: UserBans;
+
+  @OneToMany('UserBloggerBans', 'user', { nullable: true })
+  bloggerBans: UserBloggerBans[];
+
+  static create(userData: UserDataType) {
     const { login, email, passwordSalt, passwordHash } = userData;
 
     const user = new UserAccount();
@@ -80,7 +89,7 @@ export class UserAccount extends BaseEntity {
       hours: 1,
       minutes: 15,
     });
-    user.is_confirmed = false;
+    user.is_confirmed = userData.isConfirmed;
     return user;
   }
 }

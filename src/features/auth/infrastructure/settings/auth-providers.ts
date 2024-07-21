@@ -31,13 +31,18 @@ import {
   UsersRepository,
   VerificationCredentialsUseCase,
   BasicSAStrategy,
+  BanUnbanUserUseCase,
+  SACrudApiService,
 } from '.';
+import { BloggerCrudApiService } from '../../../admin/application/bloggerCrudApi.service';
+
 
 export const usersProviders: Provider[] = [
   UsersRepository,
   UsersQueryRepo,
   AuthRepository,
   AuthQueryRepository,
+  SACrudApiService,
 ];
 
 export const strategies: Provider[] = [
@@ -56,6 +61,7 @@ export const authUseCases: Provider[] = [
   DeleteSAUseCase,
   CreateSAUseCase,
   CreateUserUseCase,
+  BanUnbanUserUseCase,
   VerificationCredentialsUseCase,
   SendRecoveryMsgUseCase,
   CreateUserSessionUseCase,
@@ -87,6 +93,7 @@ export const providers = [
   ...authEventHandlers,
   ...securityProviders,
   ...securityUseCases,
+  BloggerCrudApiService,
   AuthService,
   ...usersProviders,
 ];

@@ -5,80 +5,64 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  InternalServerErrorException,
-  NotFoundException,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { RouterPaths } from '../../../../../test/tools/helpers/routing';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
-import { CreateUserErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
-import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
+import { SACrudApiService } from '../../../blogs/application/base.crud.api.service';
+import { BanUnbanCommand } from '../../application/commands/banUnban.command';
 import { CreateSACommand } from '../../application/commands/create-sa.command';
 import { DeleteSACommand } from '../../application/commands/delete-sa.command';
-import { CreateUserDto } from '../models/create-user.model';
+import { CreateUserDto } from '../models/input-sa.dtos.ts/create-user.model';
+import { UserRestrictionDto } from '../models/input-sa.dtos.ts/user-restriction.dto';
 import { SAQueryFilter } from '../models/outputSA.models.ts/sa-query.filter';
-import { UserIdType } from '../models/outputSA.models.ts/user-models';
-import { SAViewType } from '../models/userAdmin.view.models/userAdmin.view.model';
+import { SAViewType } from '../models/user.view.models/userAdmin.view-type';
 import { UsersQueryRepo } from '../query-repositories/users.query.repo';
 
 @UseGuards(BasicSAAuthGuard)
-@Controller('sa/users')
+@Controller(RouterPaths.users)
 export class SAController {
   constructor(
     private usersQueryRepo: UsersQueryRepo,
-    private commandBus: CommandBus,
+    private saCrudApiService: SACrudApiService<
+      CreateSACommand | BanUnbanCommand | DeleteSACommand
+    >,
   ) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getUserAdmins(
+  async getUsers(
     @Query() query: SAQueryFilter,
-  ): Promise<PaginationViewModel<SAViewType> | any> {
+  ): Promise<PaginationViewModel<SAViewType>> {
     return this.usersQueryRepo.getAllUsers(query);
-  }
-
-  @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  async getUserAdmin(@Param('id') userId: string): Promise<SAViewType | void> {
-    const userAdmin = await this.usersQueryRepo.getUserById(userId);
-
-    if (!userAdmin) {
-      throw new NotFoundException();
-    }
-
-    return userAdmin;
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createSA(@Body() body: CreateUserDto): Promise<SAViewType> {
-    const command = new CreateSACommand(body);
+    const createCommand = new CreateSACommand(body);
+    return this.saCrudApiService.create(createCommand);
+  }
 
-    const result = await this.commandBus.execute<
-      CreateSACommand,
-      LayerNoticeInterceptor<UserIdType>
-    >(command);
-
-    if (result.hasError) {
-      throw new InternalServerErrorException(result.extensions);
-    }
-
-    const foundNewestUser = await this.usersQueryRepo.getUserById(
-      result.data!.userId,
-    );
-
-    return foundNewestUser!;
+  @Put(':id/ban')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async banUnbanRestriction(
+    @Param('id') userId: string,
+    @Body() body: UserRestrictionDto,
+  ) {
+    const command = new BanUnbanCommand({ userId, ...body });
+    return this.saCrudApiService.updateOrDelete(command);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteSA(@Param('id') userId: string): Promise<void> {
     const command = new DeleteSACommand(userId);
-
-    await this.commandBus.execute<DeleteSACommand, boolean>(command);
+    return this.saCrudApiService.updateOrDelete(command);
   }
 }

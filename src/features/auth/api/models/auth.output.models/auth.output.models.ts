@@ -1,4 +1,4 @@
-import { SAViewType } from '../../../../admin/api/models/userAdmin.view.models/userAdmin.view.model';
+import { SAViewType } from '../../../../admin/api/models/user.view.models/userAdmin.view-type';
 
 export type UserType = {
   login: string;

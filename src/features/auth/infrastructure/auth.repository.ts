@@ -8,12 +8,19 @@ import { LoginOrEmailType } from '../api/models/auth.output.models/auth.user.typ
 import { CreateTempAccountDto } from '../api/models/temp-account.models.ts/temp-account-models';
 import { TemporaryUserAccount } from '../domain/entities/temp-account.entity';
 import { UpdatePasswordDto } from '../api/models/auth-input.models.ts/password-recovery.types';
+import { UserBans } from '../domain/entities/user-bans.entity';
+
+type BanInfoType = {
+  isBanned: boolean;
+};
 
 @Injectable()
 export class AuthRepository {
   constructor(
     @InjectRepository(UserAccount)
     private readonly userAccounts: Repository<UserAccount>,
+    @InjectRepository(UserBans)
+    private readonly userBans: Repository<UserBans>,
     @InjectRepository(TemporaryUserAccount)
     private readonly tempUserAccounts: Repository<TemporaryUserAccount>,
   ) {}
@@ -37,6 +44,18 @@ export class AuthRepository {
       );
       return null;
     }
+  }
+
+  async getUserBanInfo(userId: string): Promise<BanInfoType> {
+    try {
+      const result = await this.userBans.findOne({
+        where: { user: { id: userId } },
+      });
+
+      if (!result) return null;
+
+      return { isBanned: result.isBanned };
+    } catch (error) {}
   }
 
   async findTemporaryAccountByRecoveryCode(
@@ -100,10 +119,10 @@ export class AuthRepository {
       const { email, login, loginOrEmail } = inputData;
 
       const conditions: FindOptionsWhere<UserAccount>[] = [
-        { email: Equal('' + email) },
-        { login: Equal('' + login) },
-        { email: Equal('' + loginOrEmail) },
-        { login: Equal('' + loginOrEmail) },
+        { email: Equal(email) },
+        { login: Equal(login) },
+        { email: Equal(loginOrEmail) },
+        { login: Equal(loginOrEmail) },
       ];
 
       const result = await this.userAccounts.findOne({ where: conditions });

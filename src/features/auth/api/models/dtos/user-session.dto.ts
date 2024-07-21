@@ -1,6 +1,6 @@
 import { Payload } from '../auth-input.models.ts/jwt.types';
 
-export class UserSessionDto {
+export class UserSessionRawDto {
   ip: string;
   user_agent_info: string;
   user_id: string;
