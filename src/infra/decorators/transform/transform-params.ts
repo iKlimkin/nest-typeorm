@@ -44,9 +44,9 @@ export const ValidSortDirection = () =>
     const values = Object.values(SortDirections);
     const lowerValue = value.toLowerCase();
 
-    return !value || !values.includes(lowerValue)
-      ? SortDirections.Desc
-      : lowerValue;
+    return value && values.includes(lowerValue)
+      ? lowerValue
+      : SortDirections.Desc;
   });
 
 export const ValidateAndConvertStatuses = () =>
