@@ -1,8 +1,8 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
-import { LayerNoticeInterceptor } from '../../../auth/api/controllers';
 import { QuizRepository } from '../../infrastructure/quiz-game.repo';
 import { DeleteQuestionCommand } from '../commands/delete-question.command';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 
 @CommandHandler(DeleteQuestionCommand)
 export class DeleteQuestionUseCase

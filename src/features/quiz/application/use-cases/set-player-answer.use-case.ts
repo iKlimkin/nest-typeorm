@@ -28,7 +28,7 @@ interface IGameResultHandler extends Omit<IHandleLastAnswerInput, 'answer'> {}
 export class SetPlayerAnswerUseCase
   implements ICommandHandler<SetPlayerAnswerCommand>
 {
-  private readonly location = 'SetPlayerAnswerUseCase';
+  private readonly location = this.constructor.name;
   private readonly lastPoint = 5;
 
   constructor(

@@ -7,10 +7,9 @@ import {
   OneToOne,
 } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
-import type { UserAccount } from '../../../auth/infrastructure/settings';
 import type { QuizAnswer } from './quiz-answer.entity';
 import type { QuizGame } from './quiz-game.entity';
-
+import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
 @Entity()
 export class QuizPlayerProgress extends BaseEntity {
   @ManyToOne('UserAccount', 'gameProgress', {

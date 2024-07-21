@@ -2,7 +2,6 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { OutputId } from '../../../domain/output.models';
-import { LayerNoticeInterceptor } from '../../auth/api/controllers';
 import { GameStatus } from '../api/models/input.models/statuses.model';
 import { UpdateQuestionData } from '../api/models/input.models/update-question.model';
 import { QuestionId } from '../api/models/output.models.ts/output.types';
@@ -12,6 +11,7 @@ import { QuizCorrectAnswer } from '../domain/entities/quiz-correct-answers.entit
 import { QuizGame } from '../domain/entities/quiz-game.entity';
 import { QuizPlayerProgress } from '../domain/entities/quiz-player-progress.entity';
 import { QuizQuestion } from '../domain/entities/quiz-questions.entity';
+import { LayerNoticeInterceptor } from '../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 
 @Injectable()
 export class QuizRepository {

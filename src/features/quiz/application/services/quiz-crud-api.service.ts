@@ -1,20 +1,14 @@
-import { CommandBus } from '@nestjs/cqrs';
-import { BaseEntity } from '../../../../domain/base-entity';
-import {
-  QuizQueryRepository,
-  QuizQueryRepo,
-} from '../../api/models/query-repositories/quiz.query.repo';
-import {
-  LayerNoticeInterceptor,
-  handleErrors,
-} from '../../../auth/api/controllers';
-import { QuizPairViewType } from '../../api/models/output.models.ts/view.models.ts/quiz-game.view-type';
-import { ConnectPlayerCommand } from '../commands/connect-player.command';
 import { Injectable } from '@nestjs/common';
-
-export interface BaseViewModel {
-  id: string;
-}
+import { CommandBus } from '@nestjs/cqrs';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
+import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
+import { BaseViewModel } from '../../../blogs/application/base.crud.api.service';
+import { QuizPairViewType } from '../../api/models/output.models.ts/view.models.ts/quiz-game.view-type';
+import {
+  QuizQueryRepo,
+  QuizQueryRepository,
+} from '../../api/models/query-repositories/quiz.query.repo';
+import { ConnectPlayerCommand } from '../commands/connect-player.command';
 
 export class QuizCrudApiService<TCommand, TViewModel extends BaseViewModel> {
   constructor(

@@ -9,8 +9,8 @@ import {
   QuizRepository,
 } from '../../../../settings';
 import { runInTransaction } from '../../../../domain/transaction-wrapper';
-import { LayerNoticeInterceptor } from '../../../auth/api/controllers';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 
 @Injectable()
 export class QuizScheduleService {

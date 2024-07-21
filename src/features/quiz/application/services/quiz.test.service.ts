@@ -16,6 +16,6 @@ export class QuizTestService {
     const { userId } = userInfo;
     const user = await this.usersRepo.getUserById(userId);
 
-    return this.quizQueryRepo.test(user);
+    // return this.quizQueryRepo.test(user);
   }
 }
