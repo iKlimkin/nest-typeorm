@@ -1,15 +1,8 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import {
-  InjectDataSource,
-  InjectRepository,
-  getRepositoryToken,
-} from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Not, Repository } from 'typeorm';
 import { PaginationViewModel } from '../../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../../infra/utils/get-pagination';
-import { UserAccount } from '../../../../auth/infrastructure/settings';
-import { CurrentGameQuestion } from '../../../domain/entities/current-game-questions.entity';
-import { QuizAnswer } from '../../../domain/entities/quiz-answer.entity';
 import { QuizGame } from '../../../domain/entities/quiz-game.entity';
 import { QuizPlayerProgress } from '../../../domain/entities/quiz-player-progress.entity';
 import { QuizQuestion } from '../../../domain/entities/quiz-questions.entity';
@@ -36,27 +29,17 @@ import { getQuestionsViewModel } from '../output.models.ts/view.models.ts/quiz-q
 import { transformRawQuizDataToView } from '../output.models.ts/view.models.ts/quiz-raw.view-model';
 
 export interface QuizQueryRepository<T> {
-  // getUserGames(
-  //   userId: string,
-  //   queryOptions: QuizGamesQueryFilter,
-  // ): Promise<PaginationViewModel<T>>;
-  // getUsersTop(queryOptions: StatsQueryFilter): Promise<any>;
-  // getUserGameAnalytic(userId: string): Promise<GameStats>;
-  // getCurrentUnfinishedGame(userId: string): Promise<QuizPairViewType | null>;
+  getUserGames(
+    userId: string,
+    queryOptions: QuizGamesQueryFilter,
+  ): Promise<PaginationViewModel<T>>;
+  getUsersTop(queryOptions: StatsQueryFilter): Promise<any>;
+  getUserGameAnalytic(userId: string): Promise<GameStats>;
+  getCurrentUnfinishedGame(userId: string): Promise<QuizPairViewType | null>;
   getPairInformation(gameId: string): Promise<T | null>;
-  // getPendingPair(): Promise<T | null>;
-  // isUserInGame(userId: string, gameId: string): Promise<null | GameStatus>;
+  getPendingPair(): Promise<T | null>;
+  isUserInGame(userId: string, gameId: string): Promise<null | GameStatus>;
 }
-
-// export interface BaseQueryRepository<T> {
-//   getUserGames(
-//     userId: string,
-//     queryOptions: QuizGamesQueryFilter,
-//   ): Promise<PaginationViewModel<T>>;
-//   getUsersTop(queryOptions: StatsQueryFilter): Promise<PaginationViewModel<T>>;
-//   getPendingPair(): Promise<T | null>;
-//   getPairInformation(gameId: string): Promise<T | null>;
-// }
 
 @Injectable()
 export class QuizQueryRepo implements QuizQueryRepository<QuizPairViewType> {
@@ -269,7 +252,7 @@ export class QuizQueryRepo implements QuizQueryRepository<QuizPairViewType> {
       }
       statsQuery += `\nLIMIT ${pageSize}`;
 
-      const result = await this.dataSource.query(statsQuery);
+      const result: IUserStats[] = await this.dataSource.query(statsQuery);
 
       const [{ count }] = await this.dataSource.query(`
         SELECT COUNT(DISTINCT pp."playerId")
@@ -536,80 +519,6 @@ export class QuizQueryRepo implements QuizQueryRepository<QuizPairViewType> {
     } catch (error) {
       console.log(`getPairInformation finished with errors: ${error}`);
       return null;
-    }
-  }
-
-  async test(user: UserAccount): Promise<any> {
-    try {
-      const userId = user?.id;
-      const { pageNumber, pageSize, sortBy, skip, sortDirection } =
-        getPagination({});
-
-      const queryBuilder = this.quizPairs.createQueryBuilder('game');
-
-      queryBuilder
-        .select([
-          'game.id',
-          'game.status',
-          'game.startGameDate',
-          'game.finishGameDate',
-          'game.created_at',
-          'game.firstPlayerId',
-          'game.secondPlayerId',
-        ])
-        .where(
-          `game.firstPlayerId = :userId OR game.secondPlayerId = :userId`,
-          { userId },
-        )
-        .leftJoinAndSelect('game.firstPlayerProgress', 'firstPlayerProgress')
-        .leftJoinAndSelect('game.secondPlayerProgress', 'secondPlayerProgress')
-        .leftJoin('game.questions', 'gameQuestions')
-        .leftJoin(
-          (qb) =>
-            qb
-              .select(['gq.questionId', 'qq.body', 'gq.order'])
-              .from(CurrentGameQuestion, 'gq')
-              .innerJoin(QuizQuestion, 'qq', 'qq.id = gq.questionId')
-              .orderBy('gq.order', 'ASC'),
-          'sortedQuestions',
-          'gameQuestions.questionId = sortedQuestions.questionId',
-        );
-      // .leftJoin('gameQuestions.question', 'allQuestions')
-      // .addSelect([
-      //   'gameQuestions.questionId',
-      //   'allQuestions.id',
-      //   'allQuestions.body',
-      // ])
-      // .leftJoinAndSelect(
-      //   (qb) =>
-      //     qb
-      //       .from('QuizAnswer', 'fpAnswers')
-      //       .where('fpAnswers.playerProgressId = firstPlayerProgress.id')
-      //       .orderBy('fpAnswers.created_at', 'ASC'),
-      //   'fpAnswers',
-      //   'fpAnswers.playerProgressId = firstPlayerProgress.id',
-      // )
-      // .leftJoinAndSelect(
-      //   (qb) =>
-      //     qb
-      //       .from('Answer', 'spAnswers')
-      //       .where('spAnswers.playerProgressId = secondPlayerProgress.id')
-      //       .orderBy('spAnswers.created_at', 'ASC'),
-      //   'spAnswers',
-      //   'spAnswers.playerProgressId = secondPlayerProgress.id',
-      // )
-      // .orderBy(`game.${sortBy}`, sortDirection || 'ASC')
-      // .skip(skip)
-      // .take(pageSize);
-
-      const result = await queryBuilder.getMany();
-      console.log(result);
-      const view = result.map(getQuizPairViewModel);
-      console.log(view);
-
-      // return getQuizPairViewModel(result);
-    } catch (error) {
-      console.error(`TESTING: ${error}`);
     }
   }
 }

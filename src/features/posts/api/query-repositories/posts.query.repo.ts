@@ -1,15 +1,29 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { LikesStatuses } from '../../../../domain/reaction.models';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../infra/utils/get-pagination';
 import { PostReaction } from '../../domain/entities/post-reactions.entity';
 import { Post } from '../../domain/entities/post.entity';
 import { PostsQueryFilter } from '../models/output.post.models/posts-query.filter';
-import { PostViewModelType } from '../models/post.view.models/post-view-model.type';
-import { getPostViewModel } from '../models/post.view.models/post-view.model';
+import {
+  PostViewModelType,
+  PostWithNewestLikes,
+  PostWithNewestLikesRaw,
+} from '../models/post.view.models/post-view-model.type';
+import {
+  getPostRawView,
+  getPostViewModel,
+  parsePostToView,
+} from '../models/post.view.models/post-view.model';
 import { Blog } from '../../../blogs/domain/entities/blog.entity';
+
+interface IPostsByBlogId {
+  blogId: string;
+  queryOptions: PostsQueryFilter;
+  userId?: string;
+}
 
 @Injectable()
 export class PostsQueryRepo {
@@ -17,104 +31,209 @@ export class PostsQueryRepo {
     @InjectRepository(Post) private readonly posts: Repository<Post>,
     @InjectRepository(PostReaction)
     private readonly postReactions: Repository<PostReaction>,
+    @InjectDataSource() private dataSource: DataSource,
   ) {}
 
   async getAllPosts(
     queryOptions: PostsQueryFilter,
     userId?: string,
   ): Promise<PaginationViewModel<PostViewModelType>> {
-    try {
-      const { searchContentTerm } = queryOptions;
+    const { pageNumber, pageSize, skip, sortBy, sortDirection } =
+      getPagination(queryOptions);
 
-      const { pageNumber, pageSize, skip, sortBy, sortDirection } =
-        getPagination(queryOptions);
+    const searchTerm = `%${queryOptions.searchContentTerm || ''}%`;
 
-      const searchTerm = `%${searchContentTerm ? searchContentTerm : ''}%`;
+    const postQueryBuilder = this.posts.createQueryBuilder('post');
 
-      const queryBuilder = this.posts.createQueryBuilder('posts');
+    postQueryBuilder
+      .where('post.content ILIKE :content', { content: searchTerm })
+      .leftJoin('post.blog', 'blog')
+      .orderBy(
+        sortBy === 'blog_id'
+          ? 'post.blogId'
+          : sortBy === 'created_at'
+          ? `post.created_at`
+          : `post.${sortBy}`,
+        sortDirection,
+      )
+      .skip(skip)
+      .take(pageSize);
 
-      queryBuilder
-        .where('posts.content ILIKE :content', { content: searchTerm })
-        .leftJoin('posts.blog', 'blog')
-        .leftJoin('posts.postReactionCounts', 'reactionCounter')
-        .addSelect([
-          'blog.id',
-          'reactionCounter.likes_count',
-          'reactionCounter.dislikes_count',
-        ])
-        .orderBy(
-          sortBy === 'blog_id'
-            ? 'posts.blog.id'
-            : sortBy === 'created_at'
-            ? `posts.created_at`
-            : `posts.${sortBy}`,
-          sortDirection,
-        )
-        .skip(skip)
-        .take(pageSize);
-
-      const [posts, count] = await queryBuilder.getManyAndCount();
-
-      let myReactions: PostReaction[];
-
-      if (userId) {
-        const reactions = await this.postReactions.find({
-          where: {
-            user: {
-              id: userId,
-            },
-          },
-          relations: ['post'],
-        });
-
-        myReactions = reactions ? reactions : [];
-      }
-
-      const latestReactions = await this.postReactions
-        .createQueryBuilder('pr')
-        .select(['pr.userLogin', 'pr.created_at'])
-        .leftJoin('pr.post', 'post')
-        .addSelect('post.id')
-        .leftJoin('pr.user', 'user')
-        .addSelect('user.id')
-        .where('pr.reactionType = :reactionType', {
-          reactionType: LikesStatuses.Like,
+    if (userId) {
+      postQueryBuilder
+        .leftJoin('post.postReactions', 'pr', 'pr.userId = :userId', {
+          userId,
         })
-        .orderBy('pr.created_at', 'DESC')
-        .getMany();
+        .addSelect('pr.reactionType');
+    }
+    
+    try {
+      const [posts, count] = await postQueryBuilder.getManyAndCount();
 
-      const postsViewModel = new PaginationViewModel<PostViewModelType>(
-        posts.map((post: Post) =>
-          getPostViewModel(post, latestReactions, myReactions),
-        ),
+      const postsWithReactionsAndCounts = (await Promise.all(
+        posts.map(async (post) => {
+          const query = `
+                SELECT 
+                COUNT(
+                  CASE 
+                    WHEN pr."reactionType" = 'Like' THEN 1 
+                    ELSE NULL 
+                  END
+                ) AS "likesCount",
+                COUNT(
+                  CASE 
+                    WHEN pr."reactionType" = 'Dislike' THEN 1 
+                    ELSE NULL 
+                  END
+                ) AS "dislikesCount",
+               (
+                  SELECT COALESCE(
+                    json_agg(
+                      json_build_object(
+                        'addedAt', sub_pr."created_at",
+                        'userId', sub_pr."userId",
+                        'login', sub_pr."userLogin"
+                      )
+                    ), 
+                    '[]'
+                  )
+                  FROM (
+                    SELECT pr."userLogin", pr."created_at", pr."userId"
+                    FROM post_reaction pr
+                    LEFT JOIN user_account u ON pr."userId" = u.id
+                    LEFT JOIN user_bans bans ON u.id = bans."userId"
+                    WHERE pr."postId" = $1
+                      AND pr."reactionType" = 'Like'
+                      AND (bans."isBanned" IS NULL OR bans."isBanned" = false)
+                    ORDER BY pr."created_at" DESC
+                    LIMIT 3
+                  ) sub_pr
+                ) AS "newestLikes"
+                FROM post_reaction pr
+                LEFT JOIN user_account u ON pr."userId" = u.id
+                LEFT JOIN user_bans bans ON u.id = bans."userId"
+                WHERE pr."postId" = $1
+                AND (bans."isBanned" IS NULL OR bans."isBanned" = false)
+                GROUP BY pr."postId"
+              `;
+
+          let result = await this.dataSource.query(query, [post.id]);
+
+          if (!result.length) {
+            return {
+              ...post,
+              postReactionCounts: {
+                likesCount: 0,
+                dislikesCount: 0,
+              },
+              newestLikes: [],
+            };
+          }
+
+          const { likesCount, dislikesCount, newestLikes } = result[0];
+
+          return {
+            ...post,
+            postReactionCounts: {
+              likesCount: parseInt(likesCount, 10),
+              dislikesCount: parseInt(dislikesCount, 10),
+            },
+            newestLikes: newestLikes || [],
+          };
+        }),
+      )) as unknown as PostWithNewestLikes[];
+
+      return new PaginationViewModel<PostViewModelType>(
+        postsWithReactionsAndCounts.map(parsePostToView),
         pageNumber,
         pageSize,
         count,
       );
-
-      return postsViewModel;
     } catch (error) {
-      throw new InternalServerErrorException(
-        `Database fails operation with find all posts ${error}`,
-      );
+      console.log(`Database fails operation with find all posts ${error}`);
+      return null;
     }
   }
 
   async getPostsByBlogId(
-    blogId: string,
-    queryOptions: PostsQueryFilter,
-    userId?: string,
+    inputData: IPostsByBlogId,
   ): Promise<PaginationViewModel<PostViewModelType> | null> {
+    const { blogId, queryOptions, userId } = inputData;
+
+    const { pageNumber, pageSize, skip, sortBy, sortDirection } =
+      getPagination(queryOptions);
+
+    const searchTerm = `%${queryOptions.searchContentTerm || ''}%`;
+
     try {
-      const { searchContentTerm } = queryOptions;
+      // how to solve issue with raw query
 
-      const { pageNumber, pageSize, skip, sortBy, sortDirection } =
-        getPagination(queryOptions);
+      // let postsWithNewestLikesQuery = `
+      //   SELECT
+      //     p.id,
+      //     p.title,
+      //     p."shortDescription",
+      //     p.content,
+      //     p."blogId",
+      //     p."blogTitle",
+      //     p.created_at "createdAt",
+      //   (
+      //     SELECT json_agg(sub)
+      //     FROM (
+      //       SELECT pr."userLogin", pr.created_at "addedAt", u.id "userId"
+      //       FROM post_reaction pr
+      //       LEFT JOIN user_account u ON pr."userId" = u.id
+      //       LEFT JOIN user_bans bans ON u.id = bans."userId"
+      //       WHERE pr."postId" = p.id AND pr."reactionType" = 'Like' AND (bans IS NULL OR bans."isBanned" <> true)
+      //       ORDER BY pr.created_at DESC
+      //       LIMIT 3
+      //     ) sub
+      //   ) AS "newestLikes",
+      //   prc.likes_count "likesCount",
+      //   prc.dislikes_count "dislikesCount"
+      // `;
 
-      const searchTerm = `%${searchContentTerm ? searchContentTerm : ''}%`;
+      // if (!userId) {
+      //   postsWithNewestLikesQuery += `
+      //     ,(
+      //       SELECT pr."reactionType"
+      //       FROM post_reaction pr
+      //       WHERE pr."postId" = p.id AND pr."userId" = '${userId}'
+      //     ) AS "myReaction"
+      //   `;
+      // }
+
+      // postsWithNewestLikesQuery += `
+      //   FROM post p
+      //   LEFT JOIN blog b ON p."blogId" = b.id
+      //   LEFT JOIN post_reaction_counts prc ON p.id = prc.post_id
+      //   WHERE p.content ILIKE $1 AND b.id = $2
+      //   ORDER BY ${
+      //     sortBy === 'blog_id'
+      //       ? 'b.id'
+      //       : 'blog_title'
+      //       ? 'p."blogTitle"'
+      //       : 'p.' + sortBy
+      //   } ${sortDirection}
+      //   LIMIT ${pageSize}
+      //   OFFSET ${skip};
+      // `;
+
+      // const postsWithLikes = (await this.dataSource.query(
+      //   postsWithNewestLikesQuery,
+      //   [searchTerm, blogId],
+      // )) as PostWithNewestLikesRaw[];
+
+      // return new PaginationViewModel<PostViewModelType>(
+      //   postsWithLikes.map(getPostRawView),
+      //   pageNumber,
+      //   pageSize,
+      //   postsCount,
+      // );
 
       const queryBuilder = this.posts.createQueryBuilder('posts');
 
+      // add array in query
       queryBuilder
         .where('posts.content ILIKE :searchTerm', { searchTerm })
         .andWhere('posts.blogId = :blogId', { blogId })
@@ -124,15 +243,28 @@ export class PostsQueryRepo {
           'blog.id = posts.blogId',
           // { is_membership: true }
         )
-        .leftJoin('posts.postReactionCounts', 'reactionCounter')
-        .addSelect([
-          'blog.id',
-          'reactionCounter.likes_count',
-          'reactionCounter.dislikes_count',
-        ])
+        .addSelect('blog.id', 'blogId')
+        // .leftJoinAndMapMany(
+        //   'posts.latestLikeReactions',
+        //   (qb) =>
+        //     qb
+        //       .select(['pr.userLogin', 'pr.created_at'])
+        //       .from(PostReaction, 'pr')
+        //       .where("pr.reactionType = 'Like'")
+        //       .leftJoin('pr.post', 'posts')
+        //       .andWhere('pr. = posts.id')
+        //       .leftJoin('pr.user', 'user')
+        //       .addSelect(['user.id'])
+        //       .leftJoin('user.userBans', 'bans')
+        //       .andWhere('bans IS NULL OR bans.isBanned <> true')
+        //       .orderBy('pr.created_at', 'DESC')
+        //       .limit(3),
+        //   'latestLikeReactions',
+        //   // 'latestLikeReactions.postId = posts.id'
+        // )
         .orderBy(
           sortBy === 'blog_id'
-            ? 'blog.id'
+            ? 'posts.blogId'
             : 'created_at'
             ? `posts.created_at`
             : `posts.${sortBy}`,
@@ -141,46 +273,129 @@ export class PostsQueryRepo {
         .skip(skip)
         .take(pageSize);
 
-      const [posts, postsCount] = await queryBuilder.getManyAndCount();
-
-      let myReactions: PostReaction[];
-
       if (userId) {
-        const reactions = await this.postReactions.find({
-          where: {
-            user: { id: userId },
-            post: { blogId },
-          },
-          relations: ['post'],
-        });
-
-        myReactions = reactions ? reactions : [];
+        queryBuilder
+          .leftJoin(
+            'posts.postReactions',
+            'postReaction',
+            'postReaction.userId = :userId',
+            { userId },
+          )
+          .addSelect('postReaction.reactionType');
       }
 
-      const latestReactions = await this.postReactions
+      const [posts, postsCount] = await queryBuilder.getManyAndCount();
+
+      const latestLikeReactions = await this.postReactions
         .createQueryBuilder('pr')
         .select(['pr.userLogin', 'pr.created_at'])
+        .where("pr.reactionType = 'Like'")
         .leftJoin('pr.post', 'posts')
         .addSelect('posts.id')
+        .leftJoin('posts.blog', 'blog')
+        .andWhere('blog.id = :blogId', { blogId })
         .leftJoin('pr.user', 'user')
-        .addSelect('user.id')
-        .where('pr.reactionType = :reactionType', {
-          reactionType: LikesStatuses.Like,
-        })
-        .andWhere('posts.blogId = :blogId', { blogId })
+        .addSelect(['user.id'])
+        .leftJoin('user.userBans', 'bans')
+        .andWhere('bans IS NULL OR bans.isBanned = false')
         .orderBy('pr.created_at', 'DESC')
+        .limit(3)
         .getMany();
 
-      const postsViewModel = new PaginationViewModel<PostViewModelType>(
-        posts.map((post: Post) =>
-          getPostViewModel(post, latestReactions, myReactions),
-        ),
+      // const postsQueryBuilder = this.posts.createQueryBuilder('posts');
+
+      const postsWithReactionCounts = await Promise.all(
+        posts.map(async (post) => {
+          const query = `
+              SELECT 
+                COUNT(
+                  CASE WHEN pr."reactionType" = 'Like' THEN 1 
+                  ELSE NULL 
+                  END
+                ) AS "likesCount",
+                COUNT(
+                  CASE 
+                    WHEN pr."reactionType" = 'Dislike' THEN 1 
+                    ELSE NULL 
+                  END
+                ) AS "dislikesCount"
+              FROM post_reaction pr
+              LEFT JOIN user_account u ON pr."userId" = u.id
+              LEFT JOIN user_bans bans ON u.id = bans."userId"
+              WHERE pr."postId" = $1
+              AND (bans."isBanned" IS NULL OR bans."isBanned" = false)
+            `;
+
+          let [{ likesCount, dislikesCount }] = await this.dataSource.query(
+            query,
+            [post.id],
+          );
+
+          return {
+            ...post,
+            postReactionCounts: {
+              likesCount: parseInt(likesCount, 10),
+              dislikesCount: parseInt(dislikesCount, 10),
+            },
+          };
+        }),
+      );
+
+      // postsQueryBuilder
+      //   .select('posts.id')
+      //   .leftJoin('posts.postReactionCounts', 'reactionCounter')
+      //   .addSelect([
+      //     'reactionCounter.likes_count',
+      //     'reactionCounter.dislikes_count',
+      //   ])
+      //   .leftJoin('posts.blog', 'blog')
+      //   .where('blog.id = :blogId', { blogId })
+      //   .leftJoin('blog.user', 'user')
+      //   .leftJoin('user.userBans', 'bans')
+      //   .andWhere('bans IS NULL OR bans.isBanned = false')
+      //   .orderBy(
+      //     sortBy === 'blog_id'
+      //       ? 'blog.id'
+      //       : 'created_at'
+      //       ? `posts.created_at`
+      //       : `posts.${sortBy}`,
+      //     sortDirection,
+      //   );
+
+      // const reactionsCounter = await postsQueryBuilder.getMany();
+
+      // const reactionsCounterMap = new Map();
+      // reactionsCounter.forEach((counter) => {
+      //   reactionsCounterMap.set(counter.id, counter);
+      // });
+      const newestLikesMap = new Map();
+      latestLikeReactions.forEach((reaction) => {
+        newestLikesMap.set(
+          reaction.post.id,
+          (newestLikesMap.get(reaction.post.id) || []).concat([
+            {
+              addedAt: reaction.created_at,
+              userId: reaction.user.id,
+              login: reaction.userLogin,
+            },
+          ]),
+        );
+      });
+
+      const allPosts = postsWithReactionCounts.map((post) => {
+        const newestLikes = newestLikesMap.get(post.id) || [];
+        return {
+          ...post,
+          newestLikes,
+        };
+      });
+
+      return new PaginationViewModel<PostViewModelType>(
+        allPosts.map(parsePostToView),
         pageNumber,
         pageSize,
         postsCount,
       );
-
-      return postsViewModel;
     } catch (e) {
       console.error(`Database fails operation with find posts by blogId ${e}`);
       return null;
@@ -189,54 +404,76 @@ export class PostsQueryRepo {
 
   async getById(postId: string, userId?: string): Promise<PostViewModelType> {
     try {
-      let myReaction: LikesStatuses = LikesStatuses.None;
+      const query = `
+                SELECT 
+                p."shortDescription", 
+                p."blogTitle", 
+                p.created_at, 
+                p."blogId", 
+                p.content, 
+                p.title, 
+                p.id,
+                json_build_object(
+                  'likesCount', COALESCE(
+                    SUM(
+                      CASE 
+                        WHEN pr."reactionType" = 'Like' AND (bans."isBanned" IS NULL OR bans."isBanned" = false) THEN 1 
+                        ELSE 0 
+                      END
+                    ), 
+                  0),
+                  'dislikesCount', COALESCE(
+                    SUM(
+                      CASE 
+                        WHEN pr."reactionType" = 'Dislike' AND (bans."isBanned" IS NULL OR bans."isBanned" = false) THEN 1   ELSE 0 
+                      END
+                    ), 
+                  0)
+                ) as "postReactionCounts",
+               (
+                  SELECT COALESCE(
+                    json_agg(
+                      json_build_object(
+                        'addedAt', sub_pr."created_at",
+                        'userId', sub_pr."userId",
+                        'login', sub_pr."userLogin"
+                      )
+                    ), 
+                    '[]'
+                  )
+                  FROM (
+                    SELECT pr."userLogin", pr."created_at", pr."userId"
+                    FROM post_reaction pr
+                    LEFT JOIN user_account u ON pr."userId" = u.id
+                    LEFT JOIN user_bans bans ON u.id = bans."userId"
+                    WHERE pr."postId" = $1
+                      AND pr."reactionType" = 'Like'
+                      AND (bans."isBanned" IS NULL OR bans."isBanned" = false)
+                    ORDER BY pr."created_at" DESC
+                    LIMIT 3
+                  ) sub_pr
+                ) AS "newestLikes",
+                  (
+                    SELECT COALESCE(
+                      json_agg(
+                        json_build_object('reactionType', pr."reactionType")
+                      ), '[]'
+                    )
+                    FROM post_reaction pr
+                    WHERE pr."postId" = $1
+                      AND ($2::uuid IS NULL OR (pr."userId" = $2::uuid AND (bans."isBanned" IS NULL OR bans."isBanned" = false)))
+                  ) AS "postReactions"
+                FROM post p
+                LEFT JOIN post_reaction pr on pr."postId" = p.id
+                LEFT JOIN user_account u ON pr."userId" = u.id
+                LEFT JOIN user_bans bans ON u.id = bans."userId"
+                WHERE p.id = $1
+                GROUP BY p.id, bans.id
+              `;
 
-      const queryBuilder = this.posts.createQueryBuilder('posts');
+      const [post] = await this.dataSource.query(query, [postId, userId]);
 
-      queryBuilder
-      .where('posts.id = :postId', { postId })
-      .leftJoinAndSelect('posts.postReactionCounts', 'prc')
-      .addSelect('posts.blogId')
-
-      const post = await queryBuilder.getOne();
-      
-      const latestReactions = await this.postReactions
-        .createQueryBuilder('pr')
-        .select([
-          'pr.reactionType',
-          'pr.userLogin',
-          'pr.created_at',
-          'pr.postId',
-          'post.id',
-        ])
-        .leftJoin('pr.user', 'user')
-        .addSelect('user.id')
-        .leftJoin('pr.post', 'post')
-        .where('pr.postId = :postId', { postId })
-        .andWhere('pr.reactionType = :reactionType', {
-          reactionType: LikesStatuses.Like,
-        })
-        .orderBy('pr.created_at', 'DESC')
-        .limit(3)
-        .getMany();
-
-      if (userId) {
-        const reaction = await this.postReactions.findOne({
-          where: {
-            post: {
-              id: postId,
-            },
-            user: {
-              id: userId,
-            },
-          },
-          relations: ['post'],
-        });
-
-        myReaction = reaction ? reaction.reactionType : LikesStatuses.None;
-      }
-
-      return getPostViewModel(post, latestReactions, myReaction);
+      return parsePostToView(post);
     } catch (error) {
       console.error(`Database fails operate during find post ${error}`);
       return null;

@@ -37,13 +37,17 @@ import {
   UpdatePostCommand,
   DeletePostCommand,
 } from './index';
+import { RouterPaths } from '../../../../../test/tools/helpers/routing';
+import { PostCrudApiService } from '../../../blogs/application/base.crud.api.service';
+import { CommentsQueryFilter } from '../../../comments/api/models/output.comment.models/comment-query.filter';
 
-@Controller('posts')
+@Controller(RouterPaths.posts)
 export class PostsController {
   constructor(
     private feedbacksQueryRepo: FeedbacksQueryRepo,
     private postsQueryRepo: PostsQueryRepo,
     private commandBus: CommandBus,
+    private postCrudApiService: PostCrudApiService<CreateCommentCommand>,
   ) {}
 
   @Get()
@@ -84,7 +88,7 @@ export class PostsController {
 
     const post = await this.postsQueryRepo.getById(postId, userId);
 
-    if (!post) throw new NotFoundException('Post not found');
+    if (!post) throw new NotFoundException('Post was not found');
 
     if (post.extendedLikesInfo.myStatus === likeStatus) return;
 
@@ -103,12 +107,12 @@ export class PostsController {
   async getComments(
     @Param('id') postId: string,
     @CurrentUserId() userId: string,
-    @Query() query: PostsQueryFilter,
+    @Query() query: CommentsQueryFilter,
   ): Promise<PaginationViewModel<CommentsViewModel>> {
     const post = await this.postsQueryRepo.getById(postId);
 
     if (!post) {
-      throw new NotFoundException('Post not found');
+      throw new NotFoundException('Post was not found');
     }
 
     const comments = await this.feedbacksQueryRepo.getCommentsByPostId(
@@ -118,7 +122,7 @@ export class PostsController {
     );
 
     if (!comments) {
-      throw new NotFoundException('Comment not found');
+      throw new NotFoundException('Comments were not found');
     }
 
     return comments;
@@ -132,39 +136,12 @@ export class PostsController {
     @Body() body: InputContentDto,
     @CurrentUserInfo() userInfo: UserSessionDto,
   ): Promise<CommentsViewModel> {
-    const { content } = body;
-    const { userId } = userInfo;
-
-    const existPost = await this.postsQueryRepo.getById(postId);
-
-    if (!existPost) {
-      throw new NotFoundException('Post not found');
-    }
-
-    const createCommentData = {
-      content,
-      userId,
+    const createComment = new CreateCommentCommand({
+      content: body.content,
+      userId: userInfo.userId,
       postId,
-    };
-
-    const command = new CreateCommentCommand(createCommentData);
-
-    const result = await this.commandBus.execute<
-      CreateCommentCommand,
-      LayerNoticeInterceptor<OutputId | null>
-    >(command);
-
-    if (result.hasError) {
-      const errors = handleErrors(result.code, result.extensions[0]);
-      throw errors.error;
-    }
-
-    const foundNewComment = await this.feedbacksQueryRepo.getCommentById(
-      result.data!.id,
-      userId,
-    );
-
-    return foundNewComment;
+    });
+    return this.postCrudApiService.create(createComment);
   }
 
   @Put(':id')

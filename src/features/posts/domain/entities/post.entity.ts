@@ -15,12 +15,12 @@ import {
 import { iSValidField } from '../../../../infra/decorators/transform/transform-params';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import type { Blog } from '../../../../settings';
-import type { UserAccount } from '../../../auth/infrastructure/settings';
 import type { Comment } from '../../../comments/domain/entities/comment.entity';
 import { CreatePostDto } from '../../api/models/dto/post.dto.model';
 import type { PostReactionCounts } from './post-reaction-counts.entity';
 import type { PostReaction } from './post-reactions.entity';
 import { UpdateBloggerPostDto } from '../../api/models/input.posts.models/create.post.model';
+import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
 
 @Entity()
 export class Post extends BaseEntity {

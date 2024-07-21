@@ -2,49 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
-  ReactionPostDto,
   LikesStatuses,
+  ReactionPostDto,
 } from '../../../domain/reaction.models';
 import { UpdatePostDto } from '../api/models/input.posts.models/create.post.model';
-import { PostReactionCounts } from '../domain/entities/post-reaction-counts.entity';
 import { PostReaction } from '../domain/entities/post-reactions.entity';
 import { Post } from '../domain/entities/post.entity';
-import { OutputId } from '../../../domain/output.models';
 
 @Injectable()
 export class PostsRepository {
   constructor(
     @InjectRepository(Post) private readonly posts: Repository<Post>,
-    @InjectRepository(PostReactionCounts)
+    @InjectRepository(PostReaction)
     private readonly postReactions: Repository<PostReaction>,
     @InjectDataSource() private dataSource: DataSource,
   ) {}
 
-  // async createPost(
-  //   postDto: Post,
-  // ): Promise<OutputId | null> {
-  //   try {
-  //     const { title, short_description, content, blogId, blog_title } =
-  //       postDto.createPostDto;
-
-  //     const post = this.posts.create({
-  //       blogId,
-  //       blog_title,
-  //       title,
-  //       short_description,
-  //       content,
-  //     });
-
-  //     const result = await this.posts.save(post);
-
-  //     return {
-  //       id: result.id,
-  //     };
-  //   } catch (error) {
-  //     console.error(`Database fails during save post sql operate ${error}`);
-  //     return null;
-  //   }
-  // }
   async save(post: Post, manager: EntityManager): Promise<Post> {
     try {
       return await manager.save(Post, post);
@@ -60,17 +33,17 @@ export class PostsRepository {
     try {
       const result = await this.postReactions
         .createQueryBuilder('pr')
-        .select('reactionType')
-        .where('pr.user_id = :userId', { userId })
-        .andWhere('pr.post_id = :postId', { postId })
-        .getRawOne();
+        .select('pr.reactionType')
+        .where('pr.user = :userId', { userId })
+        .andWhere('pr.post = :postId', { postId })
+        .getOne();
 
       if (!result) return null;
 
       return result.reactionType;
     } catch (error) {
-      console.error(
-        `Database fails operate with find user's reactions on post`,
+      console.log(
+        `Database fails operate with find user's reactions on post${error}`,
       );
       return null;
     }
@@ -117,30 +90,13 @@ export class PostsRepository {
         .orUpdate(['reactionType'], ['userId', 'postId'])
         .execute();
 
-      // await this.postReactionCounts
-      //   .createQueryBuilder('postReactionCounts')
-      //   .insert()
-      //   .values({
-      //     post: {
-      //       id: postId,
-      //     },
-      //     likes_count: likesCount,
-      //     dislikes_count: dislikesCount,
-      //   })
-      //   .orUpdate(['likes_count', 'dislikes_count'], ['post_id'])
-      //   .setParameters({
-      //     excludedDislikesCount:` post_reaction_counts.likes_count + ${dislikesCount}`,
-      //     excludedLikesCount: `post_reaction_counts.likes_count + ${likesCount}`,
-      //   })
-      //   .execute();
-
       const updateCounterQuery = `
-      INSERT INTO post_reaction_counts (post_id, likes_count, dislikes_count)
-      VALUES ($1, $2, $3)
-      ON CONFLICT (post_id) DO UPDATE SET
-        likes_count = post_reaction_counts.likes_count + EXCLUDED.likes_count,
-        dislikes_count = post_reaction_counts.dislikes_count + EXCLUDED.dislikes_count
-    `;
+        INSERT INTO post_reaction_counts (post_id, likes_count, dislikes_count)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (post_id) DO UPDATE SET
+          likes_count = post_reaction_counts.likes_count + EXCLUDED.likes_count,
+          dislikes_count = post_reaction_counts.dislikes_count + EXCLUDED.dislikes_count
+      `;
 
       await this.dataSource.query(updateCounterQuery, [
         postId,
@@ -173,4 +129,5 @@ export class PostsRepository {
       return null;
     }
   }
+  
 }

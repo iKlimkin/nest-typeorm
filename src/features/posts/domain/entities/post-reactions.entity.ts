@@ -5,7 +5,7 @@ import type { UserAccount } from '../../../admin/domain/entities/user-account.en
 import type { Post } from './post.entity';
 
 @Entity()
-// @Unique(['user', 'post'])
+@Unique(['user', 'post'])
 export class PostReaction extends BaseEntity {
   @Column()
   reactionType: LikesStatuses;
@@ -17,7 +17,7 @@ export class PostReaction extends BaseEntity {
   @JoinColumn()
   post: Post;
 
-  @ManyToOne('UserAccount', 'postReactions')
+  @ManyToOne('UserAccount', 'postReactions', { onDelete: 'NO ACTION' })
   @JoinColumn()
   user: UserAccount;
 }

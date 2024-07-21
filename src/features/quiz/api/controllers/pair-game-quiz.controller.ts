@@ -14,11 +14,7 @@ import {
 import { CommandBus } from '@nestjs/cqrs';
 import { RouterPaths } from '../../../../../test/tools/helpers/routing';
 import { ValidateIdPipe } from '../../../../infra/pipes/id-validate.pipe';
-import {
-  LayerNoticeInterceptor,
-  PaginationViewModel,
-  handleErrors,
-} from '../../../blogs/api/controllers';
+
 import {
   AccessTokenGuard,
   CurrentUserInfo,
@@ -41,6 +37,9 @@ import {
   QuizPairViewType,
 } from '../models/output.models.ts/view.models.ts/quiz-game.view-type';
 import { QuizQueryRepo } from '../models/query-repositories/quiz.query.repo';
+import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
+import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 
 @Controller(RouterPaths.quiz)
 export class PairGameQuizController {
