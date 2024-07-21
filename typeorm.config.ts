@@ -1,23 +1,25 @@
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import {
-  TemporaryUserAccount,
   Blog,
-  Post,
-  Comment,
-  UserSession,
-  PostReaction,
-  PostReactionCounts,
   CommentReaction,
   CommentReactionCounts,
-  UserAccount,
-  QuizAnswer,
-  QuizGame,
-  QuizQuestion,
-  QuizPlayerProgress,
-  QuizCorrectAnswer,
   CurrentGameQuestion,
-} from './src/settings';
+  Comment,
+  Post,
+  PostReaction,
+  PostReactionCounts,
+  QuizAnswer,
+  QuizCorrectAnswer,
+  QuizGame,
+  QuizPlayerProgress,
+  QuizQuestion,
+  TemporaryUserAccount,
+  UserAccount,
+  UserBans,
+  UserBloggerBans,
+  UserSession,
+} from '.';
 
 config();
 
@@ -32,6 +34,8 @@ export const getEntities = () => [
   CommentReaction,
   CommentReactionCounts,
   UserAccount,
+  UserBans,
+  UserBloggerBans,
   UserSession,
   TemporaryUserAccount,
   QuizAnswer,
