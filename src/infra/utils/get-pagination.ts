@@ -1,6 +1,7 @@
 import {
   BaseFilter,
   DefaultSortValues,
+  SortDirections,
 } from '../../domain/sorting-base-filter';
 import { publishedStatuses } from '../../features/quiz/api/models/input.models/statuses.model';
 
@@ -9,14 +10,14 @@ enum sortDirections {
   DESC = 'DESC',
 }
 
-type SortDirections = keyof typeof sortDirections;
+type SortDirectionsType = keyof typeof sortDirections;
 
 export type PaginationType = {
   pageNumber: number;
   pageSize: number;
   skip: number;
   sortBy: string;
-  sortDirection: SortDirections;
+  sortDirection: SortDirectionsType;
   sort?: string[];
 };
 
@@ -33,13 +34,14 @@ interface CustomOutputFilter {
 export const getPagination = <T extends CustomFilter>(
   inputData: T,
 ): PaginationType & CustomOutputFilter => {
-  let sortDirection: SortDirections;
+  let sortDirection: SortDirectionsType;
   let sortBy: string;
   let sort: string[];
 
-  sortDirection = inputData.sortDirection === 'asc' ? 'ASC' : 'DESC';
-  sortBy = inputData.sortBy || 'created_at';
-  sort = inputData.sort || DefaultSortValues;
+  sortDirection =
+    inputData?.sortDirection === SortDirections.asc ? 'ASC' : 'DESC';
+  sortBy = inputData?.sortBy || 'created_at';
+  sort = inputData?.sort || DefaultSortValues;
 
   const parsedPageNumber = parseInt(inputData.pageNumber, 10);
   const pageNumber = !isNaN(parsedPageNumber)
