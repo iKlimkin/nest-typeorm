@@ -11,23 +11,21 @@ import { UpdateQuestionData } from '../../../src/features/quiz/api/models/input.
 import {
   GameStatsData,
   PlayerStatsView,
-  UserStats,
 } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game-analyze';
 import { QuizPairViewType } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game.view-type';
 import { QuizQuestionViewType } from '../../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
-import {
-  CurrentGameQuestion,
-  QuizAnswer,
-  QuizCorrectAnswer,
-  QuizGame,
-  QuizPlayerProgress,
-  QuizQuestion,
-} from '../../../src/settings';
 import { ApiRouting } from '../routes/api.routing';
 import {
   QuizGamesQueryFilter,
   StatsQueryFilter,
 } from '../../../src/features/quiz/api/models/input.models/quiz-games-query.filter';
+import { QuizQuestion } from '../../../src/features/quiz/domain/entities/quiz-questions.entity';
+import { QuizCorrectAnswer } from '../../../src/features/quiz/domain/entities/quiz-correct-answers.entity';
+import { QuizGame } from '../../../src/features/quiz/domain/entities/quiz-game.entity';
+import { QuizAnswer } from '../../../src/features/quiz/domain/entities/quiz-answer.entity';
+import { CurrentGameQuestion } from '../../../src/features/quiz/domain/entities/current-game-questions.entity';
+import { QuizPlayerProgress } from '../../../src/settings';
+
 
 export type QuestionsAndAnswersDB = {
   savedQuestion: QuizQuestion;

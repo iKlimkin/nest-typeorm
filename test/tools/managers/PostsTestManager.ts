@@ -1,4 +1,4 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import {
   LikeStatusType,
@@ -7,18 +7,43 @@ import {
 import { CreatePostModel } from '../../../src/features/posts/api/models/input.posts.models/create.post.model';
 import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
 import { RouterPaths } from '../helpers/routing';
-import { SAViewType } from '../../../src/features/admin/api/models/userAdmin.view.models/userAdmin.view.model';
+import { SAViewType } from '../../../src/features/admin/api/models/user.view.models/userAdmin.view-type';
 import { CommentsViewModel } from '../../../src/features/comments/api/models/comments.view.models/comments.view-model.type';
+import { BaseTestManager } from './BaseTestManager';
+import { PostsRouting } from '../routes/posts.routing';
+import { PaginationViewModel } from '../../../src/domain/sorting-base-filter';
+import { SuperTestBody } from '../models/body.response.model';
+import { CommentsQueryFilter } from '../../../src/features/comments/api/models/output.comment.models/comment-query.filter';
+import { constants, feedbacksConstants } from '../helpers/constants';
 
-type CreationCommentData = {
-  user: SAViewType;
-  token: string;
-  post: PostViewModelType;
+export type CreationCommentData = {
+  user?: SAViewType;
+  accessToken: string;
+  postId: string;
+  content: string;
 };
 
-export class PostsTestManager {
-  constructor(protected readonly app: INestApplication) {}
-  private application = this.app.getHttpServer();
+export type CommentInputData = CreationCommentData & {
+  likeStatus?: LikesStatuses;
+  likesCount?: number;
+  dislikesCount?: number;
+};
+
+type CreateTestCommentData = {
+  content: string;
+  postId: string;
+  accessToken: string;
+};
+
+export class PostsTestManager extends BaseTestManager {
+  // protected readonly application: INestApplication<HttpServer>;
+  constructor(
+    protected readonly app: INestApplication,
+    protected readonly routing: PostsRouting,
+  ) {
+    super(routing, app);
+    // this.application = this.app.getHttpServer();
+  }
 
   createInputData(field?: CreatePostModel | any): CreatePostModel {
     if (!field) {
@@ -37,18 +62,23 @@ export class PostsTestManager {
       };
     }
   }
-
-  checkPostsBeforeTests = async () =>
-    await request(this.application)
-      .get(RouterPaths.posts)
-      .auth('admin', 'qwerty', { type: 'basic' })
-      .expect(HttpStatus.CREATED, {
-        pagesCount: 0,
-        page: 1,
-        pageSize: 10,
-        totalCount: 0,
-        items: [],
-      });
+  createCommentData(
+    field?: Partial<CreateTestCommentData>,
+  ): CreateTestCommentData {
+    let inputData = {};
+    if (!field) {
+      inputData['content'] = '';
+      inputData['postId'] = '';
+      inputData['accessToken'] = '';
+    } else {
+      inputData['content'] =
+        field.content || 'test content to create a comment';
+      inputData['postId'] = field.postId || '';
+      inputData['accessToken'] =
+        field.accessToken || constants.inputData.expiredAccessToken;
+    }
+    return inputData as CreateTestCommentData;
+  }
 
   async createPost(
     inputData: CreatePostModel,
@@ -65,34 +95,62 @@ export class PostsTestManager {
 
   async createComment(
     inputData: CreationCommentData,
-    content: string,
-    expectedStatus: number = HttpStatus.CREATED,
+    expectedStatus = HttpStatus.CREATED,
   ): Promise<{ comment: CommentsViewModel }> {
+    const { accessToken, content, postId } = inputData;
     const response = await request(this.application)
-      .post(`${RouterPaths.posts}/${inputData.post.id}/comments`)
-      .auth(inputData.token, { type: 'bearer' })
+      .post(this.routing.createComment(postId))
+      .auth(accessToken, this.constants.authBearer)
       .send({ content })
       .expect(expectedStatus);
 
-    if (response.status === HttpStatus.CREATED) {
-      expect(response.body).toEqual({
-        id: expect.any(String),
-        content: content,
-        commentatorInfo: {
-          userId: inputData.user.id,
-          userLogin: inputData.user.login,
-        },
-        createdAt: expect.any(String),
-        likesInfo: {
-          likesCount: 0,
-          dislikesCount: 0,
-          myStatus: LikesStatuses.None,
-        },
-      } as CommentsViewModel);
-    }
     const comment = response.body;
 
     return { comment };
+  }
+
+  async createComments(
+    accessToken: string,
+    postId: string,
+    numberOfComments = 2,
+  ): Promise<CommentsViewModel[]> {
+    let comments: CommentsViewModel[] = [];
+
+    for (let i = 0; i < numberOfComments; i++) {
+      const inputContent = feedbacksConstants.createdContent;
+      const commentData = {
+        content: inputContent[i > 4 && i < 10 ? i - inputContent.length : 0],
+        postId,
+        accessToken,
+      };
+
+      const { comment } = await this.createComment(commentData);
+
+      comments.push(comment);
+    }
+
+    return comments;
+  }
+
+  async getCommentsForTheCurrentPost(
+    postId: string,
+    query?: Partial<CommentsQueryFilter>,
+    accessToken?: string,
+    expectStatus = HttpStatus.OK,
+  ): Promise<PaginationViewModel<CommentsViewModel>> {
+    let commentsPaging: PaginationViewModel<CommentsViewModel>;
+    await request(this.application)
+      .get(this.routing.getComments(postId))
+      .auth(accessToken, this.constants.authBearer)
+      .query(query)
+      .expect(expectStatus)
+      .expect(
+        ({ body }: SuperTestBody<PaginationViewModel<CommentsViewModel>>) => {
+          commentsPaging = body;
+        },
+      );
+
+    return commentsPaging;
   }
 
   async updatePost(
@@ -113,55 +171,42 @@ export class PostsTestManager {
 
   async getPostById(
     postId: string,
-    token?: string | null,
-    status: LikeStatusType = LikesStatuses.None,
-    expectStatus: number = HttpStatus.OK,
-  ) {
-    const response = await request(this.application)
-      .get(`${RouterPaths.posts}/${postId}`)
-      .auth(token || 'any', { type: 'bearer' })
-      .expect(expectStatus);
+    accessToken?: string,
+    expectStatus = HttpStatus.OK,
+  ): Promise<PostViewModelType> {
+    let postViewModel: PostViewModelType;
+    await request(this.application)
+      .get(this.routing.getPost(postId))
+      .auth(accessToken || 'token', this.constants.authBearer)
+      .expect(expectStatus)
+      .expect(({ body }: SuperTestBody<PostViewModelType>) => {
+        postViewModel = body;
+      });
 
-    const post: PostViewModelType = response.body;
-
-    expect(post.extendedLikesInfo.myStatus).toBe(status);
-
-    return post;
+    return postViewModel;
   }
 
   async likeStatusOperations(
     postId: string | PostViewModelType[],
     token: string,
-    status: LikeStatusType | string = LikesStatuses.None,
-    expectStatus: number = HttpStatus.NO_CONTENT,
+    status = LikesStatuses.None,
+    expectStatus = HttpStatus.NO_CONTENT,
   ) {
     if (Array.isArray(postId)) {
       for (const post of postId) {
         await request(this.application)
           .put(`${RouterPaths.posts}/${post.id}/like-status`)
-          .auth(token, { type: 'bearer' })
+          .auth(token, this.constants.authBearer)
           .send({ likeStatus: status })
           .expect(expectStatus);
       }
     } else {
       await request(this.application)
-        .put(`${RouterPaths.posts}/${postId}/like-status`)
-        .auth(token, { type: 'bearer' })
+        .put(this.routing.updateReaction(postId))
+        .auth(token, this.constants.authBearer)
         .send({ likeStatus: status })
         .expect(expectStatus);
     }
-  }
-
-  checkPostData(responseModel: any, expectedResult: any) {
-    expect(responseModel).toEqual(expectedResult);
-  }
-
-  async checkLength(totalCount: number) {
-    const { body } = await request(this.application).get(
-      `${RouterPaths.posts}`,
-    );
-
-    expect(body.totalCount).toBe(totalCount);
   }
 
   async deletePost(postId: number) {

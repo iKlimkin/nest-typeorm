@@ -3,46 +3,41 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import {
-  LikeStatusType,
-  LikesStatuses,
-} from '../../../src/domain/reaction.models';
-import {
-  BlogViewModelType,
-  CreateBlogInputDto,
-  CreationPostDtoByBlogId,
-  PaginationViewModel,
-  PostViewModelType,
-  SABlogsViewType,
-  SortDirections,
-  UpdateBlogInputDto,
-} from '../../../src/features/blogs/api/controllers';
-import {
   BlogType,
   BlogsTypeWithId,
 } from '../../../src/features/blogs/api/models/output.blog.models/blog.models';
 import { ErrorsMessages } from '../../../src/infra/utils/error-handler';
+import { RouterPaths } from '../helpers/routing';
 import {
   blogsData,
   createdPostStructureConsistency,
 } from '../helpers/structure-validation.helpers';
 import { SuperTestBody } from '../models/body.response.model';
-import { BlogsRouting } from '../routes/blogs.routing';
-import { Blog, Post } from '../../../src/settings';
-import { PathMappings, RouterPaths } from '../helpers/routing';
 import { ApiRouting } from '../routes/api.routing';
+import { BlogsRouting } from '../routes/blogs.routing';
+import { BaseTestManager } from './BaseTestManager';
+import { CreateBlogInputDto } from '../../../src/features/blogs/api/models/input.blog.models/create.blog.model';
+import { UpdateBlogInputDto } from '../../../src/features/blogs/api/models/input.blog.models/update-blog-models';
+import {
+  BlogViewModelType,
+  SABlogsViewType,
+} from '../../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
+import {
+  PaginationViewModel,
+  SortDirections,
+} from '../../../src/domain/sorting-base-filter';
+import { CreationPostDtoByBlogId } from '../../../src/features/posts/api/models/input.posts.models/create.post.model';
+import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
+import { Blog } from '../../../src/features/blogs/domain/entities/blog.entity';
+import { Post } from '../../../src/features/posts/domain/entities/post.entity';
 
-export const authBearer: { type: 'bearer' } = { type: 'bearer' };
-export const authBasic: { type: 'basic' } = { type: 'basic' };
-const _basicUser = 'admin';
-const _basicPass = 'qwerty';
-
-type SortedByFieldType<T> = {
-  blogs: T[];
+export type SortedByFieldType<T> = {
+  entities: T[];
   field: keyof T;
   sortDirection: SortDirections;
 };
 
-export class BlogTestManager {
+export class BlogTestManager extends BaseTestManager {
   protected readonly application: INestApplication<HttpServer>;
   protected readonly blogRoutes: ApiRouting;
   protected readonly blogRepository: Repository<Blog>;
@@ -51,7 +46,7 @@ export class BlogTestManager {
   protected bloggerManager: BloggerBlogsTestManager;
   protected publicBlogsManager: PublicBlogsTestManager;
   constructor(protected readonly app: INestApplication) {
-    this.application = this.app.getHttpServer();
+    super(new ApiRouting(), app);
     this.blogRepository = this.app.get<Repository<Blog>>(
       getRepositoryToken(Blog),
     );
@@ -113,101 +108,6 @@ export class BlogTestManager {
       };
     }
   }
-
-  checkBlogModel(
-    responseModel:
-      | BlogType
-      | BlogsTypeWithId
-      | PostViewModelType
-      | { errorsMessages: ErrorsMessages[] }
-      | any,
-    expectedResult:
-      | BlogType
-      | BlogsTypeWithId
-      | { errorsMessages: ErrorsMessages[] }
-      | any
-      | string,
-  ) {
-    expect(responseModel).toEqual(expectedResult);
-  }
-
-  assertBlogsMatch(responseData: any, expectedResult: any) {
-    expect(responseData).toEqual(expectedResult);
-  }
-
-  checkSortingByDateField(
-    blogs: BlogViewModelType[],
-    sortDirection: SortDirections,
-    sortField: string,
-  ) {
-    blogs.forEach((blog, i) => {
-      const currentGameField = new Date(blog[sortField]).getTime();
-      const nextGameField = new Date(blogs[i + 1][sortField]).getTime();
-
-      sortDirection === SortDirections.DESC
-        ? expect(nextGameField).toBeLessThanOrEqual(currentGameField)
-        : expect(currentGameField).toBeLessThanOrEqual(nextGameField);
-    });
-  }
-
-  isSortedByField = <T>(sortData: SortedByFieldType<T>) => {
-    let { field, blogs, sortDirection } = sortData;
-    let isSorted = true;
-
-    field = field === 'title' ? ('name' as any) : field;
-
-    for (let i = 0; i < blogs.length - 1; i++) {
-      const currentValue = blogs[i][field];
-      const nextValue = blogs[i + 1][field];
-
-      if (typeof currentValue === 'string' && typeof nextValue === 'string') {
-        if (sortDirection === 'ASC') {
-          if (currentValue.localeCompare(nextValue) > 0) {
-            isSorted = false;
-            break;
-          }
-        } else {
-          if (currentValue.localeCompare(nextValue) < 0) {
-            isSorted = false;
-            break;
-          }
-        }
-      } else if (
-        typeof currentValue === 'number' &&
-        typeof nextValue === 'number'
-      ) {
-        if (sortDirection === SortDirections.ASC) {
-          if (currentValue > nextValue) {
-            isSorted = false;
-            break;
-          }
-        } else {
-          if (currentValue < nextValue) {
-            isSorted = false;
-            break;
-          }
-        }
-      } else if (currentValue instanceof Date && nextValue instanceof Date) {
-        if (sortDirection === SortDirections.ASC) {
-          if (currentValue.getTime() > nextValue.getTime()) {
-            isSorted = false;
-            break;
-          }
-        } else {
-          if (currentValue.getTime() < nextValue.getTime()) {
-            isSorted = false;
-            break;
-          }
-        }
-      } else {
-        throw new Error(
-          `Unsupported field type for sorting: ${typeof currentValue}`,
-        );
-      }
-    }
-
-    expect(isSorted).toBe(true);
-  };
 }
 
 export class PublicBlogsTestManager extends BlogTestManager {
@@ -225,7 +125,7 @@ export class PublicBlogsTestManager extends BlogTestManager {
 
       const response = await request(this.application)
         .get(this.routing.getBlogs())
-        .auth(token, authBearer)
+        .auth(token, this.constants.authBearer)
         .query({
           pageSize: pageSize ? pageSize : '',
           pageNumber: pageNumber ? pageNumber : '',
@@ -246,7 +146,7 @@ export class PublicBlogsTestManager extends BlogTestManager {
   ): Promise<BlogsTypeWithId> {
     const { body } = await request(this.application)
       .post(this.routing.createBlog())
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .send(inputData)
       .expect(expectedStatus);
 
@@ -257,11 +157,11 @@ export class PublicBlogsTestManager extends BlogTestManager {
     inputData: CreationPostDtoByBlogId,
     accessToken: string,
     blogId: string,
-    expectedStatus: number = HttpStatus.CREATED,
+    expectedStatus = HttpStatus.CREATED,
   ): Promise<PostViewModelType> {
     const response = await request(this.application)
       .post(this.routing.createPost(blogId))
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .send(inputData)
       .expect(expectedStatus);
 
@@ -328,7 +228,7 @@ export class PublicBlogsTestManager extends BlogTestManager {
     const blogBefore = await this.getBlogBefore(blogId);
     await request(this.application)
       .put(this.routing.updateBlog(blogId))
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .send(inputData)
       .expect(expectStatus)
       .expect(async ({ body }: SuperTestBody) => {
@@ -352,7 +252,7 @@ export class PublicBlogsTestManager extends BlogTestManager {
     const postBefore = await this.getPostBefore(postId);
     await request(this.application)
       .put(this.routing.updatePost(blogId, postId))
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .send(inputData)
       .expect(expectStatus)
       .expect(async ({ body }: SuperTestBody) => {
@@ -412,7 +312,7 @@ export class PublicBlogsTestManager extends BlogTestManager {
     if (expectStatus !== HttpStatus.NO_CONTENT) {
       return request(this.application)
         .delete(this.routing.deleteBlog(blogId))
-        .auth(accessToken, authBearer)
+        .auth(accessToken, this.constants.authBearer)
         .expect(expectStatus);
     }
 
@@ -422,7 +322,7 @@ export class PublicBlogsTestManager extends BlogTestManager {
 
     await request(this.application)
       .delete(this.routing.deleteBlog(blogId))
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .expect(HttpStatus.NO_CONTENT);
 
     let blogAfterDelete = await this.getBlogByIdDirectly(blogId);
@@ -466,7 +366,11 @@ export class SABlogsTestManager extends BlogTestManager {
     await request(this.application)
       .get(this.routing.getBlogs())
       .query(query)
-      .auth(basicOptions ? _basicUser : '', _basicPass, authBasic)
+      .auth(
+        basicOptions ? this.constants.basicUser : '',
+        this.constants.basicPass,
+        this.constants.authBasic,
+      )
       .expect(expectedStatus)
       .expect(
         ({ body }: SuperTestBody<PaginationViewModel<SABlogsViewType>>) => {
@@ -488,7 +392,11 @@ export class SABlogsTestManager extends BlogTestManager {
     });
     await request(this.application)
       .put(this.routing.bindBlog(blogId, userId))
-      .auth(_basicUser, _basicPass, authBasic)
+      .auth(
+        this.constants.basicUser,
+        this.constants.basicPass,
+        this.constants.authBasic,
+      )
       .expect(expectStatus)
       .expect(async ({ body }: SuperTestBody) => {
         if (expectStatus === HttpStatus.NO_CONTENT) {
@@ -519,7 +427,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
 
       const response = await request(this.application)
         .get(this.routing.getBlogs())
-        .auth(token, authBearer)
+        .auth(token, this.constants.authBearer)
         .query({
           pageSize: pageSize ? pageSize : '',
           pageNumber: pageNumber ? pageNumber : '',
@@ -540,7 +448,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
   ): Promise<BlogsTypeWithId> {
     const { body } = await request(this.application)
       .post(this.routing.createBlog())
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .send(inputData)
       .expect(expectedStatus);
 
@@ -555,7 +463,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
   ): Promise<PostViewModelType> {
     const response = await request(this.application)
       .post(this.routing.createPost(blogId))
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .send(inputData)
       .expect(expectedStatus);
 
@@ -622,7 +530,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
     const blogBefore = await this.getBlogBefore(blogId);
     await request(this.application)
       .put(this.routing.updateBlog(blogId))
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .send(inputData)
       .expect(expectStatus)
       .expect(async ({ body }: SuperTestBody) => {
@@ -646,7 +554,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
     const postBefore = await this.getPostBefore(postId);
     await request(this.application)
       .put(this.routing.updatePost(blogId, postId))
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .send(inputData)
       .expect(expectStatus)
       .expect(async ({ body }: SuperTestBody) => {
@@ -676,10 +584,6 @@ export class BloggerBlogsTestManager extends BlogTestManager {
     expect(responseModel).toEqual(expectedResult);
   }
 
-  assertBlogsMatch(responseData: any, expectedResult: any) {
-    expect(responseData).toEqual(expectedResult);
-  }
-
   private getBlogByIdDirectly = async (blogId: string) =>
     await this.blogRepository.findOneBy({ id: blogId });
   private getPostByIdDirectly = async (postId: string) =>
@@ -689,7 +593,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
     let blogs: PaginationViewModel<BlogViewModelType>;
     await request(this.application)
       .get(this.routing.getBlogs())
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .expect(expectedStatus)
       .expect(
         ({ body }: SuperTestBody<PaginationViewModel<BlogViewModelType>>) => {
@@ -703,17 +607,30 @@ export class BloggerBlogsTestManager extends BlogTestManager {
   async getBloggerPosts(
     blogId: string,
     accessToken: string,
-    expectStatus: number = HttpStatus.OK,
-  ) {
-    const {
-      body: { items: postViewModels },
-    } = await request(this.application)
+    expectStatus = HttpStatus.OK,
+  ): Promise<PaginationViewModel<PostViewModelType>> {
+    let postsPaging: PaginationViewModel<PostViewModelType>;
+    await request(this.application)
       .get(this.routing.getPosts(blogId))
-      .auth(accessToken, authBearer)
-      .expect(expectStatus);
+      .auth(accessToken, this.constants.authBearer)
+      .expect(expectStatus)
+      .expect(
+        ({ body }: SuperTestBody<PaginationViewModel<PostViewModelType>>) => {
+          if (expectStatus === HttpStatus.OK) {
+            expect(body).toEqual({
+              pagesCount: expect.any(Number),
+              page: expect.any(Number),
+              pageSize: expect.any(Number),
+              totalCount: expect.any(Number),
+              items: expect.any(Array),
+            });
+            postsPaging = body;
+          }
+        },
+      );
 
     if (expectStatus === HttpStatus.OK) {
-      postViewModels.forEach((post: PostViewModelType) => {
+      postsPaging.items.forEach((post: PostViewModelType) => {
         expect(post).toEqual({
           id: expect.any(String),
           title: expect.any(String),
@@ -731,21 +648,8 @@ export class BloggerBlogsTestManager extends BlogTestManager {
         } as PostViewModelType);
       });
     }
+    return postsPaging;
   }
-
-  expectAmountOfBlogsOrPosts = async (
-    expectLength: number,
-    accessToken: string,
-    blogId?: string,
-  ) =>
-    await request(this.application)
-      .get(!blogId ? this.routing.getBlogs() : this.routing.getPosts(blogId))
-      .auth(accessToken, authBearer)
-      .expect(
-        ({ body }: SuperTestBody<PaginationViewModel<BlogViewModelType>>) => {
-          expect(body.items).toHaveLength(expectLength);
-        },
-      );
 
   async deleteBlog(
     blogId: string,
@@ -755,7 +659,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
     if (expectStatus !== HttpStatus.NO_CONTENT) {
       return request(this.application)
         .delete(this.routing.deleteBlog(blogId))
-        .auth(accessToken, authBearer)
+        .auth(accessToken, this.constants.authBearer)
         .expect(expectStatus);
     }
 
@@ -765,7 +669,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
 
     await request(this.application)
       .delete(this.routing.deleteBlog(blogId))
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .expect(HttpStatus.NO_CONTENT);
 
     let blogAfterDelete = await this.getBlogByIdDirectly(blogId);
@@ -781,7 +685,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
     if (expectStatus !== HttpStatus.NO_CONTENT) {
       return request(this.application)
         .delete(this.routing.deletePost(blogId, postId))
-        .auth(accessToken, authBearer)
+        .auth(accessToken, this.constants.authBearer)
         .expect(expectStatus);
     }
 
@@ -791,7 +695,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
 
     await request(this.application)
       .delete(this.routing.deletePost(blogId, postId))
-      .auth(accessToken, authBearer)
+      .auth(accessToken, this.constants.authBearer)
       .expect(expectStatus);
 
     let blogAfterDelete = await this.getPostByIdDirectly(postId);

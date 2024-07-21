@@ -27,7 +27,7 @@ aDescribe(skipSettings.for('blogs'))('BlogsController (e2e)', () => {
 
     app = testSettings.app;
     httpServer = testSettings.httpServer;
-    dataSource = testSettings.testingAppModule.get<DataSource>(DataSource);
+    dataSource = testSettings.testingAppModule.get(DataSource);
     const { createTestManager } = new BlogTestManager(app);
     const createManager = createTestManager.bind(new BlogTestManager(app));
 

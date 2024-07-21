@@ -5,11 +5,13 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { AppModule } from '../../../src/app.module';
 import { EmailManager } from '../../../src/infra/managers/email-manager';
-import { QuizAnswer, QuizQuestion } from '../../../src/settings';
 import { applyAppSettings } from '../../../src/settings/apply-app.settings';
 import { ConfigurationType } from '../../../src/settings/config/configuration';
 import { EmailMockService } from '../dummies/email.manager.mock';
 import { UsersTestManager } from '../managers/UsersTestManager';
+import { ApiRouting } from '../routes/api.routing';
+import { QuizQuestion } from '../../../src/features/quiz/domain/entities/quiz-questions.entity';
+import { QuizAnswer } from '../../../src/features/quiz/domain/entities/quiz-answer.entity';
 
 const truncateDBTables = async (app: INestApplication, ownerName: string) => {
   const dataSource = await app.resolve(DataSource);
@@ -73,8 +75,8 @@ export const initSettings = async (
     applyAppSettings(app);
 
     await app.init();
-
-    const usersTestManager = new UsersTestManager(app);
+    const apiRouting = new ApiRouting();
+    const usersTestManager = new UsersTestManager(app, apiRouting.users);
 
     const httpServer = app.getHttpServer();
     const dataSource = testingAppModule.get(DataSource);
@@ -88,6 +90,7 @@ export const initSettings = async (
       usersTestManager,
       testingAppModule,
       dataSource,
+      apiRouting,
     };
   } catch (error) {
     console.error('initSettings:', error);

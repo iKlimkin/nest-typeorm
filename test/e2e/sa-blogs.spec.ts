@@ -1,12 +1,9 @@
 import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
-import {
-  BlogsQueryFilter,
-  BlogViewModelType,
-  SABlogsViewType,
-  SortDirections,
-} from '../../src/features/blogs/api/controllers';
+import { SortDirections } from '../../src/domain/sorting-base-filter';
+import { BlogsQueryFilter } from '../../src/features/blogs/api/models/input.blog.models/blogs-query.filter';
+import { SABlogsViewType } from '../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
 import { configureTestSetup } from '../tools/fixtures/setup-environment';
 import { RouterPaths } from '../tools/helpers/routing';
 import {
@@ -98,8 +95,8 @@ aDescribe(skipSettings.for('SABlogs'))('SABlogsController (e2e)', () => {
       );
       const blogsWithQuery = paginationBlogsResultWithQuery.items;
 
-      saBlogTestManager.isSortedByField({
-        blogs: blogsWithQuery,
+      saBlogTestManager.isSortedByField<SABlogsViewType>({
+        entities: blogsWithQuery,
         field: queryOptions.sortBy as 'name',
         sortDirection: queryOptions.sortDirection,
       });

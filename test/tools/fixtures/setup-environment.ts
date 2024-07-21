@@ -1,16 +1,21 @@
-import { PostViewModelType } from '../../../src/features/blogs/api/controllers';
+import { CommentsViewModel } from '../../../src/features/comments/api/controllers';
+import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
 import { BloggerBlogsTestManager } from '../managers/BlogsTestManager';
+import { FeedbacksTestManager } from '../managers/FeedbacksTestManager';
+import { PostsTestManager } from '../managers/PostsTestManager';
 import { UsersTestManager } from '../managers/UsersTestManager';
 
 interface PrepareTestOptions {
   users?: { quantity?: number };
   blogs?: { quantity?: number } | boolean;
   posts?: { quantity?: number } | boolean;
+  comments?: { quantity?: number } | boolean;
 }
 const defaultOptions = {
   users: { quantity: 3 },
   blogs: { prepare: false, quantity: 2 },
   posts: { prepare: false, quantity: 3 },
+  comments: { prepare: false, quantity: 2 },
 };
 
 const resolveOption = (
@@ -30,6 +35,7 @@ export const configureTestSetup = async (
   testManagers: () => {
     usersTestManager: UsersTestManager;
     bloggerTestManager?: BloggerBlogsTestManager;
+    postsTestManager?: PostsTestManager;
   },
   options: PrepareTestOptions = {},
 ) => {
@@ -39,9 +45,10 @@ export const configureTestSetup = async (
     users: { ...defaultOptions.users, ...options.users },
     blogs: resolveOption(options.blogs, defaultOptions.blogs),
     posts: resolveOption(options.posts, defaultOptions.posts),
+    comments: resolveOption(options.comments, defaultOptions.comments),
   };
 
-  const { users, blogs, posts } = finalOptions;
+  const { users, blogs, posts, comments } = finalOptions;
 
   await createUsers(testManagers().usersTestManager, users.quantity);
 
@@ -52,8 +59,20 @@ export const configureTestSetup = async (
   if (posts.prepare && blogs.prepare) {
     await createBlogPosts(testManagers().bloggerTestManager, posts.quantity);
   } else if (posts.prepare && !blogs.prepare) {
+    if (!(testManagers().bloggerTestManager instanceof BloggerBlogsTestManager))
+      throw new Error('No blogger manager provided');
+
     await createBlogs(testManagers().bloggerTestManager, blogs.quantity);
     await createBlogPosts(testManagers().bloggerTestManager, posts.quantity);
+  } else if (comments.prepare) {
+    await createBlogs(testManagers().bloggerTestManager, blogs.quantity);
+    await createBlogPosts(testManagers().bloggerTestManager, posts.quantity);
+    if (!testManagers().postsTestManager)
+      throw new Error('No posts test manager provided');
+    await createPostComments(
+      testManagers().postsTestManager,
+      comments.quantity,
+    );
   }
 };
 
@@ -63,6 +82,7 @@ const createUsers = async (manager: UsersTestManager, userQuantity: number) => {
   const [firstPlayerToken, secondPlayerToken, thirdPlayerToken] = accessTokens;
 
   expect.setState({
+    accessTokens,
     firstPlayerToken,
     secondPlayerToken,
     thirdPlayerToken,
@@ -119,5 +139,46 @@ const createBlogPosts = async (
     posts: allPosts,
     postByFirstToken,
     postBySecondToken,
+  });
+};
+const createPostComments = async (
+  manager: PostsTestManager,
+  commentsQuantity: number,
+) => {
+  const {
+    firstPlayerToken,
+    secondPlayerToken,
+    postByFirstToken,
+    postBySecondToken,
+    users,
+  } = expect.getState();
+  const tokens = [firstPlayerToken, secondPlayerToken];
+  const posts = [postByFirstToken, postBySecondToken];
+
+  let allComments: CommentsViewModel[] = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const postId = posts[i].id;
+    console.log(postId);
+
+    const comment = await manager.createComments(
+      tokens[i],
+      posts[i].id,
+      commentsQuantity,
+    );
+    allComments = allComments.concat(comment);
+  }
+
+  const commentByFirstToken = allComments.filter(
+    (comment) => comment.commentatorInfo.userId === users[0].id,
+  )[0];
+  const commentBySecondToken = allComments.filter(
+    (comment) => comment.commentatorInfo.userId === users[1].id,
+  )[0];
+
+  expect.setState({
+    comments: allComments,
+    commentByFirstToken,
+    commentBySecondToken,
   });
 };

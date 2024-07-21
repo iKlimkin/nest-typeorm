@@ -6,16 +6,15 @@ export const skipSettings = {
 
   quiz: skip,
   userAuth: skip,
-  sa: skip,
-  userAuthSql: skip,
+  SAUsers: run,
   posts: skip,
   appTests: skip,
   SABlogs: skip,
-  bloggerBlogs: run,
+  bloggerBlogs: skip,
+  bloggerUsers: skip,
   blogs: skip,
   security: skip,
   app: skip,
-  staging: skip,
 
   for(testName: TestNamesE2E): boolean {
     if (!this.run_all_tests) return false;
@@ -25,12 +24,13 @@ export const skipSettings = {
 
 enum e2eTestNamesEnum {
   app = 'app',
+  bloggerUsers = 'bloggerUsers',
   appTests = 'appTests',
   userAuth = 'userAuth',
   userAuthSql = 'userAuthSql',
   posts = 'posts',
   security = 'security',
-  sa = 'sa',
+  SAUsers = 'saUsers',
   blogs = 'blogs',
   bloggerBlogs = 'bloggerBlogs',
   SABlogs = 'SABlogs',

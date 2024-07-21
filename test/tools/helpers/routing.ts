@@ -1,10 +1,11 @@
 export type PathMappings = keyof typeof RouterPaths;
-
+export type RouterPathsType = (typeof RouterPaths)[keyof typeof RouterPaths];
 export const RouterPaths = {
   comments: '/comments',
   blogs: '/blogs',
   SABlogs: '/sa/blogs',
   blogger: '/blogger/blogs',
+  bloggerUsers: '/blogger/users',
   posts: '/posts',
   users: '/sa/users',
   auth: '/auth',

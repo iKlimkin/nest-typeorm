@@ -1,5 +1,5 @@
 import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
-import { BlogViewModelType } from '../../src/features/blogs/api/controllers';
+
 import { configureTestSetup } from '../tools/fixtures/setup-environment';
 import { constants } from '../tools/helpers/constants';
 import { RouterPaths } from '../tools/helpers/routing';
@@ -19,6 +19,11 @@ import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
 import { createExceptions } from '../tools/utils/exceptionHandlers';
 import { initSettings } from '../tools/utils/initSettings';
 import { skipSettings } from '../tools/utils/testsSettings';
+import { PostsTestManager } from '../tools/managers/PostsTestManager';
+import { SATestManager } from '../tools/managers/SATestManager';
+import { BlogViewModelType } from '../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
+import { LikesStatuses } from '../../src/domain/reaction.models';
+import { SortDirections } from '../../src/domain/sorting-base-filter';
 
 aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
   let app: INestApplication;
@@ -27,6 +32,8 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
   let httpServer: HttpServer;
   let paginationModel: PaginationModel<BlogViewModelType>;
   let publicBlogsTestManager: PublicBlogsTestManager;
+  let postsTestManager: PostsTestManager;
+  let saTestManager: SATestManager;
 
   beforeAll(async () => {
     try {
@@ -45,7 +52,8 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       ) as PublicBlogsTestManager;
 
       usersTestManager = settings.usersTestManager;
-
+      postsTestManager = new PostsTestManager(app, settings.apiRouting.posts);
+      saTestManager = new SATestManager(app, settings.apiRouting.SAUsers);
       paginationModel = new PaginationModel();
     } catch (error) {
       console.error(error);
@@ -89,7 +97,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       );
 
       const error = createExceptions(['name']);
-      bloggerTestManager.assertBlogsMatch(res1, error);
+      bloggerTestManager.assertMatch(res1, error);
 
       const inputDataOverLenName = bloggerTestManager.createInputData({
         name: constants.inputData.length16,
@@ -102,7 +110,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       );
 
       const error2 = createExceptions(['name']);
-      bloggerTestManager.assertBlogsMatch(res2, error2);
+      bloggerTestManager.assertMatch(res2, error2);
     });
     it("/blogger/blogs (POST) - shouldn't create blog with incorrect blog description", async () => {
       const { firstPlayerToken } = expect.getState();
@@ -118,7 +126,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       );
 
       const error = createExceptions(['description']);
-      bloggerTestManager.assertBlogsMatch(res1, error);
+      bloggerTestManager.assertMatch(res1, error);
 
       const longDescription = bloggerTestManager.createInputData({
         description: constants.inputData.length501,
@@ -131,7 +139,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       );
 
       const error2 = createExceptions(['description']);
-      bloggerTestManager.assertBlogsMatch(res2, error2);
+      bloggerTestManager.assertMatch(res2, error2);
     });
     it("/blogger/blogs (POST) - shouldn't create blog with incorrect website url", async () => {
       const { firstPlayerToken } = expect.getState();
@@ -147,7 +155,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       );
 
       const error = createExceptions(['websiteUrl']);
-      bloggerTestManager.assertBlogsMatch(res1, error);
+      bloggerTestManager.assertMatch(res1, error);
 
       const longWebsiteUrl = bloggerTestManager.createInputData({
         websiteUrl: constants.inputData.length101,
@@ -160,7 +168,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       );
 
       const error2 = createExceptions(['websiteUrl']);
-      bloggerTestManager.assertBlogsMatch(res2, error2);
+      bloggerTestManager.assertMatch(res2, error2);
 
       const doesNotMatchUrl = bloggerTestManager.createInputData({
         websiteUrl: 'websiteUrl',
@@ -173,7 +181,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       );
 
       const error3 = createExceptions(['websiteUrl']);
-      bloggerTestManager.assertBlogsMatch(res3, error3);
+      bloggerTestManager.assertMatch(res3, error3);
     });
 
     it("/blogger/blogs (POST) - shouldn't create blog with empty body ", async () => {
@@ -187,7 +195,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
         HttpStatus.BAD_REQUEST,
       );
 
-      bloggerTestManager.assertBlogsMatch(newBlog, blogValidationErrors);
+      bloggerTestManager.assertMatch(newBlog, blogValidationErrors);
     });
 
     it('/blogger/blogs (post) - should create blog', async () => {
@@ -198,13 +206,14 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
         firstPlayerToken,
       );
 
-      bloggerTestManager.assertBlogsMatch(blog, blogEqualTo);
+      bloggerTestManager.assertMatch(blog, blogEqualTo);
 
       const expectLength = 1;
-      await bloggerTestManager.expectAmountOfBlogsOrPosts(
-        expectLength,
+      const blogsResponse = await bloggerTestManager.getBloggerBlogs(
         firstPlayerToken,
       );
+      expect(blogsResponse.items.length).toBe(expectLength);
+      expect(blogsResponse.totalCount).toBe(expectLength);
     });
   });
 
@@ -366,7 +375,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
     });
   });
 
-  describe.only('testing get blogs (GET -> "blogger/blogs")', () => {
+  describe('testing get blogs (GET -> "blogger/blogs")', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
     });
@@ -390,7 +399,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       const blogs = blogsResponse.items;
       expect(blogsResponse.totalCount).toBe(8);
 
-      // bloggerTestManager.assertBlogsMatch(blogs, expectLength);
+      // bloggerTestManager.assertMatch(blogs, expectLength);
     });
 
     it('/blogger/blogs (GET) - should return blogs with pagination', async () => {
@@ -401,7 +410,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       //   paginationModel,
       // );
       // const expectLength = 1;
-      // bloggerTestManager.assertBlogsMatch(blogs, expectLength);
+      // bloggerTestManager.assertMatch(blogs, expectLength);
     });
   });
 
@@ -457,8 +466,8 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
 
       const error = createExceptions(['title']);
 
-      bloggerTestManager.assertBlogsMatch(result1, error);
-      bloggerTestManager.assertBlogsMatch(result2, error);
+      bloggerTestManager.assertMatch(result1, error);
+      bloggerTestManager.assertMatch(result2, error);
     });
 
     it(`/blogger/blogs/:blogId/posts (POST) - shouldn't create post with invalid description`, async () => {
@@ -477,7 +486,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
 
       const error = createExceptions(['shortDescription']);
 
-      bloggerTestManager.assertBlogsMatch(result, error);
+      bloggerTestManager.assertMatch(result, error);
     });
 
     it(`/blogs/:blogId/posts (POST) - shouldn't create post with invalid content`, async () => {
@@ -506,8 +515,8 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
 
       const error = createExceptions(['content']);
 
-      bloggerTestManager.assertBlogsMatch(result1, error);
-      bloggerTestManager.assertBlogsMatch(result2, error);
+      bloggerTestManager.assertMatch(result1, error);
+      bloggerTestManager.assertMatch(result2, error);
     });
 
     it(`/blogs/:blogId/posts (POST) - shouldn't create post with all incorrect fields, testing error's messages`, async () => {
@@ -524,7 +533,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
 
       const errors = createExceptions(['title', 'shortDescription', 'content']);
 
-      bloggerTestManager.assertBlogsMatch(result, errors);
+      bloggerTestManager.assertMatch(result, errors);
     });
 
     it(`/blogger/blogs/:blogId/posts (POST) - should create post`, async () => {
@@ -540,14 +549,14 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
       );
 
       const expectAmountOfPosts = 1;
-      await bloggerTestManager.expectAmountOfBlogsOrPosts(
-        expectAmountOfPosts,
+      const postsResponse = await bloggerTestManager.getBloggerPosts(
+        blogByFirstToken.id,
         firstPlayerToken,
-        blogId,
       );
+      expect(postsResponse.items.length).toBe(expectAmountOfPosts);
+      expect(postsResponse.totalCount).toBe(expectAmountOfPosts);
     });
   });
-
   describe('testing update post (PUT)', () => {
     afterAll(async () => {
       await cleanDatabase(httpServer);
@@ -730,7 +739,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
 
   describe('testing get posts', () => {
     afterAll(async () => {
-      await cleanDatabase(httpServer);
+      // await cleanDatabase(httpServer);
     });
 
     beforeAll(async () => {
@@ -739,7 +748,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
           usersTestManager,
           bloggerTestManager,
         }),
-        { posts: { quantity: 10 } },
+        { users: { quantity: 10 }, posts: { quantity: 10 } },
       );
     });
 
@@ -770,7 +779,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
         HttpStatus.NOT_FOUND,
       );
     });
-    it('should receive blogger posts by blog id', async () => {
+    it('should receive blogger posts', async () => {
       const { firstPlayerToken, blogByFirstToken } = expect.getState();
 
       await bloggerTestManager.getBloggerPosts(
@@ -778,6 +787,309 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
         firstPlayerToken,
       );
     });
+    it.skip('test before test get user reaction (<=_=>)', async () => {
+      const {
+        postByFirstToken,
+        postBySecondToken,
+        accessTokens,
+        firstPlayerToken,
+        users,
+      } = expect.getState();
+
+      await postsTestManager.likeStatusOperations(
+        postByFirstToken.id,
+        firstPlayerToken,
+        LikesStatuses.Dislike,
+      );
+
+      await postsTestManager.likeStatusOperations(
+        postByFirstToken.id,
+        firstPlayerToken,
+        LikesStatuses.Like,
+      );
+    });
+    it('testing get posts, with ban user logic', async () => {
+      const {
+        postByFirstToken,
+        postBySecondToken,
+        accessTokens,
+        firstPlayerToken,
+        secondPlayerToken,
+        posts,
+        users,
+      } = expect.getState();
+      // get posts of the same blog
+      const [firstPost, secondPost] = posts.filter(
+        (post) => postByFirstToken.blogId === post.blogId,
+      );
+
+      // five likes and dislikes
+      for (let i = 0; i < 10; i++) {
+        await postsTestManager.likeStatusOperations(
+          firstPost.id,
+          accessTokens[i],
+          i % 2 ? LikesStatuses.Like : LikesStatuses.Dislike,
+        );
+
+        await postsTestManager.likeStatusOperations(
+          secondPost.id,
+          accessTokens[i],
+          i % 2 ? LikesStatuses.Dislike : LikesStatuses.Like,
+        );
+      }
+      const { items: bloggerPosts } = await bloggerTestManager.getBloggerPosts(
+        firstPost.blogId,
+        firstPlayerToken,
+      );
+
+      const analyzedFirstPost = bloggerPosts.find(
+        (post) => post.id === firstPost.id,
+      );
+      const analyzedSecondPost = bloggerPosts.find(
+        (post) => post.id === secondPost.id,
+      );
+
+      expect(
+        analyzedFirstPost.extendedLikesInfo.likesCount &&
+          analyzedFirstPost.extendedLikesInfo.dislikesCount,
+      ).toBe(5);
+      expect(analyzedFirstPost.extendedLikesInfo.myStatus).toBe(
+        LikesStatuses.Dislike,
+      );
+      expect(
+        analyzedSecondPost.extendedLikesInfo.likesCount &&
+          analyzedSecondPost.extendedLikesInfo.dislikesCount,
+      ).toBe(5);
+      expect(analyzedSecondPost.extendedLikesInfo.myStatus).toBe(
+        LikesStatuses.Like,
+      );
+
+      // posts after ban firstUser who created 1 post and gave dis to firstPost and like to secondPost
+      const banReason = saTestManager.createBanRestriction({ isBanned: true });
+      await saTestManager.banUser(users[0].id, banReason);
+      // after ban user cannot use his token
+      await bloggerTestManager.getBloggerPosts(
+        firstPost.blogId,
+        firstPlayerToken,
+        HttpStatus.UNAUTHORIZED,
+      );
+      // FORBIDDEN because firstUser is a blog creator
+      await bloggerTestManager.getBloggerPosts(
+        firstPost.blogId,
+        secondPlayerToken,
+        HttpStatus.FORBIDDEN,
+      );
+
+      const unbanReason = saTestManager.createBanRestriction({
+        isBanned: false,
+      });
+      await saTestManager.banUser(users[0].id, unbanReason);
+      // after ban you should login in system
+      const { accessToken: userTokenAfterUnban } =
+        await usersTestManager.authLogin(users[0]);
+      const { items: bloggerPostsAfterUnban } =
+        await bloggerTestManager.getBloggerPosts(
+          firstPost.blogId,
+          userTokenAfterUnban,
+        );
+      const {
+        extendedLikesInfo: {
+          likesCount: likesFirstPost,
+          dislikesCount: disFirstPost,
+          myStatus: myStatusFirstPostAfter,
+        },
+      } = bloggerPosts.find((post) => post.id === firstPost.id);
+      const {
+        extendedLikesInfo: {
+          likesCount: likesSecondPost,
+          dislikesCount: disSecondPost,
+          myStatus: myStatusSecondPostAfter,
+        },
+      } = bloggerPosts.find((post) => post.id === secondPost.id);
+      // should receive the same quantity of post's likes as before ban
+      expect(
+        analyzedFirstPost.extendedLikesInfo.likesCount &&
+          analyzedFirstPost.extendedLikesInfo.dislikesCount,
+      ).toBe(likesFirstPost && disFirstPost);
+      expect(analyzedFirstPost.extendedLikesInfo.myStatus).toBe(
+        myStatusFirstPostAfter,
+      );
+      expect(
+        analyzedSecondPost.extendedLikesInfo.likesCount &&
+          analyzedSecondPost.extendedLikesInfo.dislikesCount,
+      ).toBe(likesSecondPost && disSecondPost);
+      expect(analyzedSecondPost.extendedLikesInfo.myStatus).toBe(
+        myStatusSecondPostAfter,
+      );
+      // add ban other user who is not a blog creator!
+      // totalCount -1 reactions -1
+      // expect(totalCount).toBe()
+    });
+
+    it(`testing get post's reactions with banned user`, async () => {
+      const {
+        postByFirstToken,
+        postBySecondToken,
+        accessTokens,
+        firstPlayerToken,
+        secondPlayerToken,
+        posts,
+        users,
+      } = expect.getState();
+      const analyzedBlogId = postBySecondToken.blogId;
+      const [firstPost, secondPost] = posts.filter(
+        (post) => analyzedBlogId === post.blogId,
+      );
+
+      const intendedUser = users[5];
+      const targetUserToken = accessTokens[5];
+
+      const targetUserInfo = await usersTestManager.me(
+        intendedUser,
+        targetUserToken,
+      );
+
+      const { items: postsBeforeReactions } =
+        await bloggerTestManager.getBloggerPosts(
+          analyzedBlogId,
+          secondPlayerToken,
+        );
+
+      postsBeforeReactions.forEach((post) => {
+        expect(post.extendedLikesInfo.myStatus).toBe(LikesStatuses.None);
+        expect(
+          post.extendedLikesInfo.likesCount &&
+            post.extendedLikesInfo.dislikesCount,
+        ).toBe(0);
+      });
+
+      console.log({ firstPost, secondPlayerToken });
+
+      // gave four likes firstPost
+      await postsTestManager.likeStatusOperations(
+        firstPost.id,
+        targetUserToken,
+        LikesStatuses.Like,
+      );
+      await postsTestManager.likeStatusOperations(
+        firstPost.id,
+        secondPlayerToken,
+        LikesStatuses.Like,
+      );
+      await postsTestManager.likeStatusOperations(
+        firstPost.id,
+        accessTokens[2],
+        LikesStatuses.Like,
+      );
+      await postsTestManager.likeStatusOperations(
+        firstPost.id,
+        accessTokens[3],
+        LikesStatuses.Like,
+      );
+
+      const { items: postsAfterLikesFirstPost } =
+        await bloggerTestManager.getBloggerPosts(
+          analyzedBlogId,
+          secondPlayerToken,
+        );
+
+      postsAfterLikesFirstPost.forEach((post) => {
+        if (post.id === firstPost.id) {
+          const {
+            extendedLikesInfo: {
+              myStatus,
+              newestLikes,
+              dislikesCount,
+              likesCount,
+            },
+          } = post;
+          expect(myStatus).toBe(LikesStatuses.Like);
+          expect(likesCount).toBe(4);
+          expect(newestLikes.length).toBeLessThanOrEqual(3);
+          expect(dislikesCount).toBe(0);
+          bloggerTestManager.isSortedByField({
+            entities: newestLikes,
+            field: 'addedAt',
+            sortDirection: SortDirections.DESC,
+          });
+          expect(newestLikes).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                userId: expect.any(String),
+                addedAt: expect.any(String),
+                login: expect.any(String),
+              }),
+            ]),
+          );
+        }
+      });
+
+      // gave 2 dis secondPost
+      await postsTestManager.likeStatusOperations(
+        secondPost.id,
+        secondPlayerToken,
+        LikesStatuses.Dislike,
+      );
+
+      await postsTestManager.likeStatusOperations(
+        secondPost.id,
+        targetUserToken,
+        LikesStatuses.Dislike,
+      );
+
+      // banned target user that gave like firstPost and dis secondPost.
+      await saTestManager.banUser(
+        targetUserInfo.userId,
+        saTestManager.createBanRestriction({ isBanned: true }),
+      );
+
+      const { items: postsReactionsAfterBanTargetUser } =
+        await bloggerTestManager.getBloggerPosts(
+          analyzedBlogId,
+          secondPlayerToken,
+        );
+
+      const firstPostAfterBan = postsReactionsAfterBanTargetUser.find(
+        (p) => p.id === firstPost.id,
+      );
+      console.log({ firstPostAfterBan, firstPost });
+
+      expect(firstPostAfterBan.extendedLikesInfo.likesCount).toBe(3);
+      const secondPostAfterBan = postsReactionsAfterBanTargetUser.find(
+        (p) => p.id === secondPost.id,
+      );
+      expect(secondPostAfterBan.extendedLikesInfo.dislikesCount).toBe(1);
+
+      await saTestManager.banUser(
+        targetUserInfo.userId,
+        saTestManager.createBanRestriction({ isBanned: false }),
+      );
+
+      const { items: postsReactionsAfterUnbanTargetUser } =
+        await bloggerTestManager.getBloggerPosts(
+          analyzedBlogId,
+          secondPlayerToken,
+        );
+
+      const {
+        extendedLikesInfo: {
+          likesCount: likesSecondPost,
+          dislikesCount: disSecondPost,
+        },
+      } = postsReactionsAfterUnbanTargetUser.find(
+        (p) => p.id === secondPost.id,
+      );
+      expect(likesSecondPost).toBe(0);
+      expect(disSecondPost).toBe(2);
+
+      const {
+        extendedLikesInfo: { likesCount, dislikesCount },
+      } = postsReactionsAfterUnbanTargetUser.find((p) => p.id === firstPost.id);
+      expect(likesCount).toBe(4);
+      expect(dislikesCount).toBe(0);
+    });
+
+    it('should receive correct info after unban', async () => {});
   });
 });
 
@@ -825,7 +1137,7 @@ aDescribe(skipSettings.for('bloggerBlogs'))('BloggerController (e2e)', () => {
         fieldsToRemove,
       );
 
-      bloggerTestManager.assertBlogsMatch(
+      bloggerTestManager.assertMatch(
         dataBaseBlogsData,
         mockPaginationBlogsData,
       );

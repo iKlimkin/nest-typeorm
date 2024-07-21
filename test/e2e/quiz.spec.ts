@@ -10,10 +10,8 @@ import {
   publishedStatuses,
 } from '../../src/features/quiz/api/models/input.models/statuses.model';
 import { PlayerStatsView } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game-analyze';
-import { QuizPairViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-game.view-type';
 import { QuizQuestionViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
 import { EmailManager } from '../../src/infra/managers/email-manager';
-import { QuizGame } from '../../src/settings';
 import { EmailManagerMock } from '../tools/dummies/email.manager.mock';
 import { RouterPaths } from '../tools/helpers/routing';
 import { QuizTestManager } from '../tools/managers/QuizTestManager';
@@ -26,6 +24,7 @@ import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
 import { wait } from '../tools/utils/delayUtils';
 import { initSettings } from '../tools/utils/initSettings';
 import { skipSettings } from '../tools/utils/testsSettings';
+import { QuizGame } from '../../src/features/quiz/domain/entities/quiz-game.entity';
 
 aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
   let app: INestApplication;
@@ -43,7 +42,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
     httpServer = settings.httpServer;
     dataSource = settings.testingAppModule.get(DataSource);
 
-    apiRouting = new ApiRouting();
+    apiRouting = settings.apiRouting;
     quizTestManager = new QuizTestManager(app, apiRouting);
 
     usersTestManager = settings.usersTestManager;
@@ -1036,10 +1035,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
 
       const stats = await quizTestManager.getTopUsers(firstPlayerToken);
 
-      const firstPlayer = await usersTestManager.getProfile(
-        null,
-        firstPlayerToken,
-      );
+      const firstPlayer = await usersTestManager.me(null, firstPlayerToken);
 
       let firstPlayerStats: PlayerStatsView;
       stats.items.forEach((stat) => {
@@ -1731,7 +1727,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
       // ).toBe(5);
     });
   });
- 
+
   describe.skip('CONSTANT TESTS', () => {
     beforeEach(async () => {
       // await cleanDatabase(httpServer);
@@ -1766,7 +1762,7 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         secondPlayerToken,
         questionsAndAnswers,
       );
-      
+
       for (let i = 0; i < 1; i++) {
         await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
         await quizTestManager.sendAnswer(secondPlayerToken, 'answer');
@@ -1795,24 +1791,25 @@ aDescribe(skipSettings.for('quiz'))('SAQuizController (e2e)', () => {
         questionsAndAnswers,
       } = expect.getState();
       console.log({ firstPlayerToken });
-
+   
       for (let i = 0; i < 4; i++) {
         await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
       }
-      await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
+      
+      // await quizTestManager.sendAnswer(firstPlayerToken, 'answer');
 
-      await wait(11);
+      // await wait(11);
 
-      await quizTestManager.sendAnswer(
-        secondPlayerToken,
-        'answer',
-        HttpStatus.FORBIDDEN,
-      );
+      // await quizTestManager.sendAnswer(
+      //   secondPlayerToken,
+      //   'answer',
+      //   HttpStatus.FORBIDDEN,
+      // );
 
-      await quizTestManager.getCurrentUnfinishedGame(
-        firstPlayerToken,
-        HttpStatus.NOT_FOUND,
-      );
+      // await quizTestManager.getCurrentUnfinishedGame(
+      //   firstPlayerToken,
+      //   HttpStatus.NOT_FOUND,
+      // );
 
       // const { gameId } = await quizTestManager.prepareForBattle(
       //   firstPlayerToken,

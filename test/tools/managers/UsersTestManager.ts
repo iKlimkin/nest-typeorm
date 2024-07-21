@@ -1,13 +1,21 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { JwtTokens } from '../../../src/features/auth/api/models/auth-input.models.ts/jwt.types';
 import { UserProfileType } from '../../../src/features/auth/api/models/auth.output.models/auth.output.models';
 import { AuthUserType } from '../../../src/features/auth/api/models/auth.output.models/auth.user.types';
 import { RouterPaths } from '../helpers/routing';
+import { BaseTestManager } from './BaseTestManager';
+import { AuthUsersRouting } from '../routes/users.routing';
+import { SuperTestBody } from '../models/body.response.model';
+import { usersData } from '../helpers/users-seed';
 
-export class UsersTestManager {
-  constructor(protected readonly app: INestApplication) {}
-  private application = this.app.getHttpServer();
+export class UsersTestManager extends BaseTestManager {
+  constructor(
+    protected readonly app: INestApplication,
+    protected readonly routing: AuthUsersRouting,
+  ) {
+    super(routing, app);
+  }
 
   createInputData(field?: AuthUserType | any): AuthUserType {
     if (!field) {
@@ -32,8 +40,8 @@ export class UsersTestManager {
 
   async createSA(
     inputData: AuthUserType,
-    expectedStatus: number = HttpStatus.CREATED,
-  ): Promise<AuthUserType> {
+    expectedStatus = HttpStatus.CREATED,
+  ): Promise<Omit<AuthUserType, 'password'>> {
     const result = await request(this.application)
       .post(RouterPaths.users)
       .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
@@ -43,8 +51,20 @@ export class UsersTestManager {
     return result.body;
   }
 
+  createUsersToVerifyValidation = async () => {
+    usersData.forEach(async (user) => {
+      try {
+        
+        await this.createSA(user);
+      } catch (error) {
+        console.log({error});
+        
+      }
+    });
+  };
+
   async createUsers(
-    numberOfUsers: number = 3,
+    numberOfUsers = 3,
   ): Promise<{ users: AuthUserType[]; accessTokens: string[] }> {
     const users: AuthUserType[] = [];
     const accessTokens: string[] = [];
@@ -57,12 +77,12 @@ export class UsersTestManager {
 
       const userInputData = this.createInputData(userData);
       const sa = await this.createSA(userInputData);
+
       const { accessToken } = await this.authLogin(userInputData);
 
-      users.push(sa);
+      users.push({ ...sa, password: userInputData.password });
       accessTokens.push(accessToken);
     }
-
     return { users, accessTokens };
   }
 
@@ -112,13 +132,13 @@ export class UsersTestManager {
 
   async authLogin(
     user: AuthUserType,
-    loginOrEmailOptions: boolean | null = false,
-    expectedStatus: number = HttpStatus.OK,
+    byLogin: boolean | null = false,
+    expectedStatus = HttpStatus.OK,
   ): Promise<JwtTokens | any> {
     const res = await request(this.application)
-      .post(`${RouterPaths.auth}/login`)
+      .post(this.routing.login())
       .send({
-        loginOrEmail: loginOrEmailOptions ? user.login : user.email,
+        loginOrEmail: byLogin ? user.login : user.email,
         password: user.password || 'qwerty',
       })
       .expect(expectedStatus);
@@ -126,7 +146,7 @@ export class UsersTestManager {
     if (res.status === HttpStatus.OK) {
       const token = res.body;
       const refreshToken = this.extractRefreshToken(res);
-      return { refreshToken, accessToken: token.accessToken };
+      return { refreshToken, accessToken: token.accessToken } as JwtTokens;
     }
 
     return res.body;
@@ -158,24 +178,28 @@ export class UsersTestManager {
     expect(responseModel).toEqual(expectedResult);
   }
 
-  async getProfile(
-    user: AuthUserType | null,
+  async me(
+    user: AuthUserType = null,
     token: string,
-    expectedStatus: number = HttpStatus.OK,
+    expectedStatus = HttpStatus.OK,
   ) {
-    const res = await request(this.application)
-      .get(`${RouterPaths.auth}/me`)
-      .auth(token, { type: 'bearer' })
-      .expect(expectedStatus);
+    let userProfile: UserProfileType;
+    await request(this.application)
+      .get(this.routing.me())
+      .auth(token, this.constants.authBearer)
+      .expect(expectedStatus)
+      .expect(({ body }: SuperTestBody<UserProfileType>) => {
+        userProfile = body;
 
-    if (user && expectedStatus === HttpStatus.OK)
-      expect(res.body).toEqual({
-        email: user.email,
-        login: user.login,
-        userId: expect.any(String),
+        user &&
+          expect(userProfile).toEqual({
+            email: user.email,
+            login: user.login,
+            userId: expect.any(String),
+          });
       });
 
-    return res.body as UserProfileType;
+    return userProfile;
   }
 
   async logout(

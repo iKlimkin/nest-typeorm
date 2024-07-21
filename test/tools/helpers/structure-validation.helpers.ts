@@ -1,7 +1,13 @@
 import { LikesStatuses } from '../../../src/domain/reaction.models';
-import { CreationPostDtoByBlogId } from '../../../src/features/blogs/api/controllers';
 import { BlogViewModelType } from '../../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
+import { CommentsViewModel } from '../../../src/features/comments/api/models/comments.view.models/comments.view-model.type';
+import { CreationCommentDto } from '../../../src/features/comments/api/models/dtos/comment.dto';
+import { CreationPostDtoByBlogId } from '../../../src/features/posts/api/models/input.posts.models/create.post.model';
 import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
+import {
+  CommentInputData,
+  CreationCommentData,
+} from '../managers/PostsTestManager';
 
 export const blogsData = {
   philosophers: [
@@ -44,7 +50,7 @@ export const blogsData = {
 export const createBlogsDataForTests = (isMembership = false) => {
   let data = [];
   let i = 1;
-  
+
   while (i !== blogsData.philosophers.length + 1) {
     const currentPhilosopher = blogsData.philosophers[i - 1];
 
@@ -100,3 +106,20 @@ export const createdPostStructureConsistency = (
       newestLikes: expect.any(Array),
     },
   }) as PostViewModelType;
+
+export const commentStructureConsistency = (
+  inputData?: CommentInputData,
+): CommentsViewModel => ({
+  id: expect.any(String),
+  content: inputData?.content || expect.any(String),
+  commentatorInfo: {
+    userId: expect.any(String),
+    userLogin: expect.any(String),
+  },
+  createdAt: expect.any(String),
+  likesInfo: {
+    likesCount: inputData?.likesCount || 0,
+    dislikesCount: inputData?.dislikesCount || 0,
+    myStatus: inputData?.likeStatus || LikesStatuses.None,
+  },
+});
