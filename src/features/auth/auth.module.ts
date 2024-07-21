@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersRepository } from './infrastructure/settings';
+import { UsersRepository } from '../admin/infrastructure/users.repo';
 import { controllers } from './infrastructure/settings/auth-controllers';
 import { authEntities } from './infrastructure/settings/auth-entities';
 import { providers } from './infrastructure/settings/auth-providers';

@@ -15,7 +15,7 @@ export async function runInTransaction<T>(
 
   try {
     const result = await operation(manager);
-
+    
     if (result.hasError) {
       await queryRunner.rollbackTransaction();
       console.log(
@@ -34,6 +34,7 @@ export async function runInTransaction<T>(
       'runInTransaction',
       GetErrors.Transaction,
     );
+    
     return notice;
   } finally {
     await queryRunner.release();
