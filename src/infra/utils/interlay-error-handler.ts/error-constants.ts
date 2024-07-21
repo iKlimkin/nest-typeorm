@@ -11,4 +11,5 @@ export enum GetErrors {
   Forbidden = 403,
   IncorrectModel = 400,
   IncorrectPassword = 401,
+  DeniedAccess = 401,
 }

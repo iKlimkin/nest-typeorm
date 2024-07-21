@@ -17,7 +17,7 @@ import {
 } from '.';
 
 export const entities = [
-  TemporaryUserAccount,
+  // TemporaryUserAccount,
   Comment,
   Post,
   Blog,

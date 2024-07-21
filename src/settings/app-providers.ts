@@ -19,6 +19,7 @@ import {
   FeedbacksQueryRepo,
   FeedbacksRepository,
   IsValidAnswersConstraint,
+  PostCrudApiService,
   PostsQueryRepo,
   PostsRepository,
   PublishQuestionUseCase,
@@ -41,6 +42,8 @@ import {
 import { BindUserWithBlogUseCase } from '../features/blogs/application/use-case/bind-user-with-blog.use-case';
 import { DeleteBloggerPostUseCase } from '../features/blogs/application/use-case/delete-blogger-post.use-case';
 import { UpdateBloggerPostUseCase } from '../features/blogs/application/use-case/blogger-update-post.use-case';
+import { BanUnbanBloggerUseCase } from '../features/admin/application/use-cases/banUnbanBlogger.use.case';
+import { PostsService } from '../features/posts/application/posts.service';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -54,7 +57,9 @@ const blogsProviders: Provider[] = [
 const postsProviders: Provider[] = [
   PostsRepository,
   PostsQueryRepo,
+  PostsService,
   BlogPostsCrudApiService,
+  PostCrudApiService,
 ];
 
 const feedbacksProviders: Provider[] = [
@@ -69,6 +74,8 @@ const useCases: Provider[] = [
   BindUserWithBlogUseCase,
   DeleteBloggerPostUseCase,
   UpdateBloggerPostUseCase,
+
+  BanUnbanBloggerUseCase,
 
   CreatePostUseCase,
   UpdatePostUseCase,
