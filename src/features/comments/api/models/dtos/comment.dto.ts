@@ -1,10 +1,5 @@
-export class CreationCommentDto {
-  constructor(public createData: CreateCommentType) {}
-}
+import { CreateCommentDtoType } from '../output.comment.models/comment.models';
 
-type CreateCommentType = {
-  postId: string;
-  userId: string;
-  userLogin: string;
-  content: string;
-};
+export class CreationCommentDto {
+  constructor(public createData: CreateCommentDtoType) {}
+}

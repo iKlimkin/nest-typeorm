@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
   LikesStatuses,
   ReactionCommentDto,
@@ -19,17 +19,25 @@ export class FeedbacksRepository {
     private readonly commentReactions: Repository<CommentReaction>,
   ) {}
 
+  async save(comment: Comment, manager: EntityManager): Promise<Comment> {
+    try {
+      return await manager.save(Comment, comment);
+    } catch (error) {
+      throw new Error(`comment is not saved: ${error}`);
+    }
+  }
+
   async createComment(
     commentDto: CreationCommentDto,
   ): Promise<OutputId | null> {
     try {
-      const { content, postId, userId, userLogin } = commentDto.createData;
+      const { content, postId, userId, login } = commentDto.createData;
 
       const comment = this.comments.create({
         post: {
           id: postId,
         },
-        userLogin: userLogin,
+        userLogin: login,
         user: {
           id: userId,
         },
@@ -71,19 +79,8 @@ export class FeedbacksRepository {
           userAccount: { id: userId },
           comment: { id: commentId },
         })
-        .orUpdate(['reactionType'], ['user_id', 'comment_id'])
+        .orUpdate(['reactionType'], ['userAccountId', 'commentId'])
         .execute();
-
-      // await this.commentReactionCounts
-      //   .createQueryBuilder()
-      //   .insert()
-      //   .values({
-      //     comment: { id: commentId },
-      //     likes_count: () => `"likes_count"::integer + ${likesCount}`,
-      //   dislikes_count: () => `"dislikes_count"::integer + ${dislikesCount}`,
-      //   })
-      //   .orUpdate([], ['comment_id'])
-      //   .execute();
 
       const updateCounterQuery = `
       INSERT INTO comment_reaction_counts (comment_id, likes_count, dislikes_count)
@@ -102,6 +99,9 @@ export class FeedbacksRepository {
       console.error(
         `Database fails during update likeStatus in comment operation ${error}`,
       );
+      throw new Error(
+        `Database fails during update likeStatus in comment operation ${error}`,
+      );
     }
   }
 
@@ -112,10 +112,10 @@ export class FeedbacksRepository {
     try {
       const result = await this.commentReactions
         .createQueryBuilder('cr')
-        .select('reactionType')
-        .where('cr.user_id = :userId', { userId })
-        .andWhere('cr.comment_id = :commentId', { commentId })
-        .getRawOne();
+        .select('cr.reactionType')
+        .where('cr.userAccountId = :userId', { userId })
+        .andWhere('cr.commentId = :commentId', { commentId })
+        .getOne();
 
       if (!result) return null;
 

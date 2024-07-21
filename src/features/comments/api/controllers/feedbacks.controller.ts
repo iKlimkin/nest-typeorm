@@ -31,7 +31,6 @@ import {
 } from '.';
 import { RouterPaths } from '../../../../../test/tools/helpers/routing';
 
-
 @Controller(RouterPaths.comments)
 export class FeedbacksController {
   constructor(
@@ -46,10 +45,7 @@ export class FeedbacksController {
     @Param('id') commentId: string,
     @CurrentUserId() userId: string,
   ): Promise<CommentsViewModel> {
-    const comment = await this.feedbacksQueryRepo.getCommentById(
-      commentId,
-      userId,
-    );
+    const comment = await this.feedbacksQueryRepo.getById(commentId, userId);
 
     if (!comment) {
       throw new NotFoundException('Comment not found');
@@ -58,34 +54,15 @@ export class FeedbacksController {
     return comment;
   }
 
-  @Get()
-  @UseGuards(SetUserIdGuard)
-  @HttpCode(HttpStatus.OK)
-  async getComments(
-    @Query() query: CommentsQueryFilter,
-    @CurrentUserId() userId: string,
-  ): Promise<PaginationViewModel<CommentsViewModel>> {
-    return this.feedbacksQueryRepo.getComments(query, userId);
-  }
-
-  @Get('user/test')
-  @UseGuards(AccessTokenGuard)
-  @HttpCode(HttpStatus.OK)
-  async getUserComments(
-    @CurrentUserInfo() userInfo: UserSessionDto,
-    @Query() query: CommentsQueryFilter,
-  ): Promise<PaginationViewModel<CommentsViewModel>> {
-    const comment = await this.feedbacksQueryRepo.getCommentsByUserId(
-      userInfo.userId,
-      query,
-    );
-
-    if (!comment) {
-      throw new NotFoundException('Comment not found');
-    }
-
-    return comment;
-  }
+  // @Get()
+  // @UseGuards(SetUserIdGuard)
+  // @HttpCode(HttpStatus.OK)
+  // async getComments(
+  //   @Query() query: CommentsQueryFilter,
+  //   @CurrentUserId() userId: string,
+  // ): Promise<PaginationViewModel<CommentsViewModel>> {
+  //   return this.feedbacksQueryRepo.getComments(query, userId);
+  // }
 
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -97,8 +74,7 @@ export class FeedbacksController {
   ) {
     const { content } = body;
 
-    const foundedComment =
-      await this.feedbacksQueryRepo.getCommentById(commentId);
+    const foundedComment = await this.feedbacksQueryRepo.getById(commentId);
 
     if (!foundedComment) {
       throw new NotFoundException('Comment not found');
@@ -124,10 +100,7 @@ export class FeedbacksController {
     const { likeStatus } = inputStatusModel;
     const { userId } = userInfo;
 
-    const comment = await this.feedbacksQueryRepo.getCommentById(
-      commentId,
-      userId,
-    );
+    const comment = await this.feedbacksQueryRepo.getById(commentId, userId);
 
     if (!comment) {
       throw new NotFoundException('Comment not found');
@@ -153,7 +126,7 @@ export class FeedbacksController {
     @Param('id') commentId: string,
     @CurrentUserInfo() userInfo: UserSessionDto,
   ) {
-    const comment = await this.feedbacksQueryRepo.getCommentById(commentId);
+    const comment = await this.feedbacksQueryRepo.getById(commentId);
 
     if (!comment) {
       throw new NotFoundException('Comment not found');

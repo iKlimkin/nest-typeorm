@@ -36,3 +36,20 @@ export const getCommentsViewModel = (
     myStatus: convertStatus(myReactions, comment.id),
   },
 });
+
+export const parseCommentToView = (comment: Comment) => ({
+  id: comment.id,
+  content: comment.content,
+  commentatorInfo: {
+    userId: comment.user.id,
+    userLogin: comment.userLogin,
+  },
+  createdAt: comment.created_at.toISOString(),
+  likesInfo: {
+    likesCount: comment.commentReactionCounts?.likes_count || 0,
+    dislikesCount: comment.commentReactionCounts?.dislikes_count || 0,
+    myStatus: comment.commentReactions
+      ? comment.commentReactions[0]?.reactionType || LikesStatuses.None
+      : LikesStatuses.None,
+  },
+});

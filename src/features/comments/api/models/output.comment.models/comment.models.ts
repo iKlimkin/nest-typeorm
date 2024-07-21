@@ -11,6 +11,14 @@ export type CreateCommentType = Omit<
   'likesCountInfo' | 'createdAt' | 'likesUserInfo'
 >;
 
+export type CreateCommentDtoType = {
+  postId: string;
+  userId: string;
+  login: string;
+  content: string;
+};
+
+
 export type CommentType = {
   /**
    *  current content

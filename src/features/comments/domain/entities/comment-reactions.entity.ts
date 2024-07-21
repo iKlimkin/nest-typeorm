@@ -5,7 +5,7 @@ import type { UserAccount } from '../../../admin/domain/entities/user-account.en
 import type { Comment } from './comment.entity';
 
 @Entity()
-// @Unique(['userAccount', 'comment'])
+@Unique(['comment', 'userAccount'])
 export class CommentReaction extends BaseEntity {
   @Column()
   reactionType: LikesStatuses;
@@ -14,7 +14,7 @@ export class CommentReaction extends BaseEntity {
   @JoinColumn()
   comment: Comment;
 
-  @ManyToOne('UserAccount', 'commentReactions')
+  @ManyToOne('UserAccount', 'commentReactions', { onDelete: 'NO ACTION' })
   @JoinColumn()
   userAccount: UserAccount;
 }
