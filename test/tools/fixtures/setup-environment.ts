@@ -67,7 +67,7 @@ export const configureTestSetup = async (
   } else if (comments.prepare) {
     await createBlogs(testManagers().bloggerTestManager, blogs.quantity);
     await createBlogPosts(testManagers().bloggerTestManager, posts.quantity);
-    if (!testManagers().postsTestManager)
+    if (!(testManagers().postsTestManager instanceof PostsTestManager))
       throw new Error('No posts test manager provided');
     await createPostComments(
       testManagers().postsTestManager,
@@ -159,11 +159,10 @@ const createPostComments = async (
 
   for (let i = 0; i < tokens.length; i++) {
     const postId = posts[i].id;
-    console.log(postId);
 
     const comment = await manager.createComments(
       tokens[i],
-      posts[i].id,
+      postId,
       commentsQuantity,
     );
     allComments = allComments.concat(comment);

@@ -3,33 +3,57 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import * as request from 'supertest';
 import { Repository } from 'typeorm';
 import {
+  PaginationViewModel,
+  SortDirections,
+} from '../../../src/domain/sorting-base-filter';
+import { InputBlogBannedStatus } from '../../../src/features/blogs/api/models/input.blog.models/blog-banned-status.dto';
+import { BlogsQueryFilter } from '../../../src/features/blogs/api/models/input.blog.models/blogs-query.filter';
+import { CreateBlogInputDto } from '../../../src/features/blogs/api/models/input.blog.models/create.blog.model';
+import { UpdateBlogInputDto } from '../../../src/features/blogs/api/models/input.blog.models/update-blog-models';
+import {
   BlogType,
   BlogsTypeWithId,
 } from '../../../src/features/blogs/api/models/output.blog.models/blog.models';
+import {
+  AllCommentsForUserBlogsViewType,
+  BlogViewModelType,
+  BlogViewModelTypeWithImages,
+  SABlogsViewType,
+} from '../../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
+import { Blog } from '../../../src/features/blogs/domain/entities/blog.entity';
+import {
+  FileMetaPostViewModelType,
+  FilesMetaBlogViewModelType,
+} from '../../../src/features/files/api/models/file-view.model';
+import { CreationPostDtoByBlogId } from '../../../src/features/posts/api/models/input.posts.models/create.post.model';
+import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
+import { Post } from '../../../src/features/posts/domain/entities/post.entity';
 import { ErrorsMessages } from '../../../src/infra/utils/error-handler';
 import { RouterPaths } from '../helpers/routing';
 import {
   blogsData,
+  createdBlogStructureConsistency,
   createdPostStructureConsistency,
+  paginationStructureConsistency,
+  validateImageMetaStructureConsistency,
 } from '../helpers/structure-validation.helpers';
 import { SuperTestBody } from '../models/body.response.model';
 import { ApiRouting } from '../routes/api.routing';
 import { BlogsRouting } from '../routes/blogs.routing';
 import { BaseTestManager } from './BaseTestManager';
-import { CreateBlogInputDto } from '../../../src/features/blogs/api/models/input.blog.models/create.blog.model';
-import { UpdateBlogInputDto } from '../../../src/features/blogs/api/models/input.blog.models/update-blog-models';
-import {
-  BlogViewModelType,
-  SABlogsViewType,
-} from '../../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
-import {
-  PaginationViewModel,
-  SortDirections,
-} from '../../../src/domain/sorting-base-filter';
-import { CreationPostDtoByBlogId } from '../../../src/features/posts/api/models/input.posts.models/create.post.model';
-import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
-import { Blog } from '../../../src/features/blogs/domain/entities/blog.entity';
-import { Post } from '../../../src/features/posts/domain/entities/post.entity';
+
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+import * as sharp from 'sharp';
+
+interface UploadBackWallForBlogParams {
+  accessToken: string;
+  blogId: string;
+  fileBuffer: Buffer;
+  fileName?: string;
+  expectedStatus?: number;
+  contentType?: string;
+}
 
 export type SortedByFieldType<T> = {
   entities: T[];
@@ -273,7 +297,18 @@ export class PublicBlogsTestManager extends BlogTestManager {
   getPublicBlog = async (blogId: string, expectStatus = HttpStatus.OK) => {
     const { body: blog } = await request(this.application)
       .get(this.routing.getBlog(blogId))
-      .expect(expectStatus);
+      .expect(expectStatus)
+      .expect(({ body }: SuperTestBody<BlogViewModelTypeWithImages>) => {
+        const isSuccess = !body.errors;
+        if (isSuccess) {
+          expect(body).toEqual(createdBlogStructureConsistency());
+          if (body.images && body.images.main.length) {
+            expect(body.images).toEqual(
+              validateImageMetaStructureConsistency(),
+            );
+          }
+        }
+      });
     return blog;
   };
 
@@ -293,7 +328,7 @@ export class PublicBlogsTestManager extends BlogTestManager {
 
   async getPublicPostsByBlogId(
     blogId: string,
-    expectStatus: number = HttpStatus.OK,
+    expectStatus = HttpStatus.OK,
   ): Promise<PostViewModelType[]> {
     const {
       body: { items: postModels },
@@ -410,6 +445,28 @@ export class SABlogsTestManager extends BlogTestManager {
         }
       });
   }
+
+  async banUnbanBlog(
+    blogId: string,
+    bannedStatus: InputBlogBannedStatus,
+    expectStatus = HttpStatus.NO_CONTENT,
+  ) {
+    await request(this.application)
+      .put(this.routing.banUnban(blogId))
+      .auth(
+        this.constants.basicUser,
+        this.constants.basicPass,
+        this.constants.authBasic,
+      )
+      .send(bannedStatus)
+      .expect(expectStatus)
+      .expect(async ({ body }: SuperTestBody) => {
+        if (expectStatus === HttpStatus.NO_CONTENT) {
+          const blogAfter = await this.blogRepository.findOneBy({ id: blogId });
+          expect(blogAfter.isBanned).toEqual(bannedStatus.isBanned);
+        }
+      });
+  }
 }
 
 export class BloggerBlogsTestManager extends BlogTestManager {
@@ -420,7 +477,33 @@ export class BloggerBlogsTestManager extends BlogTestManager {
     super(app);
   }
 
-  async getBlogsWithPagination(token: string, query?) {
+  async getAllCommentsForUserBlogs(
+    accessToken: string,
+    query?: Partial<BlogsQueryFilter>,
+    expectStatus = HttpStatus.OK,
+  ) {
+    let commentsForCurrentUserBlogs: PaginationViewModel<AllCommentsForUserBlogsViewType> =
+      null;
+    await request(this.application)
+      .get(this.routing.getAllCommentsForUserBlogs())
+      .auth(accessToken, this.constants.authBearer)
+      .query(query)
+      .expect(expectStatus)
+      .expect(
+        ({
+          body,
+        }: SuperTestBody<
+          PaginationViewModel<AllCommentsForUserBlogsViewType>
+        >) => {
+          commentsForCurrentUserBlogs = body;
+        },
+      );
+    return commentsForCurrentUserBlogs;
+  }
+  async getBlogsWithPagination(
+    token: string,
+    query?: Partial<BlogsQueryFilter>,
+  ) {
     if (query) {
       const { pageNumber, pageSize, searchNameTerm, sortBy, sortDirection } =
         query;
@@ -438,6 +521,107 @@ export class BloggerBlogsTestManager extends BlogTestManager {
         .expect(HttpStatus.OK);
 
       return response.body;
+    }
+  }
+
+  async uploadBackWallForBlog(
+    uploadBackWallData: UploadBackWallForBlogParams,
+  ): Promise<FilesMetaBlogViewModelType> {
+    const { accessToken, blogId, fileBuffer } = uploadBackWallData;
+    const filename = uploadBackWallData.fileName || 'backWall';
+    const expectedStatus =
+      uploadBackWallData.expectedStatus || HttpStatus.CREATED;
+    const contentType = uploadBackWallData.contentType || 'image/png';
+    let fileMetaResponse: FilesMetaBlogViewModelType;
+    await request(this.application)
+      .post(this.routing.uploadBlogBackgroundWallpaper(blogId))
+      .auth(accessToken, this.constants.authBearer)
+      .attach('file', fileBuffer, { filename, contentType })
+      .expect(expectedStatus)
+      .expect(({ body }: SuperTestBody<FilesMetaBlogViewModelType>) => {
+        const { fileSize, height, url, width } = body.wallpaper;
+        expect(fileSize && height && url && width).toBeDefined();
+        fileMetaResponse = body;
+      });
+
+    return fileMetaResponse;
+  }
+
+  async uploadBlogMainImage(
+    uploadBackWallData: UploadBackWallForBlogParams,
+  ): Promise<FilesMetaBlogViewModelType> {
+    const { accessToken, blogId, fileBuffer } = uploadBackWallData;
+    const filename = uploadBackWallData.fileName || 'blogMain';
+    const contentType = uploadBackWallData.contentType || 'image/png';
+    const expectedStatus =
+      uploadBackWallData.expectedStatus || HttpStatus.CREATED;
+
+    let fileMetaResponse: FilesMetaBlogViewModelType;
+    await request(this.application)
+      .post(this.routing.uploadBlogMainImage(blogId))
+      .auth(accessToken, this.constants.authBearer)
+      .attach('file', fileBuffer, { filename, contentType })
+      .expect(expectedStatus)
+      .expect(({ body }: SuperTestBody<FilesMetaBlogViewModelType>) => {
+        const { fileSize, height, url, width } = body.wallpaper;
+        expect(fileSize && height && url && width).toBeDefined();
+        fileMetaResponse = body;
+      });
+
+    return fileMetaResponse;
+  }
+
+  async uploadPostMainImage(
+    uploadBackWallData: UploadBackWallForBlogParams & { postId: string },
+  ): Promise<FileMetaPostViewModelType> {
+    const { accessToken, blogId, fileBuffer, postId } = uploadBackWallData;
+    const contentType = uploadBackWallData.contentType || 'image/png';
+    const filename = uploadBackWallData.fileName || 'postMain';
+    const expectedStatus =
+      uploadBackWallData.expectedStatus || HttpStatus.CREATED;
+
+    let fileMetaResponse: FileMetaPostViewModelType;
+    await request(this.application)
+      .post(this.routing.uploadPostMainImage(blogId, postId))
+      .auth(accessToken, this.constants.authBearer)
+      .attach('file', fileBuffer, { filename, contentType })
+      .expect(expectedStatus)
+      .expect(({ body }: SuperTestBody<FileMetaPostViewModelType>) => {
+        body?.main?.length &&
+          body.main.forEach((fileParam) => {
+            const { fileSize, height, url, width } = fileParam;
+            expect(fileSize && height && url && width).toBeDefined();
+          });
+        fileMetaResponse = body;
+      });
+
+    return fileMetaResponse;
+  }
+
+  resizeImg = async (
+    buffer: Buffer,
+    width: number,
+    height: number,
+  ): Promise<Buffer> => await sharp(buffer).resize(width, height).toBuffer();
+
+  async prepareFileToSend(fileName: string, fileParams: FileDimensions) {
+    try {
+      const isNameIncludeExtension = fileExtensions.some((e) =>
+        fileName.endsWith(e),
+      );
+
+      const filePath = resolve(
+        __dirname,
+        `../../../images/${
+          isNameIncludeExtension ? fileName : fileName + '.png'
+        }`,
+      );
+      const fileBuffer = readFileSync(filePath);
+
+      return this.resizeImg(fileBuffer, fileParams.width, fileParams.height);
+    } catch (error) {
+      console.error(error);
+      throw error;
     }
   }
 
@@ -467,7 +651,7 @@ export class BloggerBlogsTestManager extends BlogTestManager {
       .send(inputData)
       .expect(expectedStatus);
 
-    const post = response.body;
+    const post = response.body as PostViewModelType;
 
     if (response.status === HttpStatus.CREATED) {
       expect(post).toEqual(createdPostStructureConsistency(inputData, blogId));
@@ -590,13 +774,15 @@ export class BloggerBlogsTestManager extends BlogTestManager {
     await this.postRepository.findOneBy({ id: postId });
 
   async getBloggerBlogs(accessToken: string, expectedStatus = HttpStatus.OK) {
-    let blogs: PaginationViewModel<BlogViewModelType>;
+    let blogs: PaginationViewModel<BlogViewModelTypeWithImages>;
     await request(this.application)
       .get(this.routing.getBlogs())
       .auth(accessToken, this.constants.authBearer)
       .expect(expectedStatus)
       .expect(
-        ({ body }: SuperTestBody<PaginationViewModel<BlogViewModelType>>) => {
+        ({
+          body,
+        }: SuperTestBody<PaginationViewModel<BlogViewModelTypeWithImages>>) => {
           blogs = body;
         },
       );
@@ -616,38 +802,16 @@ export class BloggerBlogsTestManager extends BlogTestManager {
       .expect(expectStatus)
       .expect(
         ({ body }: SuperTestBody<PaginationViewModel<PostViewModelType>>) => {
-          if (expectStatus === HttpStatus.OK) {
-            expect(body).toEqual({
-              pagesCount: expect.any(Number),
-              page: expect.any(Number),
-              pageSize: expect.any(Number),
-              totalCount: expect.any(Number),
-              items: expect.any(Array),
-            });
+          const isSuccess = !body.errors;
+          if (isSuccess) {
+            expect(body).toEqual(paginationStructureConsistency());
             postsPaging = body;
+            postsPaging.items.forEach((post) =>
+              createdPostStructureConsistency(post),
+            );
           }
         },
       );
-
-    if (expectStatus === HttpStatus.OK) {
-      postsPaging.items.forEach((post: PostViewModelType) => {
-        expect(post).toEqual({
-          id: expect.any(String),
-          title: expect.any(String),
-          shortDescription: expect.any(String),
-          content: expect.any(String),
-          blogId: expect.any(String),
-          blogName: expect.any(String),
-          createdAt: expect.any(String),
-          extendedLikesInfo: {
-            likesCount: expect.any(Number),
-            dislikesCount: expect.any(Number),
-            myStatus: expect.any(String),
-            newestLikes: expect.any(Array),
-          },
-        } as PostViewModelType);
-      });
-    }
     return postsPaging;
   }
 
@@ -720,3 +884,10 @@ export class BloggerBlogsTestManager extends BlogTestManager {
     return createdBlogs;
   }
 }
+
+type FileDimensions = {
+  width: number;
+  height: number;
+};
+
+const fileExtensions = ['png', 'jpeg', 'jpg'];

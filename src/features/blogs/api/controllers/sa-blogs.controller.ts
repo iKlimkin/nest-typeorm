@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -14,22 +15,31 @@ import { BindUserWithBlogCommand } from '../../application/use-case/commands/bin
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
 import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
-import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
+import {
+  BlogViewModelType,
+  SABlogsViewType,
+} from '../models/output.blog.models/blog.view.model-type';
 import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
+import { BanUnbanBlogCommand } from '../../application/use-case/commands/banUnbanBlog.command';
+import { InputBlogBannedStatus } from '../models/input.blog.models/blog-banned-status.dto';
 
 @UseGuards(BasicSAAuthGuard)
 @Controller(RouterPaths.SABlogs)
 export class SABlogsController {
   constructor(
     private readonly blogsQueryRepo: BlogsQueryRepo,
-    private readonly blogCrudApiService: BlogCrudApiService<BindUserWithBlogCommand>,
+    private readonly blogCrudApiService: BlogCrudApiService<
+      BindUserWithBlogCommand | BanUnbanBlogCommand
+    >,
   ) {}
 
   @Get()
   async getBlogs(
     @Query() query: BlogsQueryFilter,
-  ): Promise<PaginationViewModel<BlogViewModelType>> {
-    return this.blogsQueryRepo.getAllBlogs(query, true);
+  ): Promise<PaginationViewModel<SABlogsViewType>> {
+    return this.blogsQueryRepo.getAllBlogs(query, true) as Promise<
+      PaginationViewModel<SABlogsViewType>
+    >;
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -39,6 +49,16 @@ export class SABlogsController {
     @Param('userId') userId: string,
   ): Promise<void> {
     const command = new BindUserWithBlogCommand({ userId, blogId });
+    return this.blogCrudApiService.updateOrDelete(command);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Put(':id/ban')
+  async banUnbanDefinedBlog(
+    @Param('id') blogId: string,
+    @Body() inputStatus: InputBlogBannedStatus,
+  ): Promise<void> {
+    const command = new BanUnbanBlogCommand({ ...inputStatus, blogId });
     return this.blogCrudApiService.updateOrDelete(command);
   }
 }

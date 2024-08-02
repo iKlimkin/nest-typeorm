@@ -8,6 +8,9 @@ import { controllers } from './settings/app-controllers';
 import { providers } from './settings/app-providers';
 import { AuthModule } from './features/auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { StaticModule } from './static/static.module';
+import { FilesStorageAdapter } from './infra/adapters/files-storage.adapter';
+import { S3FilesStorageAdapter } from './infra/adapters/s3-files-storage.adapter';
 
 @Module({
   imports: [
@@ -19,8 +22,12 @@ import { ScheduleModule } from '@nestjs/schedule';
     TypeOrmModule.forFeature([...entities]),
     ScheduleModule.forRoot(),
     AuthModule,
+    StaticModule,
   ],
   controllers,
-  providers,
+  providers: [
+    ...providers,
+    { provide: FilesStorageAdapter, useClass: S3FilesStorageAdapter },
+  ],
 })
 export class AppModule {}

@@ -22,12 +22,12 @@ export class UpdateBlogUseCase implements ICommandHandler<UpdateBlogCommand> {
   ): Promise<LayerNoticeInterceptor<boolean>> {
     const { blogId, description, name, websiteUrl, userId } = command.data;
     return runInTransaction(this.dataSource, async (manager) => {
-      const notice = new LayerNoticeInterceptor<boolean | null>();
+      const notice = new LayerNoticeInterceptor<boolean>();
       const blogServiceNotice =
         await this.blogService.validateBlogAndUserRights(blogId, userId);
 
       if (blogServiceNotice.hasError)
-        return blogServiceNotice as LayerNoticeInterceptor<null>;
+        return blogServiceNotice as LayerNoticeInterceptor;
 
       const { blog } = blogServiceNotice.data;
 

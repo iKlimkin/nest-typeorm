@@ -105,7 +105,40 @@ export const createdPostStructureConsistency = (
       myStatus: LikesStatuses.None,
       newestLikes: expect.any(Array),
     },
+    images: expect.any(Object),
   }) as PostViewModelType;
+
+export const createdBlogStructureConsistency = (
+  inputData?: any,
+): BlogViewModelType => ({
+  id: expect.any(String),
+  name: expect.any(String),
+  description: expect.any(String),
+  isMembership: expect.any(Boolean),
+  createdAt: expect.any(String),
+  websiteUrl: expect.any(String),
+  images: expect.any(Object),
+});
+
+export const paginationStructureConsistency = () => ({
+  pagesCount: expect.any(Number),
+  page: expect.any(Number),
+  pageSize: expect.any(Number),
+  totalCount: expect.any(Number),
+  items: expect.any(Array),
+});
+
+export const validateImageMetaStructureConsistency = () => ({
+  main: expect.arrayContaining([
+    expect.objectContaining({
+      url: expect.any(String),
+      fileSize: expect.any(Number),
+      height: expect.any(Number),
+      width: expect.any(Number),
+    }),
+  ]),
+  wallpaper: expect.anything(),
+});
 
 export const commentStructureConsistency = (
   inputData?: CommentInputData,

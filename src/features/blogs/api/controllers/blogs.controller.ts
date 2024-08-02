@@ -8,7 +8,10 @@ import {
 } from '@nestjs/common';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
-import { BlogViewModelType } from '../models/output.blog.models/blog.view.model-type';
+import {
+  BlogViewModelType,
+  SABlogsViewType,
+} from '../models/output.blog.models/blog.view.model-type';
 import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
 import { RouterPaths } from '../../../../../test/tools/helpers/routing';
 import { PostsQueryRepo } from '../../../posts/api/query-repositories/posts.query.repo';
@@ -27,7 +30,7 @@ export class BlogsController {
   @Get()
   async getBlogs(
     @Query() query: BlogsQueryFilter,
-  ): Promise<PaginationViewModel<BlogViewModelType>> {
+  ): Promise<PaginationViewModel<BlogViewModelType | SABlogsViewType>> {
     return this.blogsQueryRepo.getAllBlogs(query);
   }
 

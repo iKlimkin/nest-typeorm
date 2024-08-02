@@ -3,11 +3,11 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { aDescribe } from './tools/utils/aDescribe';
-import { skipSettings } from './tools/utils/testsSettings';
+import { e2eTestNamesEnum, skipSettings } from './tools/utils/testsSettings';
 
-aDescribe(skipSettings.for('app'))('AppController (e2e)', () => {
+aDescribe(skipSettings.for(e2eTestNamesEnum.app))('AppController (e2e)', () => {
   let app: INestApplication;
-
+  
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],

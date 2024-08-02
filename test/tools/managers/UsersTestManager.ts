@@ -74,7 +74,7 @@ export class UsersTestManager extends BaseTestManager {
         login: `login${i}`,
         email: `email${i}@test.test`,
       };
-
+      
       const userInputData = this.createInputData(userData);
       const sa = await this.createSA(userInputData);
 

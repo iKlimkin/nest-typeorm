@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import { Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseBanEntity } from '../../../../domain/base-ban-entity';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { CreateBloggerBanInfoDto } from '../../../admin/api/models/input-sa.dtos.ts/user-restriction.dto';
@@ -7,11 +7,9 @@ import type { Blog } from './blog.entity';
 
 @Entity()
 export class UserBloggerBans extends BaseBanEntity {
-  @OneToOne('Blog', 'bloggerBan')
+  @ManyToOne('Blog', 'bloggerBans')
   @JoinColumn()
   blog: Blog;
-  // @Column()
-  // blogId: string;
 
   @ManyToOne('UserAccount', 'bloggerBans')
   @JoinColumn()

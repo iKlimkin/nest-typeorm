@@ -1,6 +1,6 @@
 import { Controller, Get, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import getConfig from './settings/config/configuration';
+import config from './settings/config/configuration';
 import { DataSource } from 'typeorm';
 import { seedAllData } from './infra/utils/seed-data';
 import { ConfigurationType } from './settings/config/configuration';
@@ -13,16 +13,14 @@ export class AppController {
   ) {}
 
   @Get()
-  getHello(): void {
-    const env = this.configService.get('env', { infer: true });
-    const jwt = this.configService.get('jwtSettings', { infer: true });
+  getConfig() {
+    const env = this.configService.get('env');
+    const jwt = this.configService.get('jwtSettings');
     const basic = this.configService.get('basicAuth', { infer: true });
-    console.log({ env });
-    console.log({ jwt });
-    console.log({ basic });
 
-    const environmentConfig = getConfig();
-    console.log({ environmentConfig });
+    const environmentConfig = config();
+    console.log({ env, jwt, basic, environmentConfig });
+    return environmentConfig
   }
 
   @Post()

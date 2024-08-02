@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   Put,
   Query,
@@ -20,12 +22,14 @@ import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current
 import { UserSessionDto } from '../../../security/api/models/security-input.models/security-session-info.model';
 import { UsersQueryRepo } from '../query-repositories/users.query.repo';
 import { BloggerCrudApiService } from '../../application/bloggerCrudApi.service';
+import { BlogsQueryRepo } from '../../../blogs/api/query-repositories/blogs.query.repo';
 
 @UseGuards(AccessTokenGuard)
 @Controller(RouterPaths.bloggerUsers)
 export class BloggerUsersController {
   constructor(
     private bloggerCrudApiService: BloggerCrudApiService<BanUnbanBloggerCommand>,
+    private blogQueryRepo: BlogsQueryRepo,
     private usersQueryRepo: UsersQueryRepo,
   ) {}
 
@@ -36,6 +40,10 @@ export class BloggerUsersController {
     @Query() query: BloggerBannedUsersQueryFilter,
     @CurrentUserInfo() userInfo: UserSessionDto,
   ): Promise<PaginationViewModel<BannedBlogUsersType>> {
+    const blog = await this.blogQueryRepo.getBlogWithUserInfo(blogId);
+    if (!blog) throw new NotFoundException('Blog not found');
+    if (blog.user.id !== userInfo.userId)
+      throw new ForbiddenException('access error');
     return this.usersQueryRepo.getBannedUsersForBlog(blogId, query);
   }
 

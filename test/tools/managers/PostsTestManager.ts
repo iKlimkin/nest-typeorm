@@ -15,6 +15,7 @@ import { PaginationViewModel } from '../../../src/domain/sorting-base-filter';
 import { SuperTestBody } from '../models/body.response.model';
 import { CommentsQueryFilter } from '../../../src/features/comments/api/models/output.comment.models/comment-query.filter';
 import { constants, feedbacksConstants } from '../helpers/constants';
+import { PostsQueryFilter } from '../../../src/features/posts/api/models/output.post.models/posts-query.filter';
 
 export type CreationCommentData = {
   user?: SAViewType;
@@ -165,8 +166,25 @@ export class PostsTestManager extends BaseTestManager {
       .expect(expectStatus);
   }
 
-  async getPosts() {
-    await request(this.application).get('/posts').expect(HttpStatus.OK);
+  async getPosts(
+    accessToken?: string,
+    query?: Partial<PostsQueryFilter>,
+    expectStatus = HttpStatus.OK,
+  ) {
+    let commentsPaging: PaginationViewModel<PostViewModelType>;
+    await request(this.application)
+      .get(this.routing.getPosts())
+      .auth(accessToken, this.constants.authBearer)
+      .query(query)
+      .expect(expectStatus)
+      .expect(
+        ({ body }: SuperTestBody<PaginationViewModel<PostViewModelType>>) => {
+          expect(body).toBeDefined();
+          commentsPaging = body;
+        },
+      );
+
+    return commentsPaging;
   }
 
   async getPostById(

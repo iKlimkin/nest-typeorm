@@ -19,11 +19,16 @@ import {
   UserBans,
   UserBloggerBans,
   UserSession,
+  FileMetadata,
+  BlogImage,
+  PostImage,
 } from '.';
 
 config();
 
 export const getEntities = () => [
+  BlogImage,
+  PostImage,
   TemporaryUserAccount,
   Comment,
   Post,
@@ -44,6 +49,7 @@ export const getEntities = () => [
   QuizPlayerProgress,
   QuizCorrectAnswer,
   CurrentGameQuestion,
+  FileMetadata,
 ];
 
 const connectionUrl = (): string => {

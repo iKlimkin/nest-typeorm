@@ -35,9 +35,10 @@ export class BloggerUsersTestManager extends BaseTestManager {
         async ({
           body,
         }: SuperTestBody<PaginationViewModel<BannedBlogUsersType>>) => {
-          body.items.forEach((user) => {
-            expect(user.banInfo.isBanned).toBeTruthy();
-          });
+          expectStatus === HttpStatus.OK &&
+            body.items.forEach((user) => {
+              expect(user.banInfo.isBanned).toBeTruthy();
+            });
           bannedUsersWithPagination = body;
         },
       );

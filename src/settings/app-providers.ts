@@ -1,5 +1,8 @@
 import { Provider } from '@nestjs/common';
 import {
+  BanUnbanBloggerUseCase,
+  BanUnbanBlogUseCase,
+  BindUserWithBlogUseCase,
   BlogCrudApiService,
   BlogIdExistConstraint,
   BlogPostsCrudApiService,
@@ -12,16 +15,21 @@ import {
   CreatePairUseCase,
   CreatePostUseCase,
   CreateQuestionUseCase,
+  DeleteBloggerPostUseCase,
   DeleteBlogUseCase,
   DeleteCommentUseCase,
   DeletePostUseCase,
   DeleteQuestionUseCase,
   FeedbacksQueryRepo,
   FeedbacksRepository,
+  FileDimensionsValidationPipe,
+  FilesRepository,
+  FilesStorageAdapter,
   IsValidAnswersConstraint,
   PostCrudApiService,
   PostsQueryRepo,
   PostsRepository,
+  PostsService,
   PublishQuestionUseCase,
   QuizCrudApiService,
   QuizQueryRepo,
@@ -31,6 +39,7 @@ import {
   QuizTestService,
   SetPlayerAnswerUseCase,
   TestDatabaseRepo,
+  UpdateBloggerPostUseCase,
   UpdateBlogUseCase,
   UpdateCommentReactionUseCase,
   UpdateCommentUseCase,
@@ -39,11 +48,12 @@ import {
   UpdateQuestionUseCase,
   ValidateIdPipe,
 } from '.';
-import { BindUserWithBlogUseCase } from '../features/blogs/application/use-case/bind-user-with-blog.use-case';
-import { DeleteBloggerPostUseCase } from '../features/blogs/application/use-case/delete-blogger-post.use-case';
-import { UpdateBloggerPostUseCase } from '../features/blogs/application/use-case/blogger-update-post.use-case';
-import { BanUnbanBloggerUseCase } from '../features/admin/application/use-cases/banUnbanBlogger.use.case';
-import { PostsService } from '../features/posts/application/posts.service';
+import { FilesService } from '../features/files/application/services/file-metadata.service';
+import { FilesCrudApiService } from '../features/files/application/services/files-crud-api.service';
+import { FilesQueryRepository } from '../features/files/api/query.repo/files.query.repository';
+import { UploadPostMainImageUseCase } from '../features/blogs/application/use-case/upload-post-main-image.use-case';
+import { UploadBackgroundWallpaperUseCase } from '../features/blogs/application/use-case/upload-background-wallpaper.use-case';
+import { UploadBlogMainImageUseCase } from '../features/blogs/application/use-case/upload-blog-main-image.use-case';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -51,8 +61,18 @@ const blogsProviders: Provider[] = [
   BlogsQueryRepo,
   BlogsRepository,
   BlogCrudApiService,
+
   BlogService,
 ];
+
+const filesProviders = [
+  FilesRepository,
+  FilesQueryRepository,
+  FilesService,
+  FilesCrudApiService,
+];
+
+const adapters = [FilesStorageAdapter];
 
 const postsProviders: Provider[] = [
   PostsRepository,
@@ -75,7 +95,12 @@ const useCases: Provider[] = [
   DeleteBloggerPostUseCase,
   UpdateBloggerPostUseCase,
 
+  UploadBackgroundWallpaperUseCase,
+  UploadBlogMainImageUseCase,
+  UploadPostMainImageUseCase,
+
   BanUnbanBloggerUseCase,
+  BanUnbanBlogUseCase,
 
   CreatePostUseCase,
   UpdatePostUseCase,
@@ -111,10 +136,12 @@ export const providers: Provider[] = [
   ...postsProviders,
   ...feedbacksProviders,
   ...useCases,
-
+  ...adapters,
   ...testProviders,
   ...quizProviders,
+  ...filesProviders,
   BlogIdExistConstraint,
   IsValidAnswersConstraint,
   ValidateIdPipe,
+  // FileDimensionsValidationPipe,
 ];

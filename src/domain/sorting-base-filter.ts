@@ -4,15 +4,15 @@ import { SortDirection } from 'typeorm';
 export enum convertSortBy {
   id = 'id',
   userId = 'user_id',
-  blogId = 'blog_id',
+  blogId = 'blogId',
   postId = 'post_id',
   commentId = 'comment_id',
-  blogName = 'blog_title',
+  blogName = 'blogTitle',
   content = 'content',
   title = 'title',
   name = 'title',
   description = 'description',
-  shortDescription = 'short_description',
+  shortDescription = 'shortDescription',
   websiteUrl = 'websiteUrl',
   startGameDate = '"startGameDate"',
   finishGameDate = '"finishGameDate"',
@@ -120,6 +120,7 @@ export abstract class BaseFilter {
   @IsString()
   searchContentTerm?: string;
 }
+
 
 export class PaginationViewModel<P> {
   public readonly pagesCount: number;

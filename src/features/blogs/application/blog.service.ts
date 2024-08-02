@@ -57,7 +57,7 @@ export class BlogService {
       return notice;
     }
 
-    if (blog.user?.id !== user?.id) {
+    if (blog.user.id !== user.id) {
       notice.addError(
         `User with id ${userId} doesn't have change rights`,
         this.location,

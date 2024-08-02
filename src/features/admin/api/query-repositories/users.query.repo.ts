@@ -112,8 +112,7 @@ export class UsersQueryRepo {
       .leftJoinAndSelect('user.userBan', 'ban')
       .where('(user.login ILIKE :login', { login })
       .orWhere('user.email ILIKE :email)', { email });
-    console.log({banStatus});
-    
+
     if (banStatus === BanStatus.banned) {
       queryBuilder.andWhere('(ban.isBanned = true)');
     } else if (banStatus === BanStatus.notBanned) {
@@ -122,14 +121,9 @@ export class UsersQueryRepo {
 
     queryBuilder
       .orderBy('user.' + sortBy, sortDirection)
-      // .orderBy(
-      //   sortBy !== 'created_at' ? `user.${sortBy}` : `user.created_at`,
-      //   sortDirection,
-      // )
       .skip(skip)
       .take(pageSize);
-    console.log(queryBuilder.getQueryAndParameters());
-    
+
     const [users, usersCount] = await queryBuilder.getManyAndCount();
 
     return new PaginationViewModel<SAViewWithBannedUsersType>(
@@ -170,8 +164,8 @@ export class UsersQueryRepo {
         { blogId },
       )
       .orderBy('user.' + sortBy, sortDirection)
-      .skip(skip)
-      .take(pageSize);
+      .limit(pageSize)
+      .offset(skip);
 
     try {
       const users = await queryBuilder.getRawMany();

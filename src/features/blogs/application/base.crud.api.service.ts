@@ -16,10 +16,10 @@ export interface BaseQueryRepository<T> {
 }
 
 export interface BaseViewModel {
-  id: string;
+  id?: string;
 }
 
-export class BaseCrudApiService<TCommand, TViewModel extends BaseViewModel> {
+export class BaseCrudApiService<TCommand, TViewModel> {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryRepo: BaseQueryRepository<TViewModel>,
@@ -27,7 +27,7 @@ export class BaseCrudApiService<TCommand, TViewModel extends BaseViewModel> {
   async create(command: TCommand): Promise<TViewModel> {
     const notification = await this.commandBus.execute<
       TCommand,
-      LayerNoticeInterceptor<TViewModel>
+      LayerNoticeInterceptor<TViewModel & BaseViewModel>
     >(command);
 
     if (notification.hasError) {

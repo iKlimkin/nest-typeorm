@@ -1,12 +1,5 @@
 import { Length, Matches } from 'class-validator';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
 import {
   descriptionLength,
@@ -15,20 +8,21 @@ import {
   urlMatching,
 } from '../../../../domain/validation.constants';
 import { iSValidField } from '../../../../infra/decorators/transform/transform-params';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import type { UserAccount } from '../../../admin/domain/entities/user-account.entity';
 import type { Post } from '../../../posts/domain/entities/post.entity';
 import {
   BlogCreationDto,
   UpdateBlogDto,
 } from '../../api/models/dtos/blog-dto.model';
-import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import type { UserBloggerBans } from './user-blogger-bans.entity';
+import { BlogImage } from '../../../files/domain/entities/blog-images.entity';
 
 @Entity()
 export class Blog extends BaseEntity {
   // @Index('title', { unique: true })
   @iSValidField(nameLength)
-  @Column()
+  @Column({ collation: 'C' })
   title: string;
 
   @Column()
@@ -51,11 +45,20 @@ export class Blog extends BaseEntity {
   @JoinColumn({ name: 'ownerId' })
   user: UserAccount;
 
-  @OneToOne('UserBloggerBans', 'blog')
-  bloggerBan: UserBloggerBans;
+  @OneToMany('UserBloggerBans', 'blog')
+  bloggerBans: UserBloggerBans[];
 
   @OneToMany('Post', 'blog')
   posts: Post[];
+
+  @Column({ default: false })
+  isBanned: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  banDate: Date;
+
+  @OneToOne(() => BlogImage, (images) => images.blog)
+  images: BlogImage;
 
   static async create(createBlogDto: BlogCreationDto) {
     const notice = new LayerNoticeInterceptor<Blog>();
@@ -96,5 +99,10 @@ export class Blog extends BaseEntity {
     await notice.validateFields(this);
     notice.addData(this);
     return notice;
+  }
+
+  banUnban(isBanned: boolean) {
+    this.isBanned = isBanned;
+    this.banDate = isBanned ? new Date() : null;
   }
 }

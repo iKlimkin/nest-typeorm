@@ -25,27 +25,9 @@ export abstract class BaseBanEntity {
   })
   banDate: Date;
 
-  @Index('IDX_banned')
+  // @Index('IDX_banned')
   @Column({ type: 'boolean', default: false })
   isBanned: boolean;
-
-  // static async create<T extends BaseBanEntity>(
-  //   this: new () => T,
-  //   restrictionDto: { banReason: string; isBanned: boolean; userId: string, entity: string },
-  // ): Promise<LayerNoticeInterceptor<T>> {
-  //   const notice = new LayerNoticeInterceptor<T>();
-  //   const { banReason, isBanned, userId } = restrictionDto;
-  //   const banInstance = new this();
-  //   banInstance.banReason = banReason;
-  //   banInstance.user = { id: userId } as UserAccount;
-  //   banInstance.isBanned = isBanned;
-  //   banInstance.banDate = isBanned ? new Date() : null;
-  //   restrictionDto.entity ? banInstance.entity = restrictionDto.entity : null;
-
-  //   await notice.validateFields(banInstance);
-  //   notice.addData(banInstance);
-  //   return notice;
-  // }
 
   async updateBanInfo(
     isBanned: boolean,

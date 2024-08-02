@@ -8,7 +8,6 @@ import { BanUnbanBloggerCommand } from '../commands/banUnbanBlogger.command';
 import { BlogService } from '../../../blogs/application/blog.service';
 import { UserBloggerBans } from '../../../blogs/domain/entities/user-blogger-bans.entity';
 import { UserBans } from '../../../auth/domain/entities/user-bans.entity';
-import { not } from 'joi';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 
 @CommandHandler(BanUnbanBloggerCommand)

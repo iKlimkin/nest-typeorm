@@ -14,11 +14,14 @@ import { PaginationModel } from '../tools/models/pagination-model';
 import { aDescribe } from '../tools/utils/aDescribe';
 import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
 import { initSettings } from '../tools/utils/initSettings';
-import { skipSettings } from '../tools/utils/testsSettings';
+import { e2eTestNamesEnum, skipSettings } from '../tools/utils/testsSettings';
 import { ApiRouting } from '../tools/routes/api.routing';
 import { BloggerUsersTestManager } from '../tools/managers/BloggerUsersTestManager';
+import { constants } from '../tools/helpers/constants';
+import { BloggerBannedUsersQueryFilter } from '../../src/features/admin/api/models/outputSA.models.ts/blogger-banned-users.query';
+import { SortDirections } from '../../src/domain/sorting-base-filter';
 
-aDescribe(skipSettings.for('bloggerUsers'))(
+aDescribe(skipSettings.for(e2eTestNamesEnum.bloggerUsers))(
   'BloggerUsersController (e2e)',
   () => {
     let app: INestApplication;
@@ -76,7 +79,97 @@ aDescribe(skipSettings.for('bloggerUsers'))(
             bloggerTestManager,
             postsTestManager,
           }),
-          { comments: true },
+          { users: { quantity: 5 }, comments: true },
+        );
+      });
+
+      it(`after auto-testing: GET -> "blogger/users/blog/:id": should return status 200; content: banned users array with pagination; used additional methods: POST -> /sa/users, PUT -> /blogger/users/:id/ban;`, async () => {
+        const { firstPlayerToken, secondPlayerToken, users, blogs, posts } =
+          expect.getState();
+        const analyzedBlogId = posts[0].blogId;
+        const firstUserRestriction =
+          bloggerUsersTestManager.createBanRestriction({
+            isBanned: true,
+            blogId: analyzedBlogId,
+          });
+
+        await bloggerUsersTestManager.banUnbanRestriction(
+          users[1].id,
+          firstPlayerToken,
+          firstUserRestriction,
+        );
+
+        const secondUserRestriction =
+          bloggerUsersTestManager.createBanRestriction({
+            isBanned: true,
+            blogId: analyzedBlogId,
+          });
+
+        await bloggerUsersTestManager.banUnbanRestriction(
+          users[2].id,
+          firstPlayerToken,
+          secondUserRestriction,
+        );
+
+        const thirdUserRestriction =
+          bloggerUsersTestManager.createBanRestriction({
+            isBanned: true,
+            blogId: analyzedBlogId,
+          });
+
+        await bloggerUsersTestManager.banUnbanRestriction(
+          users[3].id,
+          firstPlayerToken,
+          thirdUserRestriction,
+        );
+
+        await bloggerUsersTestManager.getBannedUsersForCurrentBlog(
+          constants.inputData.validUUID,
+          firstPlayerToken,
+          null,
+          HttpStatus.NOT_FOUND,
+        );
+
+        const bannedUsersForAnalyzedBlog =
+          await bloggerUsersTestManager.getBannedUsersForCurrentBlog(
+            analyzedBlogId,
+            firstPlayerToken,
+            null,
+          );
+
+        expect(
+          bannedUsersForAnalyzedBlog.items.length &&
+            bannedUsersForAnalyzedBlog.totalCount,
+        ).toBe(3);
+      });
+
+      it(`PUT -> "/blogger/users/:id/ban", GET -> "blogger/users/blog/:id": should return error if access denied; status 403; used additional methods: POST => /sa/users, POST => /auth/login, POST => /blogger/blogs;`, async () => {
+        const { firstPlayerToken, secondPlayerToken, users, blogs, posts } =
+          expect.getState();
+
+        const analyzedBlogId = posts[0].blogId;
+        const userRestriction = bloggerUsersTestManager.createBanRestriction({
+          isBanned: true,
+          blogId: analyzedBlogId,
+        });
+        await bloggerUsersTestManager.banUnbanRestriction(
+          users[1].id,
+          firstPlayerToken,
+          userRestriction,
+        );
+
+        const query: Partial<BloggerBannedUsersQueryFilter> = {
+          pageSize: '9',
+          pageNumber: '1',
+          sortBy: 'login',
+          sortDirection: SortDirections.asc,
+        };
+
+        await bloggerUsersTestManager.getBannedUsersForCurrentBlog(
+          analyzedBlogId,
+          secondPlayerToken,
+          null,
+          HttpStatus.FORBIDDEN,
         );
       });
 

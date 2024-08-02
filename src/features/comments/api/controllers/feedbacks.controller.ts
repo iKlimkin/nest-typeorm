@@ -9,13 +9,11 @@ import {
   NotFoundException,
   Param,
   Put,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import {
   AccessTokenGuard,
-  CommentsQueryFilter,
   CommentsViewModel,
   CurrentUserId,
   CurrentUserInfo,
@@ -23,7 +21,6 @@ import {
   FeedbacksQueryRepo,
   InputContentDto,
   LikeStatusInputDto,
-  PaginationViewModel,
   SetUserIdGuard,
   UpdateCommentCommand,
   UpdateCommentReactionCommand,

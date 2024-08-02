@@ -11,6 +11,7 @@ import type { Post } from '../../../posts/domain/entities/post.entity';
 import type { QuizPlayerProgress } from '../../../quiz/domain/entities/quiz-player-progress.entity';
 import type { UserSession } from '../../../security/domain/entities/security.entity';
 import type { UserBloggerBans } from '../../../blogs/domain/entities/user-blogger-bans.entity';
+import { FileMetadata } from '../../../files/domain/entities/file-metadata.entity';
 
 type UserDataType = {
   login: string;
@@ -75,6 +76,9 @@ export class UserAccount extends BaseEntity {
 
   @OneToMany('UserBloggerBans', 'user', { nullable: true })
   bloggerBans: UserBloggerBans[];
+
+  // @OneToMany(() => FileMetadata, (fileMetadata) => fileMetadata.user)
+  // fileMetadatas: FileMetadata[];
 
   static create(userData: UserDataType) {
     const { login, email, passwordSalt, passwordHash } = userData;

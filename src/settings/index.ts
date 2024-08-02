@@ -45,6 +45,16 @@ export * from '../features/quiz/application/use-cases/publish-question.use-case'
 export * from '../features/quiz/application/use-cases/connect-player.use-case';
 export * from '../features/quiz/application/use-cases/create-pair.use-case';
 export * from '../features/quiz/application/use-cases/set-player-answer.use-case';
+export * from '../features/blogs/application/use-case/bind-user-with-blog.use-case';
+export * from '../features/blogs/application/use-case/delete-blogger-post.use-case';
+export * from '../features/blogs/application/use-case/blogger-update-post.use-case';
+export * from '../features/admin/application/use-cases/banUnbanBlogger.use.case';
+export * from '../features/posts/application/posts.service';
+export * from '../features/blogs/application/use-case/banUnbanBlog.use.case';
+export * from '../features/blogs/application/use-case/upload-post-main-image.use-case';
+export * from '../features/blogs/infrastructure/pipes/file-dimensions-validation.pipe';
+export * from '../infra/adapters/files-storage.adapter';
+export * from '../features/files/infrastructure/files.repository';
 
 export * from '../features/auth/domain/entities/temp-account.entity';
 export * from '../features/blogs/domain/entities/blog.entity';
@@ -61,4 +71,4 @@ export * from '../features/quiz/domain/entities/quiz-answer.entity';
 export * from '../features/quiz/domain/entities/quiz-player-progress.entity';
 export * from '../features/quiz/domain/entities/current-game-questions.entity';
 export * from '../features/quiz/domain/entities/quiz-correct-answers.entity';
-
+export * from '../features/files/domain/entities/file-metadata.entity';

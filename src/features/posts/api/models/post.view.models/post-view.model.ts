@@ -1,10 +1,14 @@
 import { LikesStatuses } from '../../../../../domain/reaction.models';
+import {
+  ContentCharacters,
+  RawImageMetaType,
+} from '../../../../files/api/models/file-view.model';
 import { PostReaction } from '../../../domain/entities/post-reactions.entity';
 import { Post } from '../../../domain/entities/post.entity';
 import {
-  PostStatusInfo,
+  IPostWithImagesRaw,
+  MainImagesMetaPostViewModelType,
   PostViewModelType,
-  PostWithNewestLikes,
   PostWithNewestLikesRaw,
 } from './post-view-model.type';
 
@@ -56,11 +60,24 @@ export const getPostViewModel = (
       myStatus: convertStatus(myReaction, post),
       newestLikes: filterNewestLikes(latestReactions, post.id),
     },
+    images: {
+      main: [],
+    },
   };
 };
 
+export const convertPostImages = (
+  images: RawImageMetaType[],
+): ContentCharacters[] =>
+  images.map((image) => ({
+    url: image.fileUrl,
+    fileSize: +image.fileSize,
+    height: +image.fileHeight,
+    width: +image.fileWidth,
+  }));
+
 export const parsePostToView = (
-  post: PostWithNewestLikes,
+  post: IPostWithImagesRaw,
 ): PostViewModelType => {
   return {
     id: post.id,
@@ -77,6 +94,9 @@ export const parsePostToView = (
         ? post.postReactions[0]?.reactionType || LikesStatuses.None
         : LikesStatuses.None,
       newestLikes: post.newestLikes || [],
+    },
+    images: {
+      main: post.images ? convertPostImages(post.images) : [],
     },
   };
 };
@@ -96,5 +116,8 @@ export const getPostRawView = (
     dislikesCount: post.dislikesCount || 0,
     myStatus: post.myReaction || LikesStatuses.None,
     newestLikes: post.newestLikes || [],
+  },
+  images: {
+    main: [],
   },
 });

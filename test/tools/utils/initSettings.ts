@@ -13,27 +13,41 @@ import { ApiRouting } from '../routes/api.routing';
 import { QuizQuestion } from '../../../src/features/quiz/domain/entities/quiz-questions.entity';
 import { QuizAnswer } from '../../../src/features/quiz/domain/entities/quiz-answer.entity';
 
-const truncateDBTables = async (app: INestApplication, ownerName: string) => {
-  const dataSource = await app.resolve(DataSource);
+export const truncateDBTables = async (
+  dataSource: DataSource,
+  dbOwnerUserName: string = 'postgres',
+) => {
+  const queryRunner = dataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+  try {
+    await queryRunner.query(
+      `
+        CREATE OR REPLACE FUNCTION truncate_tables(username IN VARCHAR) RETURNS void AS $$
+        DECLARE
+            statements CURSOR FOR
+                SELECT tablename FROM pg_tables
+                WHERE tableowner = username 
+                  AND schemaname = 'public' 
+                  AND tablename != 'migrations';
+        BEGIN
+            FOR stmt IN statements LOOP
+                EXECUTE 'TRUNCATE TABLE ' || quote_ident(stmt.tablename) || ' CASCADE;';
+            END LOOP;
+        END;
+        $$ LANGUAGE plpgsql;
 
-  await dataSource.query(
-    `
-            CREATE OR REPLACE FUNCTION truncate_tables(username IN VARCHAR) RETURNS void AS $$
-            DECLARE
-                statements CURSOR FOR
-                    SELECT tablename FROM pg_tables
-                    WHERE tableowner = username AND schemaname = 'public'AND 
-                    tablename != 'migrations';
-            BEGIN
-                FOR stmt IN statements LOOP
-                    EXECUTE 'TRUNCATE TABLE ' || quote_ident(stmt.tablename) || ' CASCADE;';
-                END LOOP;
-            END;
-            $$ LANGUAGE plpgsql;
-
-            SELECT truncate_tables('${ownerName}');
-        `,
-  );
+        SELECT truncate_tables('${dbOwnerUserName}');
+      `,
+    );
+    console.log(`base has been cleared`);
+    await queryRunner.commitTransaction();
+  } catch (error) {
+    await queryRunner.rollbackTransaction();
+    throw error;
+  } finally {
+    await queryRunner.release();
+  }
 };
 
 export const initSettings = async (
@@ -67,7 +81,8 @@ export const initSettings = async (
     const app = testingAppModule.createNestApplication();
 
     const configService = app.get(ConfigService<ConfigurationType>);
-    const dbOwner = configService.getOrThrow('pg', { infer: true }).username;
+    const { username } = configService.getOrThrow('pg', { infer: true });
+
     const env = configService.get('env', { infer: true });
 
     console.log('in tests ENV: ', { env });
@@ -81,8 +96,7 @@ export const initSettings = async (
     const httpServer = app.getHttpServer();
     const dataSource = testingAppModule.get(DataSource);
 
-    await truncateDBTables(app, dbOwner);
-    console.log(`base has been cleared`);
+    await truncateDBTables(dataSource, username);
 
     return {
       app,

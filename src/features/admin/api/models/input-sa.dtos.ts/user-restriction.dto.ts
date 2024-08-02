@@ -1,6 +1,6 @@
-import { IsBoolean, IsUUID } from 'class-validator';
-import { iSValidField } from '../../../../../infra/decorators/transform/transform-params';
+import { IsBoolean } from 'class-validator';
 import { contentPostLength } from '../../../../../domain/validation.constants';
+import { iSValidField } from '../../../../../infra/decorators/transform/transform-params';
 
 export class UserRestrictionDto {
   @IsBoolean()

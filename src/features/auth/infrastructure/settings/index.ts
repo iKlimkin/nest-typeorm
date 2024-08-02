@@ -39,3 +39,4 @@ export * from '../../../blogs/domain/entities/user-blogger-bans.entity';
 export * from '../../../security/domain/entities/security.entity';
 export * from '../../domain/entities/user-bans.entity';
 export * from '../../domain/entities/temp-account.entity';
+export { Blog } from '../../../blogs/domain/entities/blog.entity';

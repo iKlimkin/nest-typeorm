@@ -35,6 +35,8 @@ import {
   SACrudApiService,
 } from '.';
 import { BloggerCrudApiService } from '../../../admin/application/bloggerCrudApi.service';
+import { BlogsQueryRepo } from '../../../blogs/api/query-repositories/blogs.query.repo';
+import { FileDimensionsValidationPipe } from '../../../blogs/infrastructure/pipes/file-dimensions-validation.pipe';
 
 
 export const usersProviders: Provider[] = [
@@ -94,6 +96,8 @@ export const providers = [
   ...securityProviders,
   ...securityUseCases,
   BloggerCrudApiService,
+  BlogsQueryRepo,
   AuthService,
   ...usersProviders,
+  FileDimensionsValidationPipe,
 ];

@@ -1,4 +1,8 @@
 import { LikesStatuses } from '../../../../../domain/reaction.models';
+import {
+  FilesMetaBlogViewModelType,
+  RawImageMetaType,
+} from '../../../../files/api/models/file-view.model';
 import { Post } from '../../../domain/entities/post.entity';
 
 export type PostStatusInfo = {
@@ -52,7 +56,14 @@ export type PostViewModelType = {
 
     newestLikes: PostStatusInfo[] | [];
   };
+
+  images: MainImagesMetaPostViewModelType;
 };
+
+export type MainImagesMetaPostViewModelType = Omit<
+  FilesMetaBlogViewModelType,
+  'wallpaper'
+>;
 
 export interface PostWithNewestLikes extends Omit<Post, 'postReactionCounts'> {
   newestLikes: PostStatusInfo[] | null;
@@ -60,6 +71,10 @@ export interface PostWithNewestLikes extends Omit<Post, 'postReactionCounts'> {
     likesCount: number;
     dislikesCount: number;
   };
+}
+
+export interface IPostWithImagesRaw extends PostWithNewestLikes {
+  images: RawImageMetaType[];
 }
 
 export interface PostWithNewestLikesRaw {

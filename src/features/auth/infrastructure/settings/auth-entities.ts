@@ -1,4 +1,5 @@
 import {
+  Blog,
   TemporaryUserAccount,
   UserAccount,
   UserBans,
@@ -12,4 +13,5 @@ export const authEntities = [
   UserSession,
   UserBans,
   UserBloggerBans,
+  Blog,
 ];
