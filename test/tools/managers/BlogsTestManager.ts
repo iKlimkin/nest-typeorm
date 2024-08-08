@@ -41,10 +41,10 @@ import { SuperTestBody } from '../models/body.response.model';
 import { ApiRouting } from '../routes/api.routing';
 import { BlogsRouting } from '../routes/blogs.routing';
 import { BaseTestManager } from './BaseTestManager';
-
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import * as sharp from 'sharp';
+import { Subscription } from '../../../src/features/blogs/domain/entities/blog-subscription.entity';
 
 interface UploadBackWallForBlogParams {
   accessToken: string;
@@ -135,11 +135,13 @@ export class BlogTestManager extends BaseTestManager {
 }
 
 export class PublicBlogsTestManager extends BlogTestManager {
+  private subRepo: Repository<Subscription>;
   constructor(
     protected readonly app: INestApplication,
     protected readonly routing: BlogsRouting,
   ) {
     super(app);
+    this.subRepo = app.get(getRepositoryToken(Subscription));
   }
 
   async getBlogsWithPagination(token: string, query?) {
@@ -289,16 +291,54 @@ export class PublicBlogsTestManager extends BlogTestManager {
       });
   }
 
+  async applySubscription(
+    blogId: string,
+    accessToken: string,
+    expectedStatus = HttpStatus.NO_CONTENT,
+  ) {
+    await request(this.application)
+      .post(this.routing.subUnsubToBlog(blogId))
+      .auth(accessToken, this.constants.authBearer)
+      .expect(expectedStatus);
+  }
+
+  async unSubscribe(
+    blogId: string,
+    accessToken: string,
+    expectedStatus = HttpStatus.NO_CONTENT,
+  ) {
+    await request(this.application)
+      .delete(this.routing.subUnsubToBlog(blogId))
+      .auth(accessToken, this.constants.authBearer)
+      .expect(expectedStatus);
+  }
+
+  async getSubscribeInfo(blogId: string): Promise<Subscription[]> {
+    try {
+      return await this.subRepo.find({
+        where: { blog: { id: blogId } },
+        relations: ['user'],
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
   private getBlogByIdDirectly = async (blogId: string) =>
     await this.blogRepository.findOneBy({ id: blogId });
   private getPostByIdDirectly = async (postId: string) =>
     await this.postRepository.findOneBy({ id: postId });
 
-  getPublicBlog = async (blogId: string, expectStatus = HttpStatus.OK) => {
+  getPublicBlog = async (
+    blogId: string,
+    accessToken?: string,
+    expectStatus = HttpStatus.OK,
+  ): Promise<BlogViewModelType> => {
     const { body: blog } = await request(this.application)
       .get(this.routing.getBlog(blogId))
+      .auth(accessToken, this.constants.authBearer)
       .expect(expectStatus)
-      .expect(({ body }: SuperTestBody<BlogViewModelTypeWithImages>) => {
+      .expect(({ body }: SuperTestBody<BlogViewModelType>) => {
         const isSuccess = !body.errors;
         if (isSuccess) {
           expect(body).toEqual(createdBlogStructureConsistency());
@@ -312,10 +352,11 @@ export class PublicBlogsTestManager extends BlogTestManager {
     return blog;
   };
 
-  async getPublicBlogs(expectedStatus = HttpStatus.OK) {
+  async getPublicBlogs(accessToken?: string, expectedStatus = HttpStatus.OK) {
     let blogs: PaginationViewModel<BlogViewModelType>;
     await request(this.application)
       .get(this.routing.getBlogs())
+      .auth(accessToken, this.constants.authBearer)
       .expect(expectedStatus)
       .expect(
         ({ body }: SuperTestBody<PaginationViewModel<BlogViewModelType>>) => {

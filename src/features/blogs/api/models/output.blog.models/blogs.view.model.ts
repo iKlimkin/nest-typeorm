@@ -9,14 +9,9 @@ import {
   ImageInfoType,
   RawBlogImagesType,
   SABlogsViewType,
+  SubscribeEnum,
 } from './blog.view.model-type';
 
-const imageInfo = {
-  url: '',
-  fileSize: 0,
-  height: 0,
-  width: 0,
-};
 export const getBlogsViewModel = (blog: Blog): BlogViewModelType => ({
   id: blog.id,
   name: blog.title,
@@ -27,6 +22,22 @@ export const getBlogsViewModel = (blog: Blog): BlogViewModelType => ({
   images: blog.images
     ? convertImagesToView(blog.images as unknown as ImageInfoType[])
     : { wallpaper: null, main: [] },
+});
+
+export const getBlogsViewModelNew = (
+  blog: Blog & { subscribersCount: string; subscribeStatus: SubscribeEnum },
+): BlogViewModelType => ({
+  id: blog.id,
+  name: blog.title,
+  description: blog.description,
+  websiteUrl: blog.websiteUrl,
+  createdAt: blog.created_at.toISOString(),
+  isMembership: blog.isMembership,
+  images: blog.images
+    ? convertImagesToView(blog.images as unknown as ImageInfoType[])
+    : { wallpaper: null, main: [] },
+  currentUserSubscriptionStatus: blog.subscribeStatus || SubscribeEnum.None,
+  subscribersCount: +blog.subscribersCount || 0,
 });
 
 export const convertImagesToView = (

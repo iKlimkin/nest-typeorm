@@ -37,8 +37,17 @@ export type BlogViewModelType = {
    */
   isMembership: boolean;
 
-  images: FilesMetaBlogViewModelType
+  images: FilesMetaBlogViewModelType;
+
+  currentUserSubscriptionStatus?: SubscribeEnum;
+  subscribersCount?: number;
 };
+
+export enum SubscribeEnum {
+  Subscribed = 'Subscribed',
+  Unsubscribed = 'Unsubscribed',
+  None = 'None',
+}
 
 export type BlogOwnerInfoType = { userId: string; userLogin: string };
 

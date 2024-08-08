@@ -35,9 +35,8 @@ import {
   SACrudApiService,
 } from '.';
 import { BloggerCrudApiService } from '../../../admin/application/bloggerCrudApi.service';
-import { BlogsQueryRepo } from '../../../blogs/api/query-repositories/blogs.query.repo';
 import { FileDimensionsValidationPipe } from '../../../blogs/infrastructure/pipes/file-dimensions-validation.pipe';
-
+import { BlogsQueryRepo } from '../../../blogs/api/query-repositories/blogs.query.repo';
 
 export const usersProviders: Provider[] = [
   UsersRepository,

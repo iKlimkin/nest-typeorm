@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
-import { BaseViewModel } from '../../../blogs/application/base.crud.api.service';
+import { BaseViewModel } from '../../../../domain/base-services/base.crud.api.service';
 import { QuizPairViewType } from '../../api/models/output.models.ts/view.models.ts/quiz-game.view-type';
 import {
   QuizQueryRepo,

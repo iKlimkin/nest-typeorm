@@ -2,21 +2,19 @@ import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { configureTestSetup } from '../tools/fixtures/setup-environment';
 import { RouterPaths } from '../tools/helpers/routing';
-import { createBlogsDataForTests } from '../tools/helpers/structure-validation.helpers';
 import {
   BloggerBlogsTestManager,
   BlogTestManager,
   PublicBlogsTestManager,
   SABlogsTestManager,
 } from '../tools/managers/BlogsTestManager';
+import { PostsTestManager } from '../tools/managers/PostsTestManager';
+import { SATestManager } from '../tools/managers/SATestManager';
 import { UsersTestManager } from '../tools/managers/UsersTestManager';
 import { aDescribe } from '../tools/utils/aDescribe';
 import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
 import { initSettings } from '../tools/utils/initSettings';
 import { e2eTestNamesEnum, skipSettings } from '../tools/utils/testsSettings';
-import { SATestManager } from '../tools/managers/SATestManager';
-import { PostsTestManager } from '../tools/managers/PostsTestManager';
-import { post } from 'superagent';
 
 aDescribe(skipSettings.for(e2eTestNamesEnum.blogs))(
   'BlogsController (e2e)',
@@ -75,7 +73,7 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.blogs))(
         );
       });
 
-      it.only('/blogs (GET) - should return blogs with paging', async () => {
+      it('/blogs (GET) - should return blogs with paging', async () => {
         const { firstPlayerToken, postByFirstToken } = expect.getState();
 
         const resizedWallBuffer = await bloggerTestManager.prepareFileToSend(

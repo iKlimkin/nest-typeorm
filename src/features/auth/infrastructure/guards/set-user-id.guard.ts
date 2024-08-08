@@ -15,16 +15,17 @@ export class SetUserIdGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const accessToken = this.extractTokenFromHeaders(request);
 
-    const jwtConfig = this.configService.get('jwtSettings', { infer: true });
+    const { ACCESS_TOKEN_SECRET } = this.configService.get('jwtSettings', {
+      infer: true,
+    });
 
     if (accessToken) {
       try {
         const userPayload = await this.jwtService.verifyAsync(accessToken, {
-          secret: jwtConfig.ACCESS_TOKEN_SECRET,
+          secret: ACCESS_TOKEN_SECRET,
         });
         request.userId = userPayload.userId;
       } catch (error) {
-        // console.error(`invalid accessToken ${error}`);
         return true;
       }
     }

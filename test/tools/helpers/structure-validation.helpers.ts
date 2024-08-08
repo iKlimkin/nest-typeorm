@@ -1,5 +1,8 @@
 import { LikesStatuses } from '../../../src/domain/reaction.models';
-import { BlogViewModelType } from '../../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
+import {
+  BlogViewModelType,
+  SubscribeEnum,
+} from '../../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
 import { CommentsViewModel } from '../../../src/features/comments/api/models/comments.view.models/comments.view-model.type';
 import { CreationCommentDto } from '../../../src/features/comments/api/models/dtos/comment.dto';
 import { CreationPostDtoByBlogId } from '../../../src/features/posts/api/models/input.posts.models/create.post.model';
@@ -118,6 +121,8 @@ export const createdBlogStructureConsistency = (
   createdAt: expect.any(String),
   websiteUrl: expect.any(String),
   images: expect.any(Object),
+  currentUserSubscriptionStatus: expect.any(String),
+  subscribersCount: expect.any(Number),
 });
 
 export const paginationStructureConsistency = () => ({

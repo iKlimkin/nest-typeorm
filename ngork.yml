@@ -1,0 +1,5 @@
+authtoken: ${NGROK_AUTH_TOKEN}
+tunnels:
+  web:
+    proto: http
+    addr: 1488

@@ -61,7 +61,7 @@ export const handleErrors = (
     default:
       return {
         message: 'An unexpected error occurred',
-        error: new Error('An unexpected error occurred'),
+        error: new InternalServerErrorException(errorObject),
       };
   }
 };

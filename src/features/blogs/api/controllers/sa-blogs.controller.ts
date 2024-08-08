@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { RouterPaths } from '../../../../../test/tools/helpers/routing';
-import { BlogCrudApiService } from '../../application/base.crud.api.service';
+import { BlogCrudApiService } from '../../../../domain/base-services/base.crud.api.service';
 import { BindUserWithBlogCommand } from '../../application/use-case/commands/bind-user-with-blog.command';
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
 import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
@@ -37,7 +37,7 @@ export class SABlogsController {
   async getBlogs(
     @Query() query: BlogsQueryFilter,
   ): Promise<PaginationViewModel<SABlogsViewType>> {
-    return this.blogsQueryRepo.getAllBlogs(query, true) as Promise<
+    return this.blogsQueryRepo.getAllBlogs(query, null, true) as Promise<
       PaginationViewModel<SABlogsViewType>
     >;
   }

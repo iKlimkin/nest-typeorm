@@ -3,14 +3,12 @@ import {
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
-import { AppModule } from '../app.module';
-import * as cookieParser from 'cookie-parser';
-import { ValidationError, useContainer } from 'class-validator';
-import {
-  // AllExceptionsFilter,
-  HttpExceptionFilter,
-} from '../infra/exception.filter';
 import { ConfigService } from '@nestjs/config';
+import { ValidationError, useContainer } from 'class-validator';
+import * as cookieParser from 'cookie-parser';
+import { AppModule } from '../app.module';
+import { HttpExceptionFilter } from '../infra/exception.filter';
+import { swaggerSetup } from './config/swagger.setup';
 
 export const applyAppSettings = (app: INestApplication) => {
   app.use(cookieParser());
@@ -22,6 +20,7 @@ export const applyAppSettings = (app: INestApplication) => {
   setAppPipes(app);
 
   setAppExceptionsFilters(app);
+  swaggerSetup(app);
 };
 
 type CustomError = {

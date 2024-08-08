@@ -456,9 +456,9 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.posts))(
           saManager.createBanRestriction({ isBanned: true }),
         );
 
-        const postAfter = (
-          await postsTestManager.getPosts()
-        ).items.find((p) => p.id === post.id);
+        const postAfter = (await postsTestManager.getPosts()).items.find(
+          (p) => p.id === post.id,
+        );
         expect(postAfter.extendedLikesInfo.likesCount).toEqual(0);
 
         // await postsTestManager.getPostById(postByFirstToken.id, secondPlayerToken);

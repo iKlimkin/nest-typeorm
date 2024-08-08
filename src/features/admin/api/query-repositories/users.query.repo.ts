@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../infra/utils/get-pagination';
 import { UserAccount } from '../../domain/entities/user-account.entity';
@@ -22,7 +22,6 @@ import {
 @Injectable()
 export class UsersQueryRepo {
   constructor(
-    @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(UserAccount)
     private readonly userAccounts: Repository<UserAccount>,
   ) {}

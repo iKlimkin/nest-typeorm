@@ -3,7 +3,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import {
   BaseCrudApiService,
   BaseViewModel,
-} from '../../blogs/application/base.crud.api.service';
+} from '../../../domain/base-services/base.crud.api.service';
 import { UsersQueryRepo } from '../api/query-repositories/users.query.repo';
 
 @Injectable()

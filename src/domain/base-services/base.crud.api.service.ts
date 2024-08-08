@@ -1,15 +1,15 @@
 import { CommandBus } from '@nestjs/cqrs';
 import { Injectable } from '@nestjs/common';
-import { SAViewType } from '../../admin/api/models/user.view.models/userAdmin.view-type';
-import { UsersQueryRepo } from '../../admin/api/query-repositories/users.query.repo';
-import { LayerNoticeInterceptor } from '../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { handleErrors } from '../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
-import { BlogsQueryRepo } from '../api/query-repositories/blogs.query.repo';
-import { BlogViewModelType } from '../api/models/output.blog.models/blog.view.model-type';
-import { PostViewModelType } from '../../posts/api/models/post.view.models/post-view-model.type';
-import { PostsQueryRepo } from '../../posts/api/query-repositories/posts.query.repo';
-import { CommentsViewModel } from '../../comments/api/models/comments.view.models/comments.view-model.type';
-import { FeedbacksQueryRepo } from '../../comments/api/query-repositories/feedbacks.query.repo';
+import { SAViewType } from '../../features/admin/api/models/user.view.models/userAdmin.view-type';
+import { UsersQueryRepo } from '../../features/admin/api/query-repositories/users.query.repo';
+import { LayerNoticeInterceptor } from '../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
+import { handleErrors } from '../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';
+import { BlogsQueryRepo } from '../../features/blogs/api/query-repositories/blogs.query.repo';
+import { BlogViewModelType } from '../../features/blogs/api/models/output.blog.models/blog.view.model-type';
+import { PostViewModelType } from '../../features/posts/api/models/post.view.models/post-view-model.type';
+import { PostsQueryRepo } from '../../features/posts/api/query-repositories/posts.query.repo';
+import { CommentsViewModel } from '../../features/comments/api/models/comments.view.models/comments.view-model.type';
+import { FeedbacksQueryRepo } from '../../features/comments/api/query-repositories/feedbacks.query.repo';
 
 export interface BaseQueryRepository<T> {
   getById: (id: string) => Promise<T>;

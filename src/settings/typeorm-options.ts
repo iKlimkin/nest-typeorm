@@ -29,15 +29,12 @@ export class TypeOrmOptions implements TypeOrmOptionsFactory {
     entities: EntityClassOrSchema[],
   ): TypeOrmModuleOptions {
     try {
-      const { url, username, password, database, type } = connection;
+      const { url, type } = connection;
 
       return {
         url,
         type,
         entities,
-        username,
-        password,
-        database,
         autoLoadEntities: false,
         synchronize: false,
         dropSchema: false,

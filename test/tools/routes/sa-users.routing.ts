@@ -1,7 +1,7 @@
-import { RouterPathsType } from '../helpers/routing';
+import { RouterPaths } from '../helpers/routing';
 
 export class SAUsersRouting {
-  constructor(private readonly baseUrl: RouterPathsType) {}
+  constructor(private readonly baseUrl = RouterPaths.users) {}
   getUsers = () => this.baseUrl;
   createSA = () => this.baseUrl;
   banUnbanRestriction = (userId: string) => `${this.baseUrl}/${userId}/ban`;

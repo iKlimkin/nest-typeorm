@@ -90,7 +90,6 @@ export class PostsQueryRepo {
       console.log(queryBuilder.getQueryAndParameters());
 
       const posts = await queryBuilder.getRawMany();
-      console.log({ posts: JSON.stringify(posts) });
 
       return new PaginationViewModel<PostViewModelType>(
         posts.map(parsePostToView),

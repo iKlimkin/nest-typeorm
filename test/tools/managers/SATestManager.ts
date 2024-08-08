@@ -17,7 +17,6 @@ import { SAQueryFilter } from '../../../src/features/admin/api/models/outputSA.m
 import { BaseTestManager } from './BaseTestManager';
 
 export class SATestManager extends BaseTestManager {
-  // protected readonly application: INestApplication<HttpServer>;
   protected readonly constants: AuthConstantsType;
 
   constructor(
@@ -25,7 +24,6 @@ export class SATestManager extends BaseTestManager {
     protected readonly routing: SAUsersRouting,
   ) {
     super(routing, app);
-    // this.application = this.app.getHttpServer();
     this.constants = constants.auth;
   }
 

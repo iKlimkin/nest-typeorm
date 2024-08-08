@@ -20,4 +20,5 @@ export class BlogsRouting {
   bindBlog = (blogId, userId) =>
     `${this.baseUrl}/${blogId}/bind-with-user/${userId}`;
   banUnban = (blogId) => `${this.baseUrl}/${blogId}/ban`;
+  subUnsubToBlog = (blogId) => `${this.baseUrl}/${blogId}/subscription`;
 }

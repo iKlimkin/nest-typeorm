@@ -7,11 +7,12 @@ import {
   UserSession,
 } from '.';
 
+
 export const authEntities = [
   TemporaryUserAccount,
   UserAccount,
   UserSession,
   UserBans,
   UserBloggerBans,
-  Blog,
+  Blog
 ];

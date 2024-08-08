@@ -9,7 +9,7 @@ export const GetClientInfo = createParamDecorator(
     const forwardedIpsStr =
       request.headers['x-forwarded-for'] || request.socket.remoteAddress || '';
 
-    const ip = (forwardedIpsStr as string).split(',')[0];
+    const ip = forwardedIpsStr.split(',')[0];
 
     return { ip, userAgentInfo } as ClientInfo;
   },

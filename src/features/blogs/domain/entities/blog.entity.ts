@@ -1,5 +1,12 @@
 import { Length, Matches } from 'class-validator';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 import { BaseEntity } from '../../../../domain/base-entity';
 import {
   descriptionLength,
@@ -17,6 +24,7 @@ import {
 } from '../../api/models/dtos/blog-dto.model';
 import type { UserBloggerBans } from './user-blogger-bans.entity';
 import { BlogImage } from '../../../files/domain/entities/blog-images.entity';
+import { Subscription } from './blog-subscription.entity';
 
 @Entity()
 export class Blog extends BaseEntity {
@@ -59,6 +67,9 @@ export class Blog extends BaseEntity {
 
   @OneToOne(() => BlogImage, (images) => images.blog)
   images: BlogImage;
+
+  @OneToMany(() => Subscription, (subs) => subs.blog)
+  subscriptions: Subscription[];
 
   static async create(createBlogDto: BlogCreationDto) {
     const notice = new LayerNoticeInterceptor<Blog>();

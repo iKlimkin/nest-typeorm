@@ -18,7 +18,7 @@ export class AuthService {
     private configService: ConfigService<ConfigurationType>,
   ) {}
 
-  async getTokens(userId: string): Promise<JwtTokens> {
+  async createTokenPair(userId: string): Promise<JwtTokens> {
     const deviceId = uuidv4();
     const payload = { userId, deviceId };
     const [accessToken, refreshToken] = await this.createNewTokens(payload);

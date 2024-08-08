@@ -10,11 +10,12 @@ export const skipSettings = {
   posts: skip,
   appTests: skip,
   SABlogs: skip,
-  bloggerBlogs: run,
+  bloggerBlogs: skip,
   bloggerUsers: skip,
   blogs: skip,
   security: skip,
   app: skip,
+  integrations: run,
 
   for(testName: e2eTestNamesEnum): boolean {
     if (!this.run_all_tests) return false;
@@ -48,6 +49,7 @@ export enum e2eTestNamesEnum {
   SABlogs = 'SABlogs',
   staging = 'staging',
   quiz = 'quiz',
+  integrations = 'integrations',
 }
 
 enum uTestNamesEnum {

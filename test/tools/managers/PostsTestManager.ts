@@ -1,21 +1,20 @@
-import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import {
-  LikeStatusType,
-  LikesStatuses,
+  LikesStatuses
 } from '../../../src/domain/reaction.models';
-import { CreatePostModel } from '../../../src/features/posts/api/models/input.posts.models/create.post.model';
-import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
-import { RouterPaths } from '../helpers/routing';
+import { PaginationViewModel } from '../../../src/domain/sorting-base-filter';
 import { SAViewType } from '../../../src/features/admin/api/models/user.view.models/userAdmin.view-type';
 import { CommentsViewModel } from '../../../src/features/comments/api/models/comments.view.models/comments.view-model.type';
-import { BaseTestManager } from './BaseTestManager';
-import { PostsRouting } from '../routes/posts.routing';
-import { PaginationViewModel } from '../../../src/domain/sorting-base-filter';
-import { SuperTestBody } from '../models/body.response.model';
 import { CommentsQueryFilter } from '../../../src/features/comments/api/models/output.comment.models/comment-query.filter';
-import { constants, feedbacksConstants } from '../helpers/constants';
+import { CreatePostModel } from '../../../src/features/posts/api/models/input.posts.models/create.post.model';
 import { PostsQueryFilter } from '../../../src/features/posts/api/models/output.post.models/posts-query.filter';
+import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
+import { constants, feedbacksConstants } from '../helpers/constants';
+import { RouterPaths } from '../helpers/routing';
+import { SuperTestBody } from '../models/body.response.model';
+import { PostsRouting } from '../routes/posts.routing';
+import { BaseTestManager } from './BaseTestManager';
 
 export type CreationCommentData = {
   user?: SAViewType;
@@ -37,13 +36,11 @@ type CreateTestCommentData = {
 };
 
 export class PostsTestManager extends BaseTestManager {
-  // protected readonly application: INestApplication<HttpServer>;
   constructor(
     protected readonly app: INestApplication,
     protected readonly routing: PostsRouting,
   ) {
     super(routing, app);
-    // this.application = this.app.getHttpServer();
   }
 
   createInputData(field?: CreatePostModel | any): CreatePostModel {

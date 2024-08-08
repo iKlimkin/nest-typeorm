@@ -14,11 +14,11 @@ export class BasicSAStrategy extends PassportStrategy(BasicStrategy) {
     username: string,
     password: string,
   ): Promise<boolean> => {
-    const config = this.configService.get('basicAuth', {
+    const { USERNAME, PASSWORD } = this.configService.get('basicAuth', {
       infer: true,
     });
 
-    if (config.USERNAME === username && config.PASSWORD === password) {
+    if (USERNAME === username && PASSWORD === password) {
       return true;
     }
 

@@ -38,7 +38,7 @@ import {
   DeletePostCommand,
 } from './index';
 import { RouterPaths } from '../../../../../test/tools/helpers/routing';
-import { PostCrudApiService } from '../../../blogs/application/base.crud.api.service';
+import { PostCrudApiService } from '../../../../domain/base-services/base.crud.api.service';
 import { CommentsQueryFilter } from '../../../comments/api/models/output.comment.models/comment-query.filter';
 
 @Controller(RouterPaths.posts)

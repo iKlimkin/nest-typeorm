@@ -9,10 +9,9 @@ export * from '../features/quiz/api/controllers/quiz-questions.controller';
 
 export * from '../data-testing/test.db.repo';
 export * from '../infra/decorators/validate/is-valid-blogId';
-export * from '../features/blogs/api/query-repositories/blogs.query.repo';
 export * from '../features/blogs/api/controllers/blogs.controller';
 export * from '../features/blogs/application/blog.service';
-export * from '../features/blogs/application/base.crud.api.service';
+export * from '../domain/base-services/base.crud.api.service';
 export * from '../features/quiz/infrastructure/quiz-game.repo';
 
 export * from '../infra/pipes/id-validate.pipe';

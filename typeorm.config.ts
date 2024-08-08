@@ -23,10 +23,14 @@ import {
   BlogImage,
   PostImage,
 } from '.';
+import { Subscription } from './src/features/blogs/domain/entities/blog-subscription.entity';
+import { TelegramMetaUser } from './src/features/integrations/domain/entities/telegram-meta-user.entity';
 
 config();
 
 export const getEntities = () => [
+  TelegramMetaUser,
+  Subscription,
   BlogImage,
   PostImage,
   TemporaryUserAccount,
@@ -53,19 +57,27 @@ export const getEntities = () => [
 ];
 
 const connectionUrl = (): string => {
-  let url = '';
+  let env = process.env;
+  let connection = env.DB_CONNECTION;
 
-  if (process.env.DB_CONNECTION === 'local') {
-    url = process.env.DATABASE_URL;
-  } else {
-    url = process.env.DATABASE_REMOTE_URL;
+  let url = '';
+  let connectionType = '';
+  if (connection === 'local') {
+    connectionType = 'local';
+    url = env.DATABASE_URL;
+  } else if (connection === 'docker') {
+    connectionType = 'local-docker-container';
+    url = env.DOCKER_URL;
+  } else if (connection === 'remote') {
+    connectionType = 'remote';
+    url = env.DATABASE_REMOTE_URL;
   }
 
-  const connectionLog = url.startsWith('postgres:') ? 'local' : 'remote';
-  console.log(`Migration to ${connectionLog} database`);
+  console.log(`Migration to ${connectionType} database`);
 
   return url;
 };
+
 export default new DataSource({
   url: connectionUrl(),
   type: 'postgres',

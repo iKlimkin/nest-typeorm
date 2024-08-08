@@ -1,8 +1,8 @@
 export * from '../../application/auth.service';
 export * from '../../../admin/infrastructure/users.repo';
 export * from '../../../admin/application/use-cases/create-sa.use.case';
-export * from '../../../../infra/adapters/bcrypt-adapter';
-export * from '../../../../infra/adapters/email-adapter';
+export * from '../../../../infra/adapters/bcrypt.adapter';
+export * from '../../../../infra/adapters/email.adapter';
 export * from '../../../../infra/managers/email-manager';
 export * from '../auth.repository';
 export * from '../../../security/api/query-repositories/security.query.repo';
@@ -31,12 +31,12 @@ export * from '../guards/strategies/jwt-strategy';
 export * from '../guards/strategies/basic-strategy';
 
 export * from '../../../../infra/decorators/validate/is-valid-blogId';
-export * from '../../../blogs/application/base.crud.api.service';
+export * from '../../../../domain/base-services/base.crud.api.service';
 export * from '../../../admin/application/use-cases/banUnban.use.case';
 
 export * from '../../../admin/domain/entities/user-account.entity';
 export * from '../../../blogs/domain/entities/user-blogger-bans.entity';
+export * from '../../../blogs/domain/entities/blog.entity';
 export * from '../../../security/domain/entities/security.entity';
 export * from '../../domain/entities/user-bans.entity';
 export * from '../../domain/entities/temp-account.entity';
-export { Blog } from '../../../blogs/domain/entities/blog.entity';

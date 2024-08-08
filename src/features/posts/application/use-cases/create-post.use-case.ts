@@ -1,22 +1,26 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { DataSource } from 'typeorm';
 import { OutputId } from '../../../../domain/output.models';
 import { runInTransaction } from '../../../../domain/transaction-wrapper';
+import { TelegramAdapter } from '../../../../infra/adapters/telegram.adapter';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { BlogService, Post } from '../../../../settings';
+import { BlogService } from '../../../blogs/application/blog.service';
+import { IntegrationsRepository } from '../../../integrations/infrastructure/integrations.repository';
+import { Post } from '../../domain/entities/post.entity';
 import { PostsRepository } from '../../infrastructure/posts.repository';
 import { CreatePostCommand } from './commands/create-post.command';
+import { NotifySubscribersEvent } from '../../../blogs/application/events/created-post-notify.event';
 
 @CommandHandler(CreatePostCommand)
 export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
-  private location: string;
   constructor(
     private postsRepo: PostsRepository,
     private dataSource: DataSource,
     private blogService: BlogService,
-  ) {
-    this.location = 'CreatePostUseCase';
-  }
+    private integrationsRepo: IntegrationsRepository,
+    private tgAdapter: TelegramAdapter,
+    private eventBus: EventBus,
+  ) {}
 
   async execute(
     command: CreatePostCommand,
@@ -40,8 +44,11 @@ export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
 
       const result = await postsRepo.save(createdPostNotice.data, manager);
 
+      this.eventBus.publish(new NotifySubscribersEvent(blogId, blog.title));
+
       notice.addData(result);
       return notice;
     });
   }
+
 }

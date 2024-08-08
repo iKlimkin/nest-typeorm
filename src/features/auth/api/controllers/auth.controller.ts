@@ -63,9 +63,8 @@ export class AuthController {
     @GetClientInfo() clientInfo: ClientInfo,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { accessToken, refreshToken } = await this.authService.getTokens(
-      userInfo.userId,
-    );
+    const { accessToken, refreshToken } =
+      await this.authService.createTokenPair(userInfo.userId);
 
     const userPayload = this.authService.getUserPayloadByToken(refreshToken);
 

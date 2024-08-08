@@ -6,6 +6,7 @@ import { PostsRouting } from './posts.routing';
 import { QuizPairsRouting } from './quizPairs.routing';
 import { QuizQuestionsRouting } from './quizQuestions.routing';
 import { SAUsersRouting } from './sa-users.routing';
+import { IntegrationsRouting } from './telegram.routing';
 import { AuthUsersRouting } from './users.routing';
 
 export class ApiRouting implements RoutingInterface {
@@ -19,6 +20,7 @@ export class ApiRouting implements RoutingInterface {
   posts: PostsRouting;
   users: AuthUsersRouting;
   bloggerUsers: BloggerUsersRouting;
+  integrations: IntegrationsRouting;
   constructor() {
     this.questions = new QuizQuestionsRouting();
     this.pairs = new QuizPairsRouting();
@@ -30,6 +32,7 @@ export class ApiRouting implements RoutingInterface {
     this.posts = new PostsRouting(RouterPaths.posts);
     this.users = new AuthUsersRouting(RouterPaths.auth);
     this.bloggerUsers = new BloggerUsersRouting(RouterPaths.bloggerUsers);
+    this.integrations = new IntegrationsRouting();
   }
 }
 
@@ -39,4 +42,5 @@ export interface RoutingInterface {
   SABlogs: BlogsRouting;
   questions: QuizQuestionsRouting;
   pairs: QuizPairsRouting;
+  integrations: IntegrationsRouting;
 }

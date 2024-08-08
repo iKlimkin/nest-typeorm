@@ -8,7 +8,6 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
-  ParseFilePipe,
   Post,
   Put,
   Query,
@@ -16,50 +15,49 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import {
-  BlogCrudApiService,
-  BlogPostsCrudApiService,
-} from '../../application/base.crud.api.service';
-import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { RouterPaths } from '../../../../../test/tools/helpers/routing';
-import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
-import { PostsQueryRepo } from '../../../posts/api/query-repositories/posts.query.repo';
-import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
-import { UserSessionDto } from '../../../security/api/models/security-input.models/security-session-info.model';
-import {
-  AllCommentsForUserBlogsViewType,
-  BlogViewModelType,
-} from '../models/output.blog.models/blog.view.model-type';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
-import { PostsQueryFilter } from '../../../posts/api/models/output.post.models/posts-query.filter';
-import { PostViewModelType } from '../../../posts/api/models/post.view.models/post-view-model.type';
-import { CreationPostDtoByBlogId } from '../../../posts/api/models/input.posts.models/create.post.model';
-import { CreatePostCommand } from '../../../posts/application/use-cases/commands/create-post.command';
-import { CreateBlogCommand } from '../../application/use-case/commands/create-blog.command';
-import { CreateBlogInputDto } from '../models/input.blog.models/create.blog.model';
-import { UpdateBlogCommand } from '../../application/use-case/commands/update-blog.command';
-import { UpdateBlogInputDto } from '../models/input.blog.models/update-blog-models';
-import { UpdateBloggerPostCommand } from '../../application/use-case/commands/blogger-update-post.command';
-import { DeleteBloggerPostCommand } from '../../application/use-case/commands/delete-blogger-blog.command';
-import { DeleteBlogCommand } from '../../application/use-case/commands/delete-blog.command';
+import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';
 import { CommentsQueryFilter } from '../../../comments/api/models/output.comment.models/comment-query.filter';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadBackgroundWallpaperCommand } from '../../application/use-case/commands/upload-background-wallpaper.command';
-import {
-  FileDimensionsValidatePipe,
-  FileDimensionsValidationPipe,
-  FileDimensionType,
-} from '../../infrastructure/pipes/file-dimensions-validation.pipe';
 import { ContentType } from '../../../files/api/models/file-types';
-import { FilesCrudApiService } from '../../../files/application/services/files-crud-api.service';
-import { UploadBlogMainImageCommand } from '../../application/use-case/commands/upload-blog-main-image.command';
-import { UploadPostMainImageCommand } from '../../application/use-case/commands/upload-post-main-image.command';
 import {
   FileMetaPostViewModelType,
   FilesMetaBlogViewModelType,
 } from '../../../files/api/models/file-view.model';
 import { FilesQueryRepository } from '../../../files/api/query.repo/files.query.repository';
+import { FilesCrudApiService } from '../../../files/application/services/files-crud-api.service';
+import { CreationPostDtoByBlogId } from '../../../posts/api/models/input.posts.models/create.post.model';
+import { PostsQueryFilter } from '../../../posts/api/models/output.post.models/posts-query.filter';
+import { PostViewModelType } from '../../../posts/api/models/post.view.models/post-view-model.type';
+import { PostsQueryRepo } from '../../../posts/api/query-repositories/posts.query.repo';
+import { CreatePostCommand } from '../../../posts/application/use-cases/commands/create-post.command';
+import { UserSessionDto } from '../../../security/api/models/security-input.models/security-session-info.model';
+import {
+  BlogCrudApiService,
+  BlogPostsCrudApiService,
+} from '../../../../domain/base-services/base.crud.api.service';
+import { UpdateBloggerPostCommand } from '../../application/use-case/commands/blogger-update-post.command';
+import { CreateBlogCommand } from '../../application/use-case/commands/create-blog.command';
+import { DeleteBlogCommand } from '../../application/use-case/commands/delete-blog.command';
+import { DeleteBloggerPostCommand } from '../../application/use-case/commands/delete-blogger-blog.command';
+import { UpdateBlogCommand } from '../../application/use-case/commands/update-blog.command';
+import { UploadBackgroundWallpaperCommand } from '../../application/use-case/commands/upload-background-wallpaper.command';
+import { UploadBlogMainImageCommand } from '../../application/use-case/commands/upload-blog-main-image.command';
+import { UploadPostMainImageCommand } from '../../application/use-case/commands/upload-post-main-image.command';
+import {
+  FileDimensionsValidationPipe,
+  FileDimensionType,
+} from '../../infrastructure/pipes/file-dimensions-validation.pipe';
+import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
+import { CreateBlogInputDto } from '../models/input.blog.models/create.blog.model';
+import { UpdateBlogInputDto } from '../models/input.blog.models/update-blog-models';
+import {
+  AllCommentsForUserBlogsViewType,
+  BlogViewModelType,
+} from '../models/output.blog.models/blog.view.model-type';
+import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
 
 @UseGuards(AccessTokenGuard)
 @Controller(RouterPaths.blogger)

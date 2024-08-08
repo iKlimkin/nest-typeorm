@@ -5,6 +5,10 @@ import {
   Param,
   Query,
   NotFoundException,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Delete,
 } from '@nestjs/common';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
@@ -19,32 +23,68 @@ import { PostsQueryFilter } from '../../../posts/api/models/output.post.models/p
 import { SetUserIdGuard } from '../../../auth/infrastructure/guards/set-user-id.guard';
 import { CurrentUserId } from '../../../../infra/decorators/current-user-id.decorator';
 import { PostViewModelType } from '../../../posts/api/models/post.view.models/post-view-model.type';
+import { CommandBus } from '@nestjs/cqrs';
+import { SubscribeBlogCommand } from '../../application/use-case/commands/subscribe-blog.command';
+import { UnsubscribeBlogCommand } from '../../application/use-case/commands/unSubscribe-blog.command';
+import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
+import { UserSessionDto } from '../../../security/api/models/security-input.models/security-session-info.model';
+import { BlogsCrudApiService } from '../../application/services/blogs-crud-api.service';
+import { AccessTokenGuard } from '../../../comments/api/controllers';
 
 @Controller(RouterPaths.blogs)
 export class BlogsController {
   constructor(
     private readonly blogsQueryRepo: BlogsQueryRepo,
     private readonly postsQueryRepo: PostsQueryRepo,
+    private readonly blogsCrudApiService: BlogsCrudApiService,
   ) {}
 
+  @UseGuards(AccessTokenGuard)
+  @Post(':id/subscription')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async subscribeToBlog(
+    @Param('id') blogId: string,
+    @CurrentUserInfo() userInfo: UserSessionDto,
+  ): Promise<void> {
+    const command = new SubscribeBlogCommand(userInfo.userId, blogId);
+    return this.blogsCrudApiService.create(command);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Delete(':id/subscription')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async unsubscribeToBlog(
+    @Param('id') blogId: string,
+    @CurrentUserInfo() userInfo: UserSessionDto,
+  ): Promise<void> {
+    const command = new UnsubscribeBlogCommand(userInfo.userId, blogId);
+    return this.blogsCrudApiService.create(command);
+  }
+
   @Get()
+  @UseGuards(SetUserIdGuard)
   async getBlogs(
     @Query() query: BlogsQueryFilter,
+    @CurrentUserId() userId: string,
   ): Promise<PaginationViewModel<BlogViewModelType | SABlogsViewType>> {
-    return this.blogsQueryRepo.getAllBlogs(query);
+    return this.blogsQueryRepo.getAllBlogs(query, userId);
   }
 
   @Get(':id')
-  async getBlog(@Param('id') blogId: string): Promise<BlogViewModelType> {
-    const result = await this.blogsQueryRepo.getById(blogId);
+  @UseGuards(SetUserIdGuard)
+  async getBlog(
+    @Param('id') blogId: string,
+    @CurrentUserId() userId: string,
+  ): Promise<BlogViewModelType> {
+    const result = await this.blogsQueryRepo.getById(blogId, userId);
     if (!result) throw new NotFoundException('blog not found');
     return result;
   }
 
-  @Get(':blogId/posts')
+  @Get(':id/posts')
   @UseGuards(SetUserIdGuard)
   async getPosts(
-    @Param('blogId') blogId: string,
+    @Param('id') blogId: string,
     @CurrentUserId() userId: string,
     @Query() query: PostsQueryFilter,
   ): Promise<PaginationViewModel<PostViewModelType>> {

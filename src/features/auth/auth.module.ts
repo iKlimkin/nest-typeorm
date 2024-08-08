@@ -8,6 +8,7 @@ import { UsersRepository } from '../admin/infrastructure/users.repo';
 import { controllers } from './infrastructure/settings/auth-controllers';
 import { authEntities } from './infrastructure/settings/auth-entities';
 import { providers } from './infrastructure/settings/auth-providers';
+import { BlogsQueryRepo } from '../blogs/api/query-repositories/blogs.query.repo';
 
 @Module({
   imports: [
@@ -19,6 +20,6 @@ import { providers } from './infrastructure/settings/auth-providers';
   ],
   providers,
   controllers,
-  exports: [JwtModule, CqrsModule, UsersRepository],
+  exports: [JwtModule, CqrsModule, UsersRepository, BlogsQueryRepo],
 })
 export class AuthModule {}

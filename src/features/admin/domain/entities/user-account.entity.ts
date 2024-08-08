@@ -12,6 +12,8 @@ import type { QuizPlayerProgress } from '../../../quiz/domain/entities/quiz-play
 import type { UserSession } from '../../../security/domain/entities/security.entity';
 import type { UserBloggerBans } from '../../../blogs/domain/entities/user-blogger-bans.entity';
 import { FileMetadata } from '../../../files/domain/entities/file-metadata.entity';
+import { Subscription } from '../../../blogs/domain/entities/blog-subscription.entity';
+import { TelegramMetaUser } from '../../../integrations/domain/entities/telegram-meta-user.entity';
 
 type UserDataType = {
   login: string;
@@ -50,6 +52,11 @@ export class UserAccount extends BaseEntity {
   @Column({ nullable: true })
   password_recovery_expiration_date: Date;
 
+
+
+  @OneToOne(() => TelegramMetaUser, (tgMeta) => tgMeta.user)
+  telegramMeta: TelegramMetaUser;
+
   @OneToMany('UserSession', 'userAccount', { nullable: true })
   userSessions: UserSession[];
 
@@ -77,8 +84,8 @@ export class UserAccount extends BaseEntity {
   @OneToMany('UserBloggerBans', 'user', { nullable: true })
   bloggerBans: UserBloggerBans[];
 
-  // @OneToMany(() => FileMetadata, (fileMetadata) => fileMetadata.user)
-  // fileMetadatas: FileMetadata[];
+  @OneToMany(() => Subscription, (subs) => subs.user)
+  subscriptions: Subscription[];
 
   static create(userData: UserDataType) {
     const { login, email, passwordSalt, passwordHash } = userData;
@@ -96,4 +103,6 @@ export class UserAccount extends BaseEntity {
     user.is_confirmed = userData.isConfirmed;
     return user;
   }
+
+
 }

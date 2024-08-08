@@ -370,6 +370,7 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.bloggerBlogs))(
         await bloggerTestManager.deleteBlog(blogId, firstPlayerToken);
         const blogsAfter = await publicBlogsTestManager.getPublicBlog(
           blogId,
+          null,
           HttpStatus.NOT_FOUND,
         );
       });
@@ -1141,7 +1142,7 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.bloggerBlogs))(
       });
     });
 
-    describe.only(`upload files`, () => {
+    describe(`upload files`, () => {
       afterAll(async () => {
         // await cleanDatabase(httpServer);
       });
@@ -1156,7 +1157,7 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.bloggerBlogs))(
         );
       });
 
-      it.only(`should upload wallpaper for blog`, async () => {
+      it(`should upload wallpaper for blog`, async () => {
         const { firstPlayerToken, postByFirstToken } = expect.getState();
 
         const resizedImageBuffer = await bloggerTestManager.prepareFileToSend(

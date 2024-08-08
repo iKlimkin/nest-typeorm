@@ -32,6 +32,9 @@ const getConfig = (
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     endpoint: process.env.AWS_ENDPOINT,
   },
+  telegram: {
+    token: process.env.TELEGRAM_TOKEN
+  },
   env: currentEnvironment,
 });
 

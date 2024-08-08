@@ -12,6 +12,9 @@ export const RouterPaths = {
   security: '/security/devices',
   quizQuestions: '/sa/quiz/questions',
   quiz: '/pair-game-quiz',
+  integrations: {
+    telegram: '/integrations/telegram'
+  },
 
   test: '/testing/all-data',
 };

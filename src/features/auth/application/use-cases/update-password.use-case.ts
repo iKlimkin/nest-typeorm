@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { BcryptAdapter } from '../../../../infra/adapters/bcrypt-adapter';
+import { BcryptAdapter } from '../../../../infra/adapters/bcrypt.adapter';
 import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
 import { UpdatePasswordCommand } from './commands/update-password.command';
 import { AuthRepository } from '../../infrastructure/auth.repository';

@@ -1,34 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import {
-  PaginationViewModel,
-  SortDirections,
-} from '../../../../domain/sorting-base-filter';
+import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../infra/utils/get-pagination';
+import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
+import { CommentsQueryFilter } from '../../../comments/api/models/output.comment.models/comment-query.filter';
+import { Comment } from '../../../comments/domain/entities/comment.entity';
+import { BlogImage } from '../../../files/domain/entities/blog-images.entity';
 import { Blog } from '../../domain/entities/blog.entity';
 import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
-import {
-  getBlogsViewModel,
-  getBlogsViewModelWithImages,
-  getSABlogsViewModelFromRaw,
-  getSACommentsForBlogsCurrentUserViewModelFromRaw,
-} from '../models/output.blog.models/blogs.view.model';
 import {
   AllCommentsForUserBlogsViewType,
   BlogViewModelType,
   BlogViewModelTypeWithImages,
   SABlogsViewType,
+  SubscribeEnum,
 } from '../models/output.blog.models/blog.view.model-type';
-import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
-import { Comment } from '../../../comments/domain/entities/comment.entity';
-import { CommentsQueryFilter } from '../../../comments/api/models/output.comment.models/comment-query.filter';
 import {
-  FilesMetaBlogViewModelType,
-  filesBlogMetaViewModel,
-} from '../../../files/api/models/file-view.model';
-import { FileMetadata, PhotoType, QuizAnswer } from '../../../../settings';
-import { BlogImage } from '../../../files/domain/entities/blog-images.entity';
+  getBlogsViewModel,
+  getBlogsViewModelNew,
+  getBlogsViewModelWithImages,
+  getSABlogsViewModelFromRaw,
+  getSACommentsForBlogsCurrentUserViewModelFromRaw,
+} from '../models/output.blog.models/blogs.view.model';
+import { FileMetadata } from '../../../files/domain/entities/file-metadata.entity';
+import { Subscription } from '../../domain/entities/blog-subscription.entity';
 
 @Injectable()
 export class BlogsQueryRepo {
@@ -119,6 +115,7 @@ export class BlogsQueryRepo {
   }
   async getAllBlogs(
     queryOptions: BlogsQueryFilter,
+    userId?: string,
     adminAccess = false,
   ): Promise<PaginationViewModel<BlogViewModelType | SABlogsViewType>> {
     try {
@@ -170,8 +167,28 @@ export class BlogsQueryRepo {
               .where('bi."blogId"::text = blog.id::text'),
           'images',
         )
+        .addSelect((qb) =>
+          qb
+            .select('COUNT(*) "subscribersCount"')
+            .from(Subscription, 'subs')
+            .where('subs."blogId" = blog.id')
+            .andWhere('subs."subscribeStatus" = :subStatus', {
+              subStatus: SubscribeEnum.Subscribed,
+            }),
+        )
         .skip(skip)
         .take(pageSize);
+
+      if (userId) {
+        queryBuilder.addSelect((qb) =>
+          qb
+            .select('sub."subscribeStatus"')
+            .from(Subscription, 'sub')
+            .where('sub."blogId" = blog.id AND sub."userId" = :userId', {
+              userId,
+            }),
+        );
+      }
 
       if (adminAccess) {
         queryBuilder
@@ -197,7 +214,7 @@ export class BlogsQueryRepo {
         .getRawMany();
 
       return new PaginationViewModel<BlogViewModelType>(
-        blogs.map(getBlogsViewModel),
+        blogs.map(getBlogsViewModelNew),
         pageNumber,
         pageSize,
         blogsCount,
@@ -304,14 +321,34 @@ export class BlogsQueryRepo {
               .where('bi."blogId"::text = b.id::text'),
           'images',
         )
+        .addSelect((qb) =>
+          qb
+            .select('COUNT(*) "subscribersCount"')
+            .from(Subscription, 'subs')
+            .where('subs."blogId" = blog.id')
+            .andWhere('subs."subscribeStatus" = :subStatus', {
+              subStatus: SubscribeEnum.Subscribed,
+            }),
+        )
         .skip(skip)
         .take(pageSize);
+
+      if (userId) {
+        queryBuilder.addSelect((qb) =>
+          qb
+            .select('sub."subscribeStatus"')
+            .from(Subscription, 'sub')
+            .where('sub."blogId" = blog.id AND sub."userId" = :userId', {
+              userId,
+            }),
+        );
+      }
 
       const blogs = await queryBuilder.getRawMany();
       const blogsCount = await queryBuilder.getCount();
 
-      return new PaginationViewModel<BlogViewModelTypeWithImages>(
-        blogs.map(getBlogsViewModelWithImages),
+      return new PaginationViewModel<BlogViewModelType>(
+        blogs.map(getBlogsViewModelNew),
         pageNumber,
         pageSize,
         blogsCount,
@@ -324,7 +361,10 @@ export class BlogsQueryRepo {
     }
   }
 
-  async getById(blogId: string): Promise<BlogViewModelType | null> {
+  async getById(
+    blogId: string,
+    userId?: string,
+  ): Promise<BlogViewModelType | null> {
     try {
       const queryBuilder = this.blogs.createQueryBuilder('blog');
       queryBuilder
@@ -358,11 +398,32 @@ export class BlogsQueryRepo {
               .leftJoin(BlogImage, 'bi', 'bi.id = fm."blogImgId"')
               .where('bi."blogId"::text = blog.id::text'),
           'images',
+        )
+        .addSelect((qb) =>
+          qb
+            .select('COUNT(*) as "subscribersCount"')
+            .from(Subscription, 'sub')
+            .where(
+              'sub."blogId" = :blogId AND sub.subscribeStatus = :subStatus',
+              { blogId, subStatus: SubscribeEnum.Subscribed },
+            ),
         );
+
+      if (userId) {
+        queryBuilder.addSelect((qb) =>
+          qb
+            .select('sub."subscribeStatus"')
+            .from(Subscription, 'sub')
+            .where('sub."blogId" = :blogId AND sub."userId" = :userId', {
+              blogId,
+              userId,
+            }),
+        );
+      }
 
       const result = await queryBuilder.getRawOne();
 
-      return getBlogsViewModel(result);
+      return getBlogsViewModelNew(result);
     } catch (error) {
       console.log(`Some troubles occurred during find blog by id${error}`);
       return null;

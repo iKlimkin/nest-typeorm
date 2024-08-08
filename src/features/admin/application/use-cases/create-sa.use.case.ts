@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { BcryptAdapter } from '../../../../infra/adapters/bcrypt-adapter';
+import { BcryptAdapter } from '../../../../infra/adapters/bcrypt.adapter';
 import {
   CreateUserErrors,
   GetErrors,

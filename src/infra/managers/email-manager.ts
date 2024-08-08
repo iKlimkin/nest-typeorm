@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ConfigurationType } from '../../settings/config/configuration';
-import { EmailAdapter } from '../adapters/email-adapter';
+import { EmailAdapter } from '../adapters/email.adapter';
 import { EmailEnvSettingTypes } from '../../domain/notification-model';
 
 @Injectable()
