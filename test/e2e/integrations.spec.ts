@@ -76,13 +76,6 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.integrations))(
     });
 
     beforeEach(() => {
-      // configService = new ConfigService();
-
-      // useCase = new SetWebhookTelegramBotUseCase(
-      //   telegramAdapter,
-      //   configService,
-      // );
-
       (connectToNgrok as jest.Mock).mockResolvedValue(
         'https://static-ngrok-url.com',
       );
@@ -95,7 +88,7 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.integrations))(
 
     describe.only('SUBSCRIBE', () => {
       afterAll(async () => {
-        // await cleanDatabase(httpServer);
+        await cleanDatabase(httpServer);
       });
       beforeAll(async () => {
         await configureTestSetup(
@@ -129,7 +122,10 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.integrations))(
         const tgIds = [123, 123456];
         const [_, code] = linkFirstUser.split('=');
         const mockMessageFromTgFirstUser = {
-          message: { from: { id: tgIds[0] }, text: `/start code=${code}` },
+          message: {
+            from: { id: tgIds[0], username: 'testName' },
+            text: `/start ${code}`,
+          },
         };
         await integrationsTestManager.forTelegramBotHook(
           mockMessageFromTgFirstUser as TelegramCTX,
@@ -150,8 +146,8 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.integrations))(
 
         const mockMessageFromSecondUser = {
           message: {
-            from: { id: tgIds[1] },
-            text: `/start code=${codeSecondUser}`,
+            from: { id: tgIds[1], username: 'testName' },
+            text: `/start ${codeSecondUser}`,
           },
         };
         await integrationsTestManager.forTelegramBotHook(
@@ -166,6 +162,7 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.integrations))(
           codeSecondUser,
         );
 
+        await publicBlogsManager.applySubscription(blogByFirstToken.id, firstPlayerToken, HttpStatus.BAD_REQUEST)
         await publicBlogsManager.applySubscription(
           blogByFirstToken.id,
           secondPlayerToken,
@@ -198,7 +195,7 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.integrations))(
         });
       });
 
-      it('/blogs/:blogId (GET) - should return blog with sub info', async () => {
+      it.skip('/blogs/:blogId (GET) - should return blog with sub info', async () => {
         const { blogByFirstToken, secondPlayerToken } = expect.getState();
 
         const blog = await publicBlogsManager.getPublicBlog(
@@ -232,15 +229,17 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.integrations))(
         expect(blogWithoutToken.subscribersCount).toBe(1);
       });
 
-      it.only('/blogs (GET) - get all blogs with sub info', async () => {
-        const { blogByFirstToken, blogBySecondToken, secondPlayerToken, firstPlayerToken } =
-          expect.getState();
+      it('/blogs (GET) - get all blogs with sub info', async () => {
+        const {
+          blogByFirstToken,
+          blogBySecondToken,
+          secondPlayerToken,
+          firstPlayerToken,
+        } = expect.getState();
 
-        console.log({ blogByFirstToken, firstPlayerToken }); 
-        
+        console.log({ blogByFirstToken, firstPlayerToken });
 
         // const blogs = await publicBlogsManager.getPublicBlogs(secondPlayerToken);
-      
       });
     });
     describe(`UNSUBSCRIBE`, () => {

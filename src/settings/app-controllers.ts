@@ -7,9 +7,9 @@ import {
   PostsController,
   QuizQuestionsController,
   SABlogsController,
+  TelegramController,
   TestDatabaseController,
 } from '.';
-import { TelegramController } from '../features/integrations/api/controllers/telegram.controller';
 
 export const controllers = [
   BloggerController,

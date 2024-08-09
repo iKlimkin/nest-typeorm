@@ -29,7 +29,15 @@ export class SubscribeBlogUseCase
         await this.blogsRepo.getBlogWithSubscription(blogId, userId, manager);
 
       if (!blog) {
-        notice.addError('Blog does not exist', '', GetErrors.NotFound);
+        notice.addError('Blog does not exist', 'sub', GetErrors.NotFound);
+        return notice;
+      }
+      if (blog.user.id === userId) {
+        notice.addError(
+          'You cannot subscribe to your own blog',
+          'sub',
+          GetErrors.IncorrectModel,
+        );
         return notice;
       }
 

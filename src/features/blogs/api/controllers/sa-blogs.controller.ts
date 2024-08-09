@@ -11,17 +11,14 @@ import {
 } from '@nestjs/common';
 import { RouterPaths } from '../../../../../test/tools/helpers/routing';
 import { BlogCrudApiService } from '../../../../domain/base-services/base.crud.api.service';
-import { BindUserWithBlogCommand } from '../../application/use-case/commands/bind-user-with-blog.command';
-import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
-import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
-import {
-  BlogViewModelType,
-  SABlogsViewType,
-} from '../models/output.blog.models/blog.view.model-type';
-import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
+import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
 import { BanUnbanBlogCommand } from '../../application/use-case/commands/banUnbanBlog.command';
+import { BindUserWithBlogCommand } from '../../application/use-case/commands/bind-user-with-blog.command';
 import { InputBlogBannedStatus } from '../models/input.blog.models/blog-banned-status.dto';
+import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
+import { SABlogsViewType } from '../models/output.blog.models/blog.view.model-type';
+import { BlogsQueryRepo } from '../query-repositories/blogs.query.repo';
 
 @UseGuards(BasicSAAuthGuard)
 @Controller(RouterPaths.SABlogs)

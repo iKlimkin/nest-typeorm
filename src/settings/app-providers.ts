@@ -62,6 +62,7 @@ import { TelegramCrudApiService } from '../features/integrations/application/tg-
 import { BlogService } from '../features/blogs/application/blog.service';
 import { BlogsCrudApiService } from '../features/blogs/application/services/blogs-crud-api.service';
 import { NotifySubscribersEventHandler } from '../features/blogs/application/events/created-post-notify.event';
+import { FilesScheduleService } from '../features/files/application/services/file-metadata.schedule.service';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -77,6 +78,7 @@ const filesProviders = [
   FilesQueryRepository,
   FilesService,
   FilesCrudApiService,
+  FilesScheduleService,
 ];
 
 const telegramProviders: Provider[] = [

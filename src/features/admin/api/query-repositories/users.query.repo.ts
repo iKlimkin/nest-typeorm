@@ -8,7 +8,7 @@ import { BloggerBannedUsersQueryFilter } from '../models/outputSA.models.ts/blog
 import {
   BanStatus,
   SAQueryFilter,
-} from '../models/outputSA.models.ts/sa-query.filter';
+} from '../models/outputSA.models.ts/query-filters';
 import {
   getBloggerBannedUsersView,
   getSAViewModel,
