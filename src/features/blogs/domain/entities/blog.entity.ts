@@ -2,6 +2,7 @@ import { Length, Matches } from 'class-validator';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -28,7 +29,7 @@ import { Subscription } from './blog-subscription.entity';
 
 @Entity()
 export class Blog extends BaseEntity {
-  // @Index('title', { unique: true })
+  @Index('title')
   @iSValidField(nameLength)
   @Column({ collation: 'C' })
   title: string;

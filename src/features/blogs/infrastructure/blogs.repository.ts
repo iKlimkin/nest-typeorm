@@ -4,6 +4,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { UpdateBlogDto } from '../api/models/input.blog.models/update-blog-models';
 import { Blog } from '../domain/entities/blog.entity';
 import { Subscription } from '../domain/entities/blog-subscription.entity';
+import { UserAccount } from '../../auth/infrastructure/settings';
 
 @Injectable()
 export class BlogsRepository {
@@ -50,6 +51,9 @@ export class BlogsRepository {
     try {
       const queryBuilder = manager
         .createQueryBuilder(Blog, 'blog')
+        .select('blog.id')
+        .leftJoin('blog.user', 'user')
+        .addSelect('user.id')
         .where('blog.id = :blogId', { blogId });
 
       const blog = await queryBuilder.getOne();

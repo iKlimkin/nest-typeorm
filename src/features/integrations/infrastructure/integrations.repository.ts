@@ -50,7 +50,7 @@ export class IntegrationsRepository {
       const queryBuilder = this.telegramMeta.createQueryBuilder('tgMeta');
 
       queryBuilder
-        .select('tgMeta.telegramId')
+        .select(['tgMeta.telegramId', 'tgMeta.telegramUsername'])
         .leftJoin('tgMeta.user', 'user')
         .leftJoin('user.subscriptions', 'subs')
         .where('subs.blogId = :blogId AND subs.subscribeStatus = :status', {

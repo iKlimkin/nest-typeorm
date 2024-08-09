@@ -3,8 +3,9 @@ import { DataSource } from 'typeorm';
 import { runInTransaction } from '../../../../domain/transaction-wrapper';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { BlogService, PostsRepository } from '../../../../settings';
 import { DeleteBloggerPostCommand } from './commands/delete-blogger-blog.command';
+import { PostsRepository } from '../../../posts/infrastructure/posts.repository';
+import { BlogService } from '../blog.service';
 
 @CommandHandler(DeleteBloggerPostCommand)
 export class DeleteBloggerPostUseCase

@@ -13,7 +13,7 @@ import {
   UserRestrictionDto,
 } from '../../../src/features/admin/api/models/input-sa.dtos.ts/user-restriction.dto';
 import { PaginationViewModel } from '../../../src/domain/sorting-base-filter';
-import { SAQueryFilter } from '../../../src/features/admin/api/models/outputSA.models.ts/sa-query.filter';
+import { SAQueryFilter } from '../../../src/features/admin/api/models/outputSA.models.ts/query-filters';
 import { BaseTestManager } from './BaseTestManager';
 
 export class SATestManager extends BaseTestManager {

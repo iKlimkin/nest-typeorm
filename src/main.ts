@@ -6,10 +6,9 @@ import {
   applyAppSettings,
   visualizeStartApp,
 } from '.';
-import { applyAppIntegrationSettings } from './settings/integration.settings/apply-app-integrations.settings';
 
 (async () => {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const configService = app.get(ConfigService<ConfigurationType>);
 
   const PORT = configService.getOrThrow('port');
@@ -19,6 +18,4 @@ import { applyAppIntegrationSettings } from './settings/integration.settings/app
   await app.listen(PORT, () => {
     console.log(visualizeStartApp(PORT));
   });
-
-  await applyAppIntegrationSettings(app, configService);
 })();

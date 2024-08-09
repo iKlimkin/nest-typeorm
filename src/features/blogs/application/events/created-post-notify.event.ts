@@ -1,6 +1,7 @@
 import { EventsHandler, IEventHandler, CommandBus } from '@nestjs/cqrs';
 import { TelegramAdapter } from '../../../../infra/adapters/telegram.adapter';
 import { IntegrationsRepository } from '../../../integrations/infrastructure/integrations.repository';
+import { parse } from 'path';
 
 export class NotifySubscribersEvent {
   constructor(
@@ -19,14 +20,16 @@ export class NotifySubscribersEventHandler
   ) {}
   async handle(event: NotifySubscribersEvent) {
     const { blogId, blogTitle } = event;
-    const message = `New post published for blog ${blogTitle}`;
+
     const subscribers = await this.integrationsRepo.getUserTelegramIdsByBlogId(
       blogId,
     );
-    console.log(subscribers);
-    
+
     for (const sub of subscribers) {
-      await this.tgAdapter.sendMessage(+sub.telegramId, message);
+      const message = `Hey <b>${sub.telegramUsername}</b>! 🎉<br><br>Hurry up, a new post has just been published for the blog <b>${blogTitle}</b>.<br><br><a href="https://interact-hub.com/\`${blogId}\`">Check it out!</a>`;
+      await this.tgAdapter.sendMessage(+sub.telegramId, message, {
+        parse_mode: 'HTML',
+      });
     }
   }
 }
