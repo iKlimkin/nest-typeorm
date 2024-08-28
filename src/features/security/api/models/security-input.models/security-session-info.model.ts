@@ -10,11 +10,7 @@ export class UserSessionDto {
   deviceId: string;
 }
 
-export class DeviceInfoDto {
-  @IsUUID()
-  @IsNotEmpty()
-  deviceId: string;
-
+export class DeviceInfoDto extends UserSessionDto{
   @IsDate()
   @IsNotEmpty()
   issuedAt: Date;
@@ -23,3 +19,4 @@ export class DeviceInfoDto {
   @IsNotEmpty()
   expirationDate: Date;
 }
+

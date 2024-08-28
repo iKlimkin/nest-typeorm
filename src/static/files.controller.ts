@@ -4,7 +4,7 @@ import {
   Post,
   Res,
   UploadedFile,
-  UseInterceptors
+  UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -36,7 +36,6 @@ export class FilesController {
     // @CurrentUserInfo() userInfo: UserSessionDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-
     const command = new SaveFileCommand('123', file.originalname, file.buffer);
     await this.commandBus.execute(command);
     return 'success';

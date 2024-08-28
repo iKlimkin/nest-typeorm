@@ -1,8 +1,6 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import {
-  LikesStatuses
-} from '../../../src/domain/reaction.models';
+import { LikesStatuses } from '../../../src/domain/reaction.models';
 import { PaginationViewModel } from '../../../src/domain/sorting-base-filter';
 import { SAViewType } from '../../../src/features/admin/api/models/user.view.models/userAdmin.view-type';
 import { CommentsViewModel } from '../../../src/features/comments/api/models/comments.view.models/comments.view-model.type';
@@ -11,7 +9,7 @@ import { CreatePostModel } from '../../../src/features/posts/api/models/input.po
 import { PostsQueryFilter } from '../../../src/features/posts/api/models/output.post.models/posts-query.filter';
 import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
 import { constants, feedbacksConstants } from '../helpers/constants';
-import { RouterPaths } from '../helpers/routing';
+import { RouterPaths } from '../../../src/infra/utils/routing';
 import { SuperTestBody } from '../models/body.response.model';
 import { PostsRouting } from '../routes/posts.routing';
 import { BaseTestManager } from './BaseTestManager';
@@ -40,7 +38,7 @@ export class PostsTestManager extends BaseTestManager {
     protected readonly app: INestApplication,
     protected readonly routing: PostsRouting,
   ) {
-    super(routing, app);
+    super(app);
   }
 
   createInputData(field?: CreatePostModel | any): CreatePostModel {

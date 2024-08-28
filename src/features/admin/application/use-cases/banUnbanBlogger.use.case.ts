@@ -36,8 +36,10 @@ export class BanUnbanBloggerUseCase
         return notice;
       }
 
-      const blogServiceNotice =
-        await this.blogService.validateBlogAndUserRights(blogId, ownerId);
+      const blogServiceNotice = await this.blogService.ensureUserHasBlogAccess(
+        blogId,
+        ownerId,
+      );
 
       if (blogServiceNotice.hasError)
         return blogServiceNotice as LayerNoticeInterceptor<null>;

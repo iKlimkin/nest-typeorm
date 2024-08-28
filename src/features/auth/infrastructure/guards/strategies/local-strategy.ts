@@ -15,9 +15,7 @@ import { UserCredentialsDto } from '../../../api/models/auth-input.models.ts/ver
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(private commandBus: CommandBus) {
-    super({
-      usernameField: 'loginOrEmail',
-    });
+    super({ usernameField: 'loginOrEmail' });
   }
 
   async validate(loginOrEmail: string, password: string): Promise<UserIdType> {

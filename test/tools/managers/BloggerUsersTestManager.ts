@@ -15,7 +15,7 @@ export class BloggerUsersTestManager extends BaseTestManager {
     protected readonly app: INestApplication,
     protected readonly routing: BloggerUsersRouting,
   ) {
-    super(routing, app);
+    super(app);
   }
 
   getBannedUsersForCurrentBlog = async (

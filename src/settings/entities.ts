@@ -1,28 +1,26 @@
 import {
-  FileMetadata,
-  Comment,
-  Post,
   Blog,
-  UserSession,
-  PostReaction,
-  PostReactionCounts,
+  BlogImage,
+  Comment,
   CommentReaction,
   CommentReactionCounts,
-  QuizAnswer,
-  QuizGame,
-  QuizQuestion,
-  QuizPlayerProgress,
-  QuizCorrectAnswer,
   CurrentGameQuestion,
-  BlogImage,
+  FileMetadata,
+  Post,
   PostImage,
+  PostReaction,
+  PostReactionCounts,
+  QuizAnswer,
+  QuizCorrectAnswer,
+  QuizGame,
+  QuizPlayerProgress,
+  QuizQuestion,
+  UserSession,
 } from '../..';
-import { Subscription } from '../features/blogs/domain/entities/blog-subscription.entity';
-import { TelegramMetaUser } from '../features/integrations/domain/entities/telegram-meta-user.entity';
+import { BlogNotifySubscription } from '../features/blogs/domain/entities/blog-subscription.entity';
 
 export const entities = [
-  TelegramMetaUser,
-  Subscription,
+  BlogNotifySubscription,
   PostImage,
   BlogImage,
   FileMetadata,

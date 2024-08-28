@@ -1,5 +1,5 @@
-import { CreateBlogDto } from '../../../api/models/input.blog.models/create.blog.model';
+import { CreateBlogCommandDto } from '../../../api/models/input.blog.models/create.blog.model';
 
 export class CreateBlogCommand {
-  constructor(public data: CreateBlogDto) {}
+  constructor(public data: CreateBlogCommandDto) {}
 }

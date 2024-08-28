@@ -1,19 +1,16 @@
 import { HttpServer, INestApplication } from '@nestjs/common';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { SortDirections } from '../../../src/domain/sorting-base-filter';
+import { UserAccount } from '../../../src/features/admin/domain/entities/user-account.entity';
 import { AuthConstantsType, constants } from '../helpers/constants';
 import { SortedByFieldType } from './BlogsTestManager';
-import { Repository } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { UserAccount } from '../../../src/features/admin/domain/entities/user-account.entity';
 
 export class BaseTestManager {
   protected readonly constants: AuthConstantsType;
   protected readonly application: INestApplication<HttpServer>;
   protected readonly usersRepo: Repository<UserAccount>;
-  constructor(
-    protected routing: any,
-    protected readonly app: INestApplication,
-  ) {
+  constructor(protected readonly app: INestApplication) {
     this.constants = constants.auth;
     this.usersRepo = this.app.get(getRepositoryToken(UserAccount));
     this.application = this.app.getHttpServer();
@@ -21,7 +18,6 @@ export class BaseTestManager {
   assertMatch(responseData: any, expectedResult: any) {
     expect(responseData).toEqual(expectedResult);
   }
-
   isSortedByField = <T>(sortData: SortedByFieldType<T>) => {
     let { field, entities, sortDirection } = sortData;
     let isSorted = true;

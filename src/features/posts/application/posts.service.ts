@@ -40,7 +40,7 @@ export class PostsService {
       userId,
       post.blogId,
     );
-    
+
     if (!userWithBanInfo) {
       notice.addError(
         `User doesn't have permissions`,

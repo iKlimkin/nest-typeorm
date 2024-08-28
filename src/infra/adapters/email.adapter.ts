@@ -1,25 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
-import {
-  EmailData,
-  EmailEnvSettingTypes,
-} from '../../domain/notification-model';
+import { EmailData } from '../../domain/notification-model';
 import { SentMessageInfo } from 'nodemailer';
+import { ConfigService } from '@nestjs/config/dist/config.service';
+import { ConfigurationType } from '../../settings/config/configuration';
 
 @Injectable()
 export class EmailAdapter {
-  constructor() {}
+  private readonly emailSettings: ConfigurationType['emailSettings'];
+  constructor(
+    private readonly configService: ConfigService<ConfigurationType>,
+  ) {
+    this.emailSettings = this.configService.get('emailSettings', {
+      infer: true,
+    });
+  }
 
-  async sendEmail(inputData: EmailData): Promise<SentMessageInfo | null> {
-    const transporter = this.createTransport(inputData.emailSettings);
+  async sendEmail(sendEmailData: EmailData): Promise<SentMessageInfo | null> {
+    const transporter = this.createTransport();
 
     try {
-      const info: SentMessageInfo = await this.sendMail(transporter, inputData);
+      const info: SentMessageInfo = await this.sendMail(
+        transporter,
+        sendEmailData,
+      );
 
       return info.messageId;
     } catch (error) {
       console.error(
-        `Failed with ${inputData.subject.toLowerCase()} message sending `,
+        `Failed with ${sendEmailData.subject.toLowerCase()} message sending `,
         error,
       );
     }
@@ -27,23 +36,24 @@ export class EmailAdapter {
 
   private async sendMail(
     transporter: SentMessageInfo,
-    inputData: Omit<EmailData, 'emailSettings'>,
+    sendEmailData: Omit<EmailData, 'emailSettings'>,
   ): Promise<SentMessageInfo> {
     return transporter.sendMail({
-      from: inputData.from,
+      from: sendEmailData.from,
       sender: `Testing`,
-      to: inputData.email,
-      subject: inputData.subject,
-      html: inputData.message,
+      to: sendEmailData.to,
+      subject: sendEmailData.subject,
+      html: sendEmailData.message,
     });
   }
 
-  private createTransport(emailSettings: EmailEnvSettingTypes) {
+  private createTransport() {
+    const { EMAIL_PASSWORD, EMAIL_SERVICE, EMAIL_USER } = this.emailSettings;
     return nodemailer.createTransport({
-      service: emailSettings.EMAIL_SERVICE,
+      service: EMAIL_SERVICE,
       auth: {
-        user: emailSettings.EMAIL_USER,
-        pass: emailSettings.EMAIL_PASSWORD,
+        user: EMAIL_USER,
+        pass: EMAIL_PASSWORD,
       },
     });
   }

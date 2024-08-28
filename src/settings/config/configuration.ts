@@ -33,8 +33,33 @@ const getConfig = (
     endpoint: process.env.AWS_ENDPOINT,
     bucketName: process.env.AWS_BUCKET_NAME,
   },
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
+  },
   telegram: {
-    token: process.env.TELEGRAM_TOKEN
+    token: process.env.TELEGRAM_TOKEN,
+    botForTestsToken: process.env.TG_BOT_FOR_TESTS_TOKEN,
+  },
+  stripe: {
+    success_url: process.env.STRIPE_SUCCESS_URL,
+    cancel_url: process.env.STRIPE_CANCEL_URL,
+    api_key: process.env.STRIPE_API_KEY,
+    secret: process.env.STRIPE_SECRET,
+    webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
+  },
+  google: {
+    capture_secret: process.env.GOOGLE_CAPTURE_SECRET,
+    site_key: process.env.CAPTURE_SITE_KEY,
+    client_id: process.env.OAUTH_GOOGLE_CLIENT_ID,
+    client_secret: process.env.OAUTH_GOOGLE_CLIENT_SECRET,
+    redirect_url: process.env.OAUTH_GOOGLE_REDIRECT_URL,
+  },
+  github: {
+    client_id: process.env.OAUTH_GITHUB_CLIENT_ID,
+    client_secret: process.env.OAUTH_GITHUB_CLIENT_SECRET,
+    redirect_url: process.env.OAUTH_GITHUB_REDIRECT_URL,
   },
   env: currentEnvironment,
 });
@@ -55,7 +80,6 @@ export type EnvironmentTypes = keyof typeof Environments;
 
 export default () => {
   const environmentVariables = process.env;
-
   console.log('process.env.ENV =', environmentVariables.ENV);
   const currentEnvironment = environmentVariables.ENV as Environments;
 

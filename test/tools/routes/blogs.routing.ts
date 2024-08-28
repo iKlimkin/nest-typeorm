@@ -1,7 +1,11 @@
-import { RouterPaths } from '../helpers/routing';
+import { RouterPaths } from '../../../src/infra/utils/routing';
 
 export class BlogsRouting {
   constructor(private readonly baseUrl = RouterPaths.blogger) {}
+  joinTheMembershipPlan = (blogId: string) =>
+    `${this.baseUrl}/${blogId}/membership`;
+  getMembershipPlans = (blogId: string) =>
+    `${this.baseUrl}/${blogId}/membership/plans`;
   uploadBlogBackgroundWallpaper = (blogId) =>
     `${this.baseUrl}/${blogId}/images/wallpaper`;
   uploadBlogMainImage = (blogId) => `${this.baseUrl}/${blogId}/images/main`;

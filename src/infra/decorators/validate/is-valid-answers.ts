@@ -10,7 +10,7 @@ import {
 export class IsValidAnswersConstraint implements ValidatorConstraintInterface {
   validate(value: any, args: ValidationArguments) {
     if (!value || !Array.isArray(value)) return false;
-    
+
     for (const answer of value) {
       if (answer.constructor !== String) return false;
     }

@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { OutputId } from '../../../../domain/output.models';
 import { runInTransaction } from '../../../../domain/transaction-wrapper';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { Subscription } from '../../domain/entities/blog-subscription.entity';
+import { BlogNotifySubscription } from '../../domain/entities/blog-subscription.entity';
 import { BlogsRepository } from '../../infrastructure/blogs.repository';
 import { SubscribeBlogCommand } from './commands/subscribe-blog.command';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
@@ -49,7 +49,7 @@ export class SubscribeBlogUseCase
         return notice;
       }
 
-      const newSubscription = Subscription.create(userId, blogId);
+      const newSubscription = BlogNotifySubscription.create(userId, blogId);
       await this.blogsRepo.saveEntity(newSubscription, manager);
 
       return notice;

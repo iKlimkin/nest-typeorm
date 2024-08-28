@@ -100,6 +100,7 @@ export const initSettings = async (
 
     return {
       app,
+      configService,
       httpServer,
       usersTestManager,
       testingAppModule,

@@ -1,12 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
+import {
+  PaginationResponseModel,
+  PaginationViewModel,
+} from '../../../../domain/sorting-base-filter';
 import { getPagination } from '../../../../infra/utils/get-pagination';
 import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
 import { CommentsQueryFilter } from '../../../comments/api/models/output.comment.models/comment-query.filter';
 import { Comment } from '../../../comments/domain/entities/comment.entity';
 import { BlogImage } from '../../../files/domain/entities/blog-images.entity';
+import { FileMetadata } from '../../../files/domain/entities/file-metadata.entity';
+import { getMembershipPlansViewModel } from '../../../integrations/payments/api/models/view/blog-payment-plans.view-model';
+import {
+  getMembershipPayments,
+  MembershipPlanType,
+  UserPaymentsViewType,
+} from '../../../integrations/payments/api/models/view/user-payments.view-model';
+import { BlogNotifySubscription } from '../../domain/entities/blog-subscription.entity';
 import { Blog } from '../../domain/entities/blog.entity';
 import { BlogsQueryFilter } from '../models/input.blog.models/blogs-query.filter';
 import {
@@ -19,24 +30,23 @@ import {
 import {
   getBlogsViewModel,
   getBlogsViewModelNew,
-  getBlogsViewModelWithImages,
   getSABlogsViewModelFromRaw,
   getSACommentsForBlogsCurrentUserViewModelFromRaw,
 } from '../models/output.blog.models/blogs.view.model';
-import { FileMetadata } from '../../../files/domain/entities/file-metadata.entity';
-import { Subscription } from '../../domain/entities/blog-subscription.entity';
+import { UserPaymentsQueryFilter } from '../../../integrations/payments/api/models/input/payments-query-filter';
+import { MembershipBlogPlan } from '../../../integrations/payments/domain/entities/membership-blog-plan.entity';
 
 @Injectable()
 export class BlogsQueryRepo {
   constructor(
-    @InjectRepository(Blog) private readonly blogs: Repository<Blog>,
+    @InjectRepository(Blog) private readonly blogsRepo: Repository<Blog>,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   async getAllCommentsForUserBlogs(
     userId: string,
     queryOptions: CommentsQueryFilter,
-  ): Promise<PaginationViewModel<AllCommentsForUserBlogsViewType>> {
+  ): PaginationResponseModel<AllCommentsForUserBlogsViewType> {
     const { pageNumber, pageSize, skip, sortBy, sortDirection } =
       getPagination(queryOptions);
 
@@ -45,15 +55,15 @@ export class BlogsQueryRepo {
     const queryBuilder = this.dataSource
       .getRepository(Comment)
       .createQueryBuilder('comment');
-    const blogQueryBuilder = this.blogs.createQueryBuilder('blogs');
+    const blogQueryBuilder = this.blogsRepo.createQueryBuilder('blogsRepo');
 
     queryBuilder
       .leftJoin('comment.post', 'posts')
       .addSelect(['posts.id', 'posts.title', 'posts.blogId', 'posts.blogTitle'])
-      .leftJoin('posts.blog', 'blogs')
+      .leftJoin('posts.blog', 'blogsRepo')
       .leftJoin('comment.user', 'user')
       .addSelect('user.id')
-      .where('blogs.user = :userId', { userId })
+      .where('blogsRepo.user = :userId', { userId })
       .orderBy('comment.' + sortBy, sortDirection)
       .offset(skip)
       .limit(pageSize);
@@ -117,7 +127,7 @@ export class BlogsQueryRepo {
     queryOptions: BlogsQueryFilter,
     userId?: string,
     adminAccess = false,
-  ): Promise<PaginationViewModel<BlogViewModelType | SABlogsViewType>> {
+  ): PaginationResponseModel<BlogViewModelType | SABlogsViewType> {
     try {
       const { searchNameTerm } = queryOptions;
 
@@ -126,7 +136,7 @@ export class BlogsQueryRepo {
 
       const [title] = [`%${searchNameTerm || ''}%`];
 
-      const queryBuilder = this.blogs.createQueryBuilder('blog');
+      const queryBuilder = this.blogsRepo.createQueryBuilder('blog');
 
       queryBuilder
         .select([
@@ -135,7 +145,6 @@ export class BlogsQueryRepo {
           'blog.description AS description',
           `blog.websiteUrl AS "websiteUrl"`,
           'blog.created_at AS created_at',
-          `blog.isMembership AS "isMembership"`,
         ])
         .where('blog.title ILIKE :title', { title })
         .orderBy(
@@ -170,7 +179,7 @@ export class BlogsQueryRepo {
         .addSelect((qb) =>
           qb
             .select('COUNT(*) "subscribersCount"')
-            .from(Subscription, 'subs')
+            .from(BlogNotifySubscription, 'subs')
             .where('subs."blogId" = blog.id')
             .andWhere('subs."subscribeStatus" = :subStatus', {
               subStatus: SubscribeEnum.Subscribed,
@@ -180,14 +189,30 @@ export class BlogsQueryRepo {
         .take(pageSize);
 
       if (userId) {
-        queryBuilder.addSelect((qb) =>
-          qb
-            .select('sub."subscribeStatus"')
-            .from(Subscription, 'sub')
-            .where('sub."blogId" = blog.id AND sub."userId" = :userId', {
-              userId,
-            }),
-        );
+        queryBuilder
+          .addSelect((qb) =>
+            qb
+              .select('sub."subscribeStatus"')
+              .from(BlogNotifySubscription, 'sub')
+              .where('sub."blogId" = blog.id AND sub."userId" = :userId', {
+                userId,
+              }),
+          )
+          .addSelect((qb) =>
+            qb
+              .select(
+                `
+                (CASE WHEN EXISTS(
+                  SELECT 1
+                  FROM membership_blog_plan mPlan
+                  WHERE mPlan.user = :userId 
+                  AND mPlan.blogId = blog.id
+                ) THEN true ELSE false END)
+              `,
+                'isMembership',
+              )
+              .from(MembershipBlogPlan, 'mPlan'),
+          );
       }
 
       if (adminAccess) {
@@ -222,7 +247,7 @@ export class BlogsQueryRepo {
     } catch (error) {
       console.error(error);
       throw new Error(
-        `Some troubles occurred during find or paging blogs: ${error}`,
+        `Some troubles occurred during find or paging blogsRepo: ${error}`,
       );
     }
   }
@@ -230,7 +255,7 @@ export class BlogsQueryRepo {
   async getBlogsByBlogger(
     userId: string,
     queryOptions: BlogsQueryFilter,
-  ): Promise<PaginationViewModel<BlogViewModelTypeWithImages>> {
+  ): PaginationResponseModel<BlogViewModelTypeWithImages> {
     try {
       const { searchNameTerm } = queryOptions;
 
@@ -239,7 +264,7 @@ export class BlogsQueryRepo {
 
       const [title] = [`%${searchNameTerm || ''}%`];
 
-      const queryBuilder = this.blogs.createQueryBuilder('b');
+      const queryBuilder = this.blogsRepo.createQueryBuilder('b');
 
       queryBuilder
         .select([
@@ -248,8 +273,8 @@ export class BlogsQueryRepo {
           'b.description AS description',
           `b.websiteUrl AS "websiteUrl"`,
           'b.created_at AS created_at',
-          `b.isMembership AS "isMembership"`,
           `b.banDate as "banDate"`,
+          `'true' AS "isMembership"`,
         ])
         .where('b.title ILIKE :title AND b."ownerId" = :userId', {
           title,
@@ -263,43 +288,6 @@ export class BlogsQueryRepo {
             : `b.${sortBy}`,
           sortDirection,
         )
-        // .addSelect(
-        //   (qb) =>
-        //     qb
-        //       .select(
-        //         `json_build_object(
-        //           'wall', (
-        //             SELECT
-        //               json_build_object(
-        //                 'fileUrl', fm."fileUrl",
-        //                 'fileSize', fm."fileSize",
-        //                 'fileHeight', fm."fileHeight",
-        //                 'fileWidth', fm."fileWidth"
-        //               )
-        //             FROM "file_metadata" fm
-        //             LEFT JOIN "blog_image" bi ON bi.id = fm."blogImgId"
-        //             WHERE bi."blogId"::text = b.id::text AND fm."photoType" = :wallType
-        //           ),
-        //           'main', (
-        //             SELECT json_agg(
-        //               json_build_object(
-        //                 'fileUrl', fm."fileUrl",
-        //                 'fileSize', fm."fileSize",
-        //                 'fileHeight', fm."fileHeight",
-        //                 'fileWidth', fm."fileWidth"
-        //               )
-        //             )
-        //             FROM "file_metadata" fm
-        //             LEFT JOIN "blog_image" bi ON bi.id = fm."blogImgId"
-        //             WHERE bi."blogId"::text = b.id::text AND fm."photoType" = :mainType
-        //           )
-        //         )`
-        //       )
-        //       .from(Blog, 'b')
-        //       .setParameter('wallType', PhotoType.WALLPAPER)
-        //       .setParameter('mainType', PhotoType.MAIN),
-        //   'images'
-        // )
         .addSelect(
           (qb) =>
             qb
@@ -324,31 +312,29 @@ export class BlogsQueryRepo {
         .addSelect((qb) =>
           qb
             .select('COUNT(*) "subscribersCount"')
-            .from(Subscription, 'subs')
-            .where('subs."blogId" = blog.id')
+            .from(BlogNotifySubscription, 'subs')
+            .where('subs."blogId" = b.id')
             .andWhere('subs."subscribeStatus" = :subStatus', {
               subStatus: SubscribeEnum.Subscribed,
+            }),
+        );
+      queryBuilder
+        .addSelect((qb) =>
+          qb
+            .select('sub."subscribeStatus"')
+            .from(BlogNotifySubscription, 'sub')
+            .where('sub."blogId" = b.id AND sub."userId" = :userId', {
+              userId,
             }),
         )
         .skip(skip)
         .take(pageSize);
 
-      if (userId) {
-        queryBuilder.addSelect((qb) =>
-          qb
-            .select('sub."subscribeStatus"')
-            .from(Subscription, 'sub')
-            .where('sub."blogId" = blog.id AND sub."userId" = :userId', {
-              userId,
-            }),
-        );
-      }
-
-      const blogs = await queryBuilder.getRawMany();
+      const blogsRepo = await queryBuilder.getRawMany();
       const blogsCount = await queryBuilder.getCount();
 
       return new PaginationViewModel<BlogViewModelType>(
-        blogs.map(getBlogsViewModelNew),
+        blogsRepo.map(getBlogsViewModelNew),
         pageNumber,
         pageSize,
         blogsCount,
@@ -356,7 +342,7 @@ export class BlogsQueryRepo {
     } catch (error) {
       console.error(error);
       throw new Error(
-        `Some troubles occurred during find or paging blogs by blogger: ${error}`,
+        `Some troubles occurred during find or paging blogsRepo by blogger: ${error}`,
       );
     }
   }
@@ -366,7 +352,7 @@ export class BlogsQueryRepo {
     userId?: string,
   ): Promise<BlogViewModelType | null> {
     try {
-      const queryBuilder = this.blogs.createQueryBuilder('blog');
+      const queryBuilder = this.blogsRepo.createQueryBuilder('blog');
       queryBuilder
         .select([
           'blog.id AS id',
@@ -374,7 +360,6 @@ export class BlogsQueryRepo {
           'blog.description AS description',
           `blog.websiteUrl AS "websiteUrl"`,
           'blog.created_at AS created_at',
-          `blog.isMembership AS "isMembership"`,
         ])
         .where('blog.id = :blogId', { blogId })
         .andWhere('blog.isBanned = false')
@@ -402,7 +387,7 @@ export class BlogsQueryRepo {
         .addSelect((qb) =>
           qb
             .select('COUNT(*) as "subscribersCount"')
-            .from(Subscription, 'sub')
+            .from(BlogNotifySubscription, 'sub')
             .where(
               'sub."blogId" = :blogId AND sub.subscribeStatus = :subStatus',
               { blogId, subStatus: SubscribeEnum.Subscribed },
@@ -410,15 +395,30 @@ export class BlogsQueryRepo {
         );
 
       if (userId) {
-        queryBuilder.addSelect((qb) =>
-          qb
-            .select('sub."subscribeStatus"')
-            .from(Subscription, 'sub')
-            .where('sub."blogId" = :blogId AND sub."userId" = :userId', {
-              blogId,
-              userId,
-            }),
-        );
+        queryBuilder
+          .addSelect((qb) =>
+            qb
+              .select('sub."subscribeStatus"')
+              .from(BlogNotifySubscription, 'sub')
+              .where('sub."blogId" = :blogId AND sub."userId" = :userId', {
+                blogId,
+                userId,
+              }),
+          )
+          .addSelect((qb) =>
+            qb
+              .select(
+                `
+                  (CASE WHEN EXISTS(
+                    SELECT 1
+                    FROM membership_blog_plan mPlan
+                    WHERE mPlan.blog = :blogId AND mPlan.user = :userId
+                  ) THEN true ELSE false END)
+                `,
+                'isMembership',
+              )
+              .from(MembershipBlogPlan, 'mPlan'),
+          );
       }
 
       const result = await queryBuilder.getRawOne();
@@ -434,7 +434,7 @@ export class BlogsQueryRepo {
     blogId: string,
   ): Promise<(BlogViewModelType & { user: UserAccount }) | null> {
     try {
-      const result = await this.blogs.findOne({
+      const result = await this.blogsRepo.findOne({
         where: { id: blogId },
         relations: {
           user: true,
@@ -449,6 +449,82 @@ export class BlogsQueryRepo {
     } catch (error) {
       console.log(`Some troubles occurred during find blog by id${error}`);
       return null;
+    }
+  }
+
+  getMembershipPlansForSpecificBlog = async (
+    blogId: string,
+  ): Promise<MembershipPlanType[]> => {
+    try {
+      const queryBuilder = this.blogsRepo.createQueryBuilder('blog');
+
+      queryBuilder
+        .select('blog.id')
+        .leftJoin('blog.subscriptionPlanModels', 'plan')
+        .addSelect([
+          'plan.productId',
+          'plan.productPlan',
+          'plan.productCurrency',
+          'plan.productPrice',
+        ])
+        .where('plan."blogId" = :blogId', { blogId });
+
+      const blogPlans = await queryBuilder.getOne();
+
+      if (!blogPlans) return null;
+
+      return getMembershipPlansViewModel(blogPlans.subscriptionPlanModels);
+    } catch (error) {
+      throw new Error('getMembershipPlansForSpecificBlog: ' + error);
+    }
+  };
+
+  async getAllMembershipPayments(
+    blogId: string,
+    query: UserPaymentsQueryFilter,
+  ): PaginationResponseModel<UserPaymentsViewType> {
+    try {
+      const { pageNumber, pageSize, skip, sortBy, sortDirection } =
+        getPagination(query);
+      const queryBuilder = this.dataSource
+        .getRepository(MembershipBlogPlan)
+        .createQueryBuilder('memberPlan');
+
+      queryBuilder
+        .select('memberPlan.id as "planId"')
+        .leftJoin('memberPlan.blog', 'blog')
+        .addSelect(['blog.id as "blogId"', 'blog.title as "blogTitle"'])
+        .leftJoin('memberPlan.user', 'user')
+        .addSelect(['user.login as "userLogin"', 'user.id as "userId"'])
+        .leftJoin('memberPlan.blogPlanModel', 'planModel')
+        .addSelect([
+          'planModel.productPrice as "price"',
+          'planModel.productCurrency as "currency"',
+          'planModel.productPlan as "plan"',
+        ])
+        .where('memberPlan.blog = :blogId', { blogId })
+        .orderBy(
+          sortBy === 'title'
+            ? 'blog."title" COLLATE "C"'
+            : sortBy === 'created_at'
+            ? 'memberPlan.created_at'
+            : `memberPlan.${sortBy}`,
+          sortDirection,
+        )
+        .skip(skip)
+        .take(pageSize);
+
+      const memberPlans = await queryBuilder.getRawMany();
+      const membershipPlansCount = await queryBuilder.getCount();
+
+      return new PaginationViewModel<UserPaymentsViewType>(
+        memberPlans.map(getMembershipPayments),
+        pageNumber,
+        pageSize,
+        membershipPlansCount,
+      );
+    } catch (error) {
+      throw new Error('getMembershipPaymentsCurrentBlog: ' + error);
     }
   }
 }

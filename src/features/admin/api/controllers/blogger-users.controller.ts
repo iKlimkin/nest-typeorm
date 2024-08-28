@@ -11,7 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { RouterPaths } from '../../../../../test/tools/helpers/routing';
+import { RouterPaths } from '../../../../infra/utils/routing';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { BanUnbanBloggerCommand } from '../../application/commands/banUnbanBlogger.command';
 import { InputUserBloggerBanDto } from '../models/input-sa.dtos.ts/user-restriction.dto';
@@ -23,6 +23,9 @@ import { UserSessionDto } from '../../../security/api/models/security-input.mode
 import { UsersQueryRepo } from '../query-repositories/users.query.repo';
 import { BloggerCrudApiService } from '../../application/bloggerCrudApi.service';
 import { BlogsQueryRepo } from '../../../blogs/api/query-repositories/blogs.query.repo';
+import { UserPaymentsViewType } from '../../../integrations/payments/api/models/view/user-payments.view-model';
+import { UserPaymentsQueryFilter } from '../../../integrations/payments/api/models/input/payments-query-filter';
+import { ValidateIdPipe } from '../../../../infra/pipes/id-validate.pipe';
 
 @UseGuards(AccessTokenGuard)
 @Controller(RouterPaths.bloggerUsers)
@@ -32,6 +35,19 @@ export class BloggerUsersController {
     private blogQueryRepo: BlogsQueryRepo,
     private usersQueryRepo: UsersQueryRepo,
   ) {}
+
+  @Get('blog/:id/payments')
+  @HttpCode(HttpStatus.OK)
+  async getAllMembershipPayments(
+    @Query() queryOptions: UserPaymentsQueryFilter,
+    @Param('id', ValidateIdPipe) blogId: string,
+    @CurrentUserInfo() userInfo: UserSessionDto,
+  ): Promise<PaginationViewModel<UserPaymentsViewType>> {
+    return await this.blogQueryRepo.getAllMembershipPayments(
+      blogId,
+      queryOptions,
+    );
+  }
 
   @Get('blog/:id')
   @HttpCode(HttpStatus.OK)

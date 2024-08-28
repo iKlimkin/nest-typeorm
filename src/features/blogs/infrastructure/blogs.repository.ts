@@ -3,16 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { UpdateBlogDto } from '../api/models/input.blog.models/update-blog-models';
 import { Blog } from '../domain/entities/blog.entity';
-import { Subscription } from '../domain/entities/blog-subscription.entity';
-import { UserAccount } from '../../auth/infrastructure/settings';
+import { BlogNotifySubscription } from '../domain/entities/blog-subscription.entity';
+import { BaseRepository } from '../../../domain/base-repository';
 
 @Injectable()
-export class BlogsRepository {
+export class BlogsRepository extends BaseRepository {
   constructor(
-    @InjectRepository(Blog) private readonly blogs: Repository<Blog>,
-    @InjectRepository(Subscription)
-    private readonly sub: Repository<Subscription>,
-  ) {}
+    @InjectRepository(Blog) private readonly blogsRepo: Repository<Blog>,
+    @InjectRepository(BlogNotifySubscription)
+    private readonly subRepo: Repository<BlogNotifySubscription>,
+  ) {
+    super();
+  }
 
   async save(blogDto: Blog, manager: EntityManager): Promise<Blog> {
     try {
@@ -21,22 +23,15 @@ export class BlogsRepository {
       throw new Error(`blog is not saved: ${error}`);
     }
   }
-  async saveEntity<T>(entity: T, manager: EntityManager): Promise<T> {
-    try {
-      return await manager.save(entity);
-    } catch (error) {
-      throw new Error(`entity is not saved: ${error}`);
-    }
-  }
 
   async findBlogSubscription(
     blogId: string,
     userId: string,
     manager: EntityManager,
-  ): Promise<Subscription | null> {
+  ): Promise<BlogNotifySubscription | null> {
     try {
       return await manager
-        .getRepository(Subscription)
+        .getRepository(BlogNotifySubscription)
         .findOne({ where: { blog: { id: blogId }, user: { id: userId } } });
     } catch (error) {
       throw new Error(`blogSubscription: ${error}`);
@@ -47,7 +42,7 @@ export class BlogsRepository {
     blogId: string,
     userId: string,
     manager: EntityManager,
-  ): Promise<{ blog: Blog; subscription: Subscription } | null> {
+  ): Promise<{ blog: Blog; subscription: BlogNotifySubscription } | null> {
     try {
       const queryBuilder = manager
         .createQueryBuilder(Blog, 'blog')
@@ -62,15 +57,17 @@ export class BlogsRepository {
         .andWhere('subscription.userId = :userId', { userId })
         .getOne();
 
-      return { blog, subscription: subscription?.subscriptions[0] };
+      return { blog, subscription: subscription?.notifySubscriptions[0] };
     } catch (error) {
       throw new Error(`blogSubscription: ${error}`);
     }
   }
 
-  async getSubscribersForBlog(blogId: string): Promise<Subscription[]> {
+  async getSubscribersForBlog(
+    blogId: string,
+  ): Promise<BlogNotifySubscription[]> {
     try {
-      return await this.sub.find({ where: { blog: { id: blogId } } });
+      return await this.subRepo.find({ where: { blog: { id: blogId } } });
     } catch (error) {
       throw new Error(`getSubscribersForBlog: ${error}`);
     }
@@ -78,7 +75,7 @@ export class BlogsRepository {
 
   async getBlogById(blogId: string): Promise<Blog | null> {
     try {
-      return await this.blogs.findOne({
+      return await this.blogsRepo.findOne({
         where: {
           id: blogId,
         },
@@ -92,11 +89,36 @@ export class BlogsRepository {
     }
   }
 
+  async getMembershipPlanModels(planId: string): Promise<Blog | null> {
+    try {
+      return await this.blogsRepo
+        .createQueryBuilder('blog')
+        .select('blog.id')
+        .leftJoinAndSelect('blog.subscriptionPlanModels', 'plan')
+        .where('plan.productId = :planId', { planId })
+        .getOne();
+    } catch (error) {
+      console.log(
+        `Database fails operate during get membership plan by planId: ${error}`,
+      );
+      return null;
+    }
+  }
+
+  async getMembershipUserPlan(userId: string, blogId: string) {
+    try {
+    } catch (error) {
+      throw new Error(
+        `Database fails operate during the get user plan ${error}`,
+      );
+    }
+  }
+
   async updateBlog(updateBlogDto: UpdateBlogDto): Promise<boolean> {
     try {
       const { blogId, description, name, websiteUrl } = updateBlogDto;
 
-      const result = await this.blogs.update(
+      const result = await this.blogsRepo.update(
         { id: blogId },
         { title: name, description, websiteUrl },
       );

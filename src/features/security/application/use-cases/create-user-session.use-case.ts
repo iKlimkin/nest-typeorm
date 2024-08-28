@@ -11,18 +11,19 @@ import { UserSessionRawDto } from '../../../auth/api/models/dtos/user-session.dt
 export class CreateUserSessionUseCase
   implements ICommandHandler<CreateSessionCommand>
 {
+  private location = this.constructor.name;
   constructor(private securityRepo: SecurityRepository) {}
 
   async execute(
     command: CreateSessionCommand,
-  ): Promise<LayerNoticeInterceptor<OutputId | null>> {
+  ): Promise<LayerNoticeInterceptor<OutputId>> {
     const notice = new LayerNoticeInterceptor<OutputId>();
     try {
       await validateOrRejectModel(command, CreateSessionCommand);
     } catch (error) {
       notice.addError(
         'Input data incorrect',
-        'input',
+        this.location,
         GetErrors.IncorrectModel,
       );
       return notice;
@@ -46,13 +47,8 @@ export class CreateUserSessionUseCase
     );
 
     const result = await this.securityRepo.createSession(sessionDto);
-
-    if (!result) {
-      notice.addError('Session not created', 'db', GetErrors.NotCreated);
-    } else {
-      notice.addData({ id: result.id });
-    }
-
+    
+    notice.addData({ id: result.id });
     return notice;
   }
 }

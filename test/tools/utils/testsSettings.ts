@@ -15,7 +15,8 @@ export const skipSettings = {
   blogs: skip,
   security: skip,
   app: skip,
-  integrations: run,
+  telega: run,
+  stripe: run,
 
   for(testName: e2eTestNamesEnum): boolean {
     if (!this.run_all_tests) return false;
@@ -49,9 +50,7 @@ export enum e2eTestNamesEnum {
   SABlogs = 'SABlogs',
   staging = 'staging',
   quiz = 'quiz',
-  integrations = 'integrations',
+  telegram = 'telega',
+  stripe = 'stripe',
 }
 
-enum uTestNamesEnum {
-  createPair = 'CreatePairUseCase',
-}

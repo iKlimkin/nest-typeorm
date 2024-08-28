@@ -59,7 +59,7 @@ export class CreateSAUseCase implements ICommandHandler<CreateSACommand> {
         CreateUserErrors.DatabaseFail,
       );
     } else {
-      notice.addData({ id: userAdmin.userId });
+      notice.addData({ id: userAdmin.id });
     }
 
     return notice;

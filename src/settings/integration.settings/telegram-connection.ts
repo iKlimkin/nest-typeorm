@@ -8,8 +8,8 @@ export const connectToTelegram = async (
 ) => {
   try {
     const baseUrl = await connectToNgrok(configService.getOrThrow('port'));
-    console.log({baseUrl});
-    
+    console.log({ baseUrl });
+
     const webhookUrl = `${baseUrl}/integrations/telegram`;
     await telegramAdapter.setHookToTelegram(webhookUrl);
   } catch (error) {

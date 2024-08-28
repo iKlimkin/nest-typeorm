@@ -25,7 +25,7 @@ export interface PlayerStatsView extends GameStats {
   player: {
     id: string;
     login: string;
-  }
+  };
 }
 
 export interface IUserStats {

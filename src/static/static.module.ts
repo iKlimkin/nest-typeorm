@@ -14,10 +14,6 @@ import { GetSecretAvatarUrlUseCase } from './use-cases/get-secret-avatar-url.use
   imports: [
     CqrsModule,
     ThrottlerModule.forRoot([{ ttl: 10000, limit: 50 }]),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'static'),
-      // renderPath: '/',
-    }),
   ],
   providers: [
     SaveUserFileUseCase,

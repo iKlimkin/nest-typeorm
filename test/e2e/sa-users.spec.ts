@@ -11,7 +11,7 @@ import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
 import { initSettings } from '../tools/utils/initSettings';
 import { e2eTestNamesEnum, skipSettings } from '../tools/utils/testsSettings';
 import { AuthUserType } from '../../src/features/auth/api/models/auth.output.models/auth.user.types';
-import { BanStatus } from '../../src/features/admin/api/models/outputSA.models.ts/sa-query.filter';
+import { BanStatus } from '../../src/features/admin/api/models/outputSA.models.ts/query-filters';
 import { SABlogsViewType } from '../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
 
 aDescribe(skipSettings.for(e2eTestNamesEnum.SAUsers))(

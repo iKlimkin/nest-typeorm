@@ -5,4 +5,6 @@ export class InputBlogBannedStatus {
   isBanned: boolean;
 }
 
-export type BanUnbanBlogCommandType = InputBlogBannedStatus & { blogId: string };
+export type BanUnbanBlogCommandType = InputBlogBannedStatus & {
+  blogId: string;
+};

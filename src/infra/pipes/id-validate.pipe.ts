@@ -12,7 +12,7 @@ export class ValidateIdPipe implements PipeTransform {
     const isValidUuid = isUUID(value);
 
     if (!isValidUuid) {
-      throw new BadRequestException('Invalid id');
+      throw new BadRequestException(`Invalid format id: ${value}`);
     }
 
     return value;

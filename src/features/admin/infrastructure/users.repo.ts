@@ -17,13 +17,9 @@ export class UsersRepository {
     private readonly userAccounts: Repository<UserAccount>,
   ) {}
 
-  async save(userDto: UserAccount): Promise<UserIdType | null> {
+  async save(userDto: UserAccount): Promise<UserAccount | null> {
     try {
-      const res = await this.userAccounts.save(userDto);
-
-      return {
-        userId: res.id,
-      };
+      return await this.userAccounts.save(userDto);
     } catch (error) {
       console.log(error);
       return null;
@@ -96,6 +92,18 @@ export class UsersRepository {
   //     return null;
   //   }
   // }
+
+  async findUserByEmail(email: string): Promise<UserAccount | null> {
+    try {
+      const user = await this.userAccounts.findOne({ where: { email } });
+      console.log('user findOne', {user});
+      return null
+      return await this.userAccounts.findOneBy({ email });
+    } catch (error) {
+      console.log(`error in findUserByEmail: ${error}`);
+      return null;
+    }
+  }
 
   async getEntityBanInfo<T>(
     entity: EntityTarget<T>,

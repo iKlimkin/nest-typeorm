@@ -23,14 +23,20 @@ import {
   BlogImage,
   PostImage,
 } from '.';
-import { Subscription } from './src/features/blogs/domain/entities/blog-subscription.entity';
-import { TelegramMetaUser } from './src/features/integrations/domain/entities/telegram-meta-user.entity';
+import { BlogNotifySubscription } from './src/features/blogs/domain/entities/blog-subscription.entity';
+import { BlogSubscriptionPlanModel } from './src/features/integrations/payments/domain/entities/blog-subscription-plan-model.entity';
+import { TelegramMetaUser } from './src/features/integrations/telegram/domain/entities/telegram-meta-user.entity';
+import { PaymentTransactionPlan } from './src/features/integrations/payments/domain/entities/payment-transaction-plan.entity';
+import { MembershipBlogPlan } from './src/features/integrations/payments/domain/entities/membership-blog-plan.entity';
 
 config();
 
 export const getEntities = () => [
+  MembershipBlogPlan,
+  PaymentTransactionPlan,
+  BlogNotifySubscription,
   TelegramMetaUser,
-  Subscription,
+  BlogSubscriptionPlanModel,
   BlogImage,
   PostImage,
   TemporaryUserAccount,

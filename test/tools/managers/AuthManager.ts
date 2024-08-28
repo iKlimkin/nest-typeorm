@@ -2,7 +2,7 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AuthUserType } from '../../../src/features/auth/api/models/auth.output.models/auth.user.types';
 import { ErrorsMessages } from '../../../src/infra/utils/error-handler';
-import { RouterPaths } from '../helpers/routing';
+import { RouterPaths } from '../../../src/infra/utils/routing';
 
 export class AuthManager {
   constructor(protected readonly app: INestApplication) {}

@@ -29,7 +29,7 @@ import { CreationPostDtoByBlogId } from '../../../src/features/posts/api/models/
 import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
 import { Post } from '../../../src/features/posts/domain/entities/post.entity';
 import { ErrorsMessages } from '../../../src/infra/utils/error-handler';
-import { RouterPaths } from '../helpers/routing';
+import { RouterPaths } from '../../../src/infra/utils/routing';
 import {
   blogsData,
   createdBlogStructureConsistency,
@@ -44,7 +44,8 @@ import { BaseTestManager } from './BaseTestManager';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import * as sharp from 'sharp';
-import { Subscription } from '../../../src/features/blogs/domain/entities/blog-subscription.entity';
+import { BlogNotifySubscription } from '../../../src/features/blogs/domain/entities/blog-subscription.entity';
+import { MembershipPlanType } from '../../../src/features/integrations/payments/api/models/view/user-payments.view-model';
 
 interface UploadBackWallForBlogParams {
   accessToken: string;
@@ -70,7 +71,7 @@ export class BlogTestManager extends BaseTestManager {
   protected bloggerManager: BloggerBlogsTestManager;
   protected publicBlogsManager: PublicBlogsTestManager;
   constructor(protected readonly app: INestApplication) {
-    super(new ApiRouting(), app);
+    super(app);
     this.blogRepository = this.app.get<Repository<Blog>>(
       getRepositoryToken(Blog),
     );
@@ -135,13 +136,13 @@ export class BlogTestManager extends BaseTestManager {
 }
 
 export class PublicBlogsTestManager extends BlogTestManager {
-  private subRepo: Repository<Subscription>;
+  private subRepo: Repository<BlogNotifySubscription>;
   constructor(
     protected readonly app: INestApplication,
     protected readonly routing: BlogsRouting,
   ) {
     super(app);
-    this.subRepo = app.get(getRepositoryToken(Subscription));
+    this.subRepo = app.get(getRepositoryToken(BlogNotifySubscription));
   }
 
   async getBlogsWithPagination(token: string, query?) {
@@ -163,6 +164,16 @@ export class PublicBlogsTestManager extends BlogTestManager {
 
       return response.body;
     }
+  }
+
+  async getMembershipPlans(
+    blogId: string,
+    expectStatus = HttpStatus.OK,
+  ): Promise<MembershipPlanType[]> {
+    const { body: membershipPlans } = await request(this.application)
+      .get(this.routing.getMembershipPlans(blogId))
+      .expect(expectStatus);
+    return membershipPlans;
   }
 
   async createBlog(
@@ -313,7 +324,7 @@ export class PublicBlogsTestManager extends BlogTestManager {
       .expect(expectedStatus);
   }
 
-  async getSubscribeInfo(blogId: string): Promise<Subscription[]> {
+  async getSubscribeInfo(blogId: string): Promise<BlogNotifySubscription[]> {
     try {
       return await this.subRepo.find({
         where: { blog: { id: blogId } },
@@ -352,6 +363,19 @@ export class PublicBlogsTestManager extends BlogTestManager {
     return blog;
   };
 
+  joinTheMembershipPlan = async (
+    accessToken: string,
+    blogId: string,
+    membershipPlanId: string,
+    expectStatus = HttpStatus.OK,
+  ): Promise<{ url: string }> => {
+    const { body: url } = await request(this.application)
+      .post(this.routing.joinTheMembershipPlan(blogId))
+      .auth(accessToken, this.constants.authBearer)
+      .send({ membershipPlanId })
+      .expect(expectStatus);
+    return url;
+  };
   async getPublicBlogs(accessToken?: string, expectedStatus = HttpStatus.OK) {
     let blogs: PaginationViewModel<BlogViewModelType>;
     await request(this.application)

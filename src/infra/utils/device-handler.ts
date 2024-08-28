@@ -9,10 +9,10 @@ export const getDeviceInfo = (userAgentInfo: any): DeviceInfo => {
         deviceType: userAgentInfo.isDesktop
           ? 'Desktop'
           : userAgentInfo.isMobile
-            ? 'Mobile'
-            : userAgentInfo.isTablet
-              ? 'Tablet'
-              : 'Unknown',
+          ? 'Mobile'
+          : userAgentInfo.isTablet
+          ? 'Tablet'
+          : 'Unknown',
         browser: userAgentInfo.browser || 'Unknown',
       }
     : {

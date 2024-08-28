@@ -13,7 +13,7 @@ import { PlayerStatsView } from '../../src/features/quiz/api/models/output.model
 import { QuizQuestionViewType } from '../../src/features/quiz/api/models/output.models.ts/view.models.ts/quiz-question.view-type';
 import { EmailManager } from '../../src/infra/managers/email-manager';
 import { EmailManagerMock } from '../tools/dummies/email.manager.mock';
-import { RouterPaths } from '../tools/helpers/routing';
+import { RouterPaths } from '../../src/infra/utils/routing';
 import { QuizTestManager } from '../tools/managers/QuizTestManager';
 import { UsersTestManager } from '../tools/managers/UsersTestManager';
 import { SuperTestBody } from '../tools/models/body.response.model';

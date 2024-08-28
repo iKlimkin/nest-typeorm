@@ -129,5 +129,4 @@ export class PostsRepository {
       return null;
     }
   }
-  
 }

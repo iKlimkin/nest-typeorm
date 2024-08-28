@@ -18,14 +18,14 @@ import {
 import { iSValidField } from '../../../../infra/decorators/transform/transform-params';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import type { UserAccount } from '../../../admin/domain/entities/user-account.entity';
-import type { Post } from '../../../posts/domain/entities/post.entity';
-import {
-  BlogCreationDto,
-  UpdateBlogDto,
-} from '../../api/models/dtos/blog-dto.model';
-import type { UserBloggerBans } from './user-blogger-bans.entity';
 import { BlogImage } from '../../../files/domain/entities/blog-images.entity';
-import { Subscription } from './blog-subscription.entity';
+import type { Post } from '../../../posts/domain/entities/post.entity';
+import { UpdateBlogDto } from '../../api/models/dtos/blog-dto.model';
+import { BlogNotifySubscription } from './blog-subscription.entity';
+import type { UserBloggerBans } from './user-blogger-bans.entity';
+import { CreateBlogCommandDto } from '../../api/models/input.blog.models/create.blog.model';
+import { MembershipBlogPlan } from '../../../integrations/payments/domain/entities/membership-blog-plan.entity';
+import { BlogSubscriptionPlanModel } from '../../../integrations/payments/domain/entities/blog-subscription-plan-model.entity';
 
 @Entity()
 export class Blog extends BaseEntity {
@@ -43,9 +43,6 @@ export class Blog extends BaseEntity {
   @Length(urlLength.min, urlLength.max)
   websiteUrl: string;
 
-  @Column()
-  isMembership: boolean;
-
   @ManyToOne('UserAccount', 'blogs', {
     nullable: true,
     cascade: true,
@@ -53,6 +50,9 @@ export class Blog extends BaseEntity {
   })
   @JoinColumn({ name: 'ownerId' })
   user: UserAccount;
+
+  @Column('boolean', { default: false })
+  isMembership: boolean;
 
   @OneToMany('UserBloggerBans', 'blog')
   bloggerBans: UserBloggerBans[];
@@ -69,20 +69,27 @@ export class Blog extends BaseEntity {
   @OneToOne(() => BlogImage, (images) => images.blog)
   images: BlogImage;
 
-  @OneToMany(() => Subscription, (subs) => subs.blog)
-  subscriptions: Subscription[];
+  @OneToMany(() => BlogNotifySubscription, (notifySub) => notifySub.blog)
+  notifySubscriptions: BlogNotifySubscription[];
 
-  static async create(createBlogDto: BlogCreationDto) {
+  @OneToMany(() => MembershipBlogPlan, (membershipPlan) => membershipPlan.blog)
+  membershipPlans: MembershipBlogPlan[];
+
+  @OneToMany(
+    () => BlogSubscriptionPlanModel,
+    (subscriptionPlanModels) => subscriptionPlanModels.blog,
+  )
+  subscriptionPlanModels: BlogSubscriptionPlanModel[];
+
+  static async create(createBlogDto: CreateBlogCommandDto) {
     const notice = new LayerNoticeInterceptor<Blog>();
-    const { description, isMembership, title, websiteUrl, user } =
-      createBlogDto;
+    const { description, name, websiteUrl, userId } = createBlogDto;
 
     const newBlog = new Blog();
-    newBlog.title = title;
+    newBlog.title = name;
     newBlog.description = description;
     newBlog.websiteUrl = websiteUrl;
-    newBlog.isMembership = isMembership;
-    newBlog.user = user;
+    newBlog.user = { id: userId } as UserAccount;
 
     await notice.validateFields(newBlog);
     notice.addData(newBlog);

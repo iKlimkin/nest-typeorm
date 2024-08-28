@@ -1,4 +1,4 @@
-import { RouterPaths } from '../helpers/routing';
+import { RouterPaths } from '../../../src/infra/utils/routing';
 
 export class AuthUsersRouting {
   constructor(private readonly baseUrl = RouterPaths.auth) {}
@@ -8,7 +8,8 @@ export class AuthUsersRouting {
   refreshToken = () => `${this.baseUrl}/refresh-token`;
   registrationConfirmation = () => `${this.baseUrl}/registration-confirmation`;
   registration = () => `${this.baseUrl}/registration`;
-  registrationEmailResending = () => `${this.baseUrl}/registration-email-resending`;
+  registrationEmailResending = () =>
+    `${this.baseUrl}/registration-email-resending`;
   logout = () => `${this.baseUrl}/logout`;
   me = () => `${this.baseUrl}/me`;
 }

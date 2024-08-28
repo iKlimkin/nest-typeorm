@@ -3,10 +3,16 @@
     "Aristotel",
     "Metadatas",
     "newestlikes",
+    "Paybox",
     "presigner",
+    "Qiwi",
+    "Robokassa",
     "Socrat",
+    "Tinkoff",
     "Unban",
     "unbunned",
-    "Unsub"
-  ]
+    "Unsub",
+    "webmoney"
+  ],
+  "prettier.configPath": "C:\\Users\\ghbro\\Project\\nest-typeorm\\.prettierrc"
 }

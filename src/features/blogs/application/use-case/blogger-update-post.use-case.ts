@@ -26,12 +26,11 @@ export class UpdateBloggerPostUseCase
     return runInTransaction(this.dataSource, async (manager) => {
       const notice = new LayerNoticeInterceptor();
 
-      const blogServiceNotice =
-        await this.blogService.validateBlogAndUserRights(
-          blogId,
-          userId,
-          postId,
-        );
+      const blogServiceNotice = await this.blogService.ensureUserHasBlogAccess(
+        blogId,
+        userId,
+        postId,
+      );
 
       if (blogServiceNotice.hasError)
         return blogServiceNotice as LayerNoticeInterceptor<null>;

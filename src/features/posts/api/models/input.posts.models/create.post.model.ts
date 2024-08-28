@@ -92,4 +92,3 @@ export class UpdatePostDto extends CreationPostDtoByBlogId {
 }
 
 export class UpdateBloggerPostDto extends CreationPostDtoByBlogId {}
-

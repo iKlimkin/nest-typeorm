@@ -11,7 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { RouterPaths } from '../../../../../test/tools/helpers/routing';
+import { RouterPaths } from '../../../../infra/utils/routing';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';
 import { SACrudApiService } from '../../../../domain/base-services/base.crud.api.service';
@@ -20,7 +20,7 @@ import { CreateSACommand } from '../../application/commands/create-sa.command';
 import { DeleteSACommand } from '../../application/commands/delete-sa.command';
 import { CreateUserDto } from '../models/input-sa.dtos.ts/create-user.model';
 import { UserRestrictionDto } from '../models/input-sa.dtos.ts/user-restriction.dto';
-import { SAQueryFilter } from '../models/outputSA.models.ts/sa-query.filter';
+import { SAQueryFilter } from '../models/outputSA.models.ts/query-filters';
 import { SAViewType } from '../models/user.view.models/userAdmin.view-type';
 import { UsersQueryRepo } from '../query-repositories/users.query.repo';
 

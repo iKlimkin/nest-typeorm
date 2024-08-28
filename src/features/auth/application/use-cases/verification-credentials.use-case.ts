@@ -1,12 +1,10 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { BcryptAdapter } from '../../../../infra/adapters/bcrypt.adapter';
+import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
+import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { UserIdType } from '../../../admin/api/models/outputSA.models.ts/user-models';
 import { AuthRepository } from '../../infrastructure/auth.repository';
-import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
-import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { VerificationCredentialsCommand } from './commands/verification-credentials.command';
-import { SecurityRepository } from '../../infrastructure/settings';
 
 @CommandHandler(VerificationCredentialsCommand)
 export class VerificationCredentialsUseCase
@@ -16,7 +14,6 @@ export class VerificationCredentialsUseCase
   constructor(
     private authRepo: AuthRepository,
     private bcryptAdapter: BcryptAdapter,
-    private securityRepo: SecurityRepository,
   ) {
     this.location = this.constructor.name;
   }

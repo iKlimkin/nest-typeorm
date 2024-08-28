@@ -28,5 +28,4 @@ export * from '../models/auth.output.models/auth.output.models';
 export * from '../query-repositories/auth.query.repo';
 export * from '../../../security/application/use-cases/commands/create-session.command';
 export * from '../../application/use-cases/commands/update-Issued-token.command';
-export * from '../../infrastructure/decorators/models';
-export * from '../../../../../test/tools/helpers/routing';
+export * from '../../../../infra/utils/routing';

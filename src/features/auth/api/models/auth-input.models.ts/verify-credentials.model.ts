@@ -3,6 +3,7 @@ import {
   frequentLength,
   passwordLength,
 } from '../../../../../domain/validation.constants';
+import { IsString } from 'class-validator';
 
 export class UserCredentialsDto {
   /**
@@ -16,4 +17,9 @@ export class UserCredentialsDto {
    */
   @iSValidField(passwordLength)
   password: string;
+}
+
+export class UserCredentialsWithCaptureTokenDto extends UserCredentialsDto {
+  @IsString()
+  recaptureToken: string;
 }

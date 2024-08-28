@@ -36,7 +36,7 @@ export class UploadPostMainImageUseCase
 
     return runInTransaction(this.dataSource, async (manager) => {
       const notice = new LayerNoticeInterceptor<ResponseFileType>();
-      const validationNotice = await this.blogService.validateBlogAndUserRights(
+      const validationNotice = await this.blogService.ensureUserHasBlogAccess(
         blogId,
         userId,
         postId,

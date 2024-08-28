@@ -24,7 +24,7 @@ export class BlogService {
     this.location = this.constructor.name;
   }
 
-  async validateBlogAndUserRights(
+  async ensureUserHasBlogAccess(
     blogId: string,
     userId: string,
     postId?: string,

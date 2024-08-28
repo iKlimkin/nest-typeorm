@@ -155,7 +155,6 @@ export const createUser = (options?: CreateUserType): UserAccount =>
     email: options?.email || 'email',
     login: options?.login || 'login0',
     password_hash: 'hash',
-    password_salt: 'salt',
     is_confirmed: true,
     created_at: new Date(),
   }) as UserAccount;

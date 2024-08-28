@@ -3,5 +3,5 @@ export type UserIdType = {
 };
 
 export type ResponseIdType = {
-  id: string
-}
+  id: string;
+};

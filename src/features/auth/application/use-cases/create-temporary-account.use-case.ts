@@ -25,8 +25,9 @@ export class CreateTemporaryAccountUseCase
       expirationDate: recoveryPassInfo.expirationDate,
     };
 
-    const temporaryUserAccount =
-      await this.authRepo.createTemporaryUserAccount(tempAccountDto);
+    const temporaryUserAccount = await this.authRepo.createTemporaryUserAccount(
+      tempAccountDto,
+    );
 
     const sendRecoveryMsgCommand = new SendRecoveryMsgCommand({
       email,

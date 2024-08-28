@@ -33,13 +33,15 @@ export class UploadBlogMainImageUseCase
     };
     const bucketName = BucketName.HUB;
 
-    return runInTransaction(this.dataSource, async (manager) => {
-      return await this.filesService.manageBlogImageUpload({
-        ...uploadData,
-        photoTypes,
-        manager,
-        bucketName,
-      });
-    });
+    return runInTransaction(
+      this.dataSource,
+      async (manager) =>
+        await this.filesService.manageBlogImageUpload({
+          ...uploadData,
+          photoTypes,
+          manager,
+          bucketName,
+        }),
+    );
   }
 }

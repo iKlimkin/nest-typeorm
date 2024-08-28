@@ -29,7 +29,7 @@ export class DeleteBloggerPostUseCase
     return runInTransaction(dataSource, async (manager) => {
       const notice = new LayerNoticeInterceptor<boolean>();
 
-      const blogServiceNotice = await blogService.validateBlogAndUserRights(
+      const blogServiceNotice = await blogService.ensureUserHasBlogAccess(
         blogId,
         userId,
         postId,

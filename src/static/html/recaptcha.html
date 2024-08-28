@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recaptcha</title>
+  </head>
+  <body>
+    <h1>Recaptcha testing</h1>
+    <form action="">
+      <input id="input-email" type="email" value="ghbrot@yg.com" />
+      <br />
+      <button
+        class="g-recaptcha"
+        data-sitekey="6LcXfikqAAAAAEtJf27WMmB70tR2xlm2A3Jlgz6P"
+        data-callback="onSubmit"
+        data-action="submit"
+      >
+        Submit
+      </button>
+    </form>
+    <script src="https://www.google.com/recaptcha/api.js"></script>
+    <script>
+      const emailButton = document.getElementById('input-email');
+      const button = document.getElementById('rec-pass-button');
+
+      function onSubmit(recaptchaVal) {
+        fetch('/recaptcha/password-recovery', {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify({
+            email: emailButton.value,
+            recaptchaVal,
+          }),
+        });
+      }
+    </script>
+  </body>
+</html>

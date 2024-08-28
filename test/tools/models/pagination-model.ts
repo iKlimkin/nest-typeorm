@@ -20,8 +20,8 @@ export class PaginationModel<T> {
     hideFieldOptions?: any,
   ): PaginationModelData<T> {
     const { pagesCount, page, pageSize, totalCount, items } = data;
-    
-    let cItems = [...items || []];
+
+    let cItems = [...(items || [])];
 
     if (query?.searchEmailTerm || query?.searchLoginTerm) {
       cItems = this.filterQueryTerms(cItems, query);

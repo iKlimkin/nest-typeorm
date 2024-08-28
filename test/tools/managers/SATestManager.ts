@@ -1,19 +1,16 @@
-import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
+import { PaginationViewModel } from '../../../src/domain/sorting-base-filter';
+import { UserRestrictionDto } from '../../../src/features/admin/api/models/input-sa.dtos.ts/user-restriction.dto';
+import { SAQueryFilter } from '../../../src/features/admin/api/models/outputSA.models.ts/query-filters';
 import {
   SAViewType,
   SAViewWithBannedUsersType,
 } from '../../../src/features/admin/api/models/user.view.models/userAdmin.view-type';
 import { AuthUserType } from '../../../src/features/auth/api/models/auth.output.models/auth.user.types';
 import { ErrorsMessages } from '../../../src/infra/utils/error-handler';
-import { SAUsersRouting } from '../routes/sa-users.routing';
 import { AuthConstantsType, constants } from '../helpers/constants';
-import {
-  UserRestrictionCommandDto,
-  UserRestrictionDto,
-} from '../../../src/features/admin/api/models/input-sa.dtos.ts/user-restriction.dto';
-import { PaginationViewModel } from '../../../src/domain/sorting-base-filter';
-import { SAQueryFilter } from '../../../src/features/admin/api/models/outputSA.models.ts/query-filters';
+import { SAUsersRouting } from '../routes/sa-users.routing';
 import { BaseTestManager } from './BaseTestManager';
 
 export class SATestManager extends BaseTestManager {
@@ -23,7 +20,7 @@ export class SATestManager extends BaseTestManager {
     protected readonly app: INestApplication,
     protected readonly routing: SAUsersRouting,
   ) {
-    super(routing, app);
+    super(app);
     this.constants = constants.auth;
   }
 

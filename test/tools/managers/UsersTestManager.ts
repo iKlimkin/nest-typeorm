@@ -3,7 +3,7 @@ import * as request from 'supertest';
 import { JwtTokens } from '../../../src/features/auth/api/models/auth-input.models.ts/jwt.types';
 import { UserProfileType } from '../../../src/features/auth/api/models/auth.output.models/auth.output.models';
 import { AuthUserType } from '../../../src/features/auth/api/models/auth.output.models/auth.user.types';
-import { RouterPaths } from '../helpers/routing';
+import { RouterPaths } from '../../../src/infra/utils/routing';
 import { BaseTestManager } from './BaseTestManager';
 import { AuthUsersRouting } from '../routes/users.routing';
 import { SuperTestBody } from '../models/body.response.model';
@@ -14,7 +14,7 @@ export class UsersTestManager extends BaseTestManager {
     protected readonly app: INestApplication,
     protected readonly routing: AuthUsersRouting,
   ) {
-    super(routing, app);
+    super(app);
   }
 
   createInputData(field?: AuthUserType | any): AuthUserType {
@@ -54,11 +54,9 @@ export class UsersTestManager extends BaseTestManager {
   createUsersToVerifyValidation = async () => {
     usersData.forEach(async (user) => {
       try {
-        
         await this.createSA(user);
       } catch (error) {
-        console.log({error});
-        
+        console.log({ error });
       }
     });
   };
@@ -74,7 +72,7 @@ export class UsersTestManager extends BaseTestManager {
         login: `login${i}`,
         email: `email${i}@test.test`,
       };
-      
+
       const userInputData = this.createInputData(userData);
       const sa = await this.createSA(userInputData);
 

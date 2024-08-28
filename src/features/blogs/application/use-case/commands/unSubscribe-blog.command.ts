@@ -1,4 +1,3 @@
-
 export class UnsubscribeBlogCommand {
   constructor(
     public userId: string,

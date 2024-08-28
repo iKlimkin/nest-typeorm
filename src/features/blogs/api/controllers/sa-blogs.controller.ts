@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { RouterPaths } from '../../../../../test/tools/helpers/routing';
+import { RouterPaths } from '../../../../infra/utils/routing';
 import { BlogCrudApiService } from '../../../../domain/base-services/base.crud.api.service';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { BasicSAAuthGuard } from '../../../auth/infrastructure/guards/basic-auth.guard';

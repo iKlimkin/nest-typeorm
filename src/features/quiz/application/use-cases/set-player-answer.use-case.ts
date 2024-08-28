@@ -3,7 +3,6 @@ import { DataSource, EntityManager } from 'typeorm';
 import { runInTransaction } from '../../../../domain/transaction-wrapper';
 import { GetErrors } from '../../../../infra/utils/interlay-error-handler.ts/error-constants';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
-import { validateOrRejectModel } from '../../../../infra/utils/validators/validate-or-reject.model';
 import { AnswerResultViewType } from '../../api/models/output.models.ts/view.models.ts/quiz-game.view-type';
 import { QuizAnswer } from '../../domain/entities/quiz-answer.entity';
 import { QuizPlayerProgress } from '../../domain/entities/quiz-player-progress.entity';
