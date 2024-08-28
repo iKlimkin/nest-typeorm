@@ -18,7 +18,6 @@ export type CreateCommentDtoType = {
   content: string;
 };
 
-
 export type CommentType = {
   /**
    *  current content

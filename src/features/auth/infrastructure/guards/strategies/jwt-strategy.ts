@@ -30,7 +30,7 @@ export class AccessTokenStrategy extends PassportStrategy(
 
     if (!userSession) return false;
 
-    return payload;
+    return { ...payload };
   }
 }
 

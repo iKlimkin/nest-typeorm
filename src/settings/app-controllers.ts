@@ -7,7 +7,6 @@ import {
   PostsController,
   QuizQuestionsController,
   SABlogsController,
-  TelegramController,
   TestDatabaseController,
 } from '.';
 
@@ -15,15 +14,10 @@ export const controllers = [
   BloggerController,
   SABlogsController,
   BlogsController,
-  TelegramController,
   PostsController,
-
   FeedbacksController,
-
   AppController,
-
   QuizQuestionsController,
   PairGameQuizController,
-
   TestDatabaseController,
 ];

@@ -1,4 +1,10 @@
-import { IsNotEmpty, Length, Matches } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsUUID,
+  Length,
+  Matches,
+} from 'class-validator';
 import {
   descriptionLength,
   nameLength,
@@ -29,9 +35,12 @@ export class CreateBlogInputDto {
   websiteUrl: string;
 }
 
-export class CreateBlogDto extends CreateBlogInputDto {
+export class CreateBlogCommandDto extends CreateBlogInputDto {
+  @IsUUID()
   userId: string;
-
-  // @iSValidField(loginLength, loginMatch)
-  // userLogin: string;
 }
+
+// export class CreateBlogDto extends CreateBlogCommandDto {
+//   @IsBoolean()
+//   isMembership: boolean;
+// }

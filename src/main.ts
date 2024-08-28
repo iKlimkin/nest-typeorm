@@ -10,7 +10,6 @@ import {
 (async () => {
   const app = await NestFactory.create(AppModule, { rawBody: true });
   const configService = app.get(ConfigService<ConfigurationType>);
-
   const PORT = configService.getOrThrow('port');
 
   applyAppSettings(app);

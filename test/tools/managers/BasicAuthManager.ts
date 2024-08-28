@@ -1,6 +1,6 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { PathMappings, RouterPaths } from '../helpers/routing';
+import { PathMappings, RouterPaths } from '../../../src/infra/utils/routing';
 
 export class BasicAuthorization {
   constructor(protected readonly app: INestApplication) {}

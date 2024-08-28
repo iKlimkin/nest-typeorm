@@ -14,7 +14,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { RouterPaths } from '../../../../../test/tools/helpers/routing';
+import { RouterPaths } from '../../../../infra/utils/routing';
 import { PaginationViewModelType } from '../../../../domain/pagination-view.model';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { handleErrors } from '../../../../infra/utils/interlay-error-handler.ts/interlay-errors.handler';

@@ -61,11 +61,10 @@ export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
         CreateUserErrors.DatabaseFail,
       );
     } else {
-      notice.addData({ userId: result.userId });
+      notice.addData({ userId: result.id });
     }
 
     const event = new EmailNotificationEvent(email, user.confirmation_code);
-
     this.eventBus.publish(event);
 
     return notice;

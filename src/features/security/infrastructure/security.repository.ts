@@ -30,7 +30,7 @@ export class SecurityRepository {
     } catch (error) {
       console.error(`
       Database fails operate with create session ${error}`);
-      return null;
+      throw new Error(`Database fails operate with create session ${error}`);
     }
   }
 

@@ -2,7 +2,7 @@ import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { PaginationViewModel } from '../../../src/domain/sorting-base-filter';
 import { CommentsViewModel } from '../../../src/features/comments/api/models/comments.view.models/comments.view-model.type';
-import { RouterPaths } from '../helpers/routing';
+import { RouterPaths } from '../../../src/infra/utils/routing';
 import { SuperTestBody } from '../models/body.response.model';
 import { BaseTestManager } from './BaseTestManager';
 import { FeedbacksRouting } from '../routes/feedbacks.routing';
@@ -21,7 +21,7 @@ export class FeedbacksTestManager extends BaseTestManager {
     protected readonly app: INestApplication,
     protected readonly routing: FeedbacksRouting,
   ) {
-    super(routing, app);
+    super(app);
   }
 
   async updateComment(

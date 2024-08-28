@@ -1,4 +1,3 @@
-
 export class SubscribeBlogCommand {
   constructor(
     public userId: string,

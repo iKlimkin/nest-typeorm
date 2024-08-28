@@ -19,8 +19,8 @@ describe('Set-answer-use-case', () => {
   let setPlayerAnswerUseCase: SetPlayerAnswerUseCase;
   let quizRepoMock: QuizRepoMockForSetAnswer;
   let quizRepo: QuizRepository;
-  let firstPlayerUserId: string = '1';
-  let secondPlayerUserId: string = '123';
+  let firstPlayerUserId = '1';
+  let secondPlayerUserId = '123';
 
   beforeAll(async () => {
     const settings = await initSettings((moduleBuilder) =>
@@ -270,7 +270,7 @@ describe('Set-answer-use-case', () => {
         answer: '2',
       });
       const answerPoint = 5;
- 
+
       const mockCurrentGame = startGame(command.inputData.userId, {
         fPAnswerCount: answerPoint - 1,
         sPAnswerCount: answerPoint,

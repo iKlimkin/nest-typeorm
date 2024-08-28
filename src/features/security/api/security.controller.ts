@@ -36,8 +36,9 @@ export class SecurityController implements SecurityInterface {
   ): Promise<SecurityViewDeviceModel[]> {
     const { userId } = userInfo;
 
-    const securityData =
-      await this.securityQueryRepo.getUserActiveSessions(userId);
+    const securityData = await this.securityQueryRepo.getUserActiveSessions(
+      userId,
+    );
 
     if (!securityData) {
       throw new UnauthorizedException();
@@ -61,8 +62,9 @@ export class SecurityController implements SecurityInterface {
     @Param('id') deviceId: string,
     @CurrentUserInfo() userInfo: UserSessionDto,
   ) {
-    const sessionExistence =
-      await this.securityQueryRepo.getUserSession(deviceId);
+    const sessionExistence = await this.securityQueryRepo.getUserSession(
+      deviceId,
+    );
 
     if (!sessionExistence) {
       throw new NotFoundException('Session not found');

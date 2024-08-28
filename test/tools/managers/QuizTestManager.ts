@@ -26,7 +26,6 @@ import { QuizAnswer } from '../../../src/features/quiz/domain/entities/quiz-answ
 import { CurrentGameQuestion } from '../../../src/features/quiz/domain/entities/current-game-questions.entity';
 import { QuizPlayerProgress } from '../../../src/settings';
 
-
 export type QuestionsAndAnswersDB = {
   savedQuestion: QuizQuestion;
   answers: QuizCorrectAnswer[];

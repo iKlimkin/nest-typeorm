@@ -5,7 +5,7 @@ import { SortDirections } from '../../src/domain/sorting-base-filter';
 import { BlogsQueryFilter } from '../../src/features/blogs/api/models/input.blog.models/blogs-query.filter';
 import { SABlogsViewType } from '../../src/features/blogs/api/models/output.blog.models/blog.view.model-type';
 import { configureTestSetup } from '../tools/fixtures/setup-environment';
-import { RouterPaths } from '../tools/helpers/routing';
+import { RouterPaths } from '../../src/infra/utils/routing';
 import {
   BloggerBlogsTestManager,
   BlogTestManager,

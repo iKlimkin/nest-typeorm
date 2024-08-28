@@ -1,31 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ConfigurationType } from '../../settings/config/configuration';
 import { EmailAdapter } from '../adapters/email.adapter';
-import { EmailEnvSettingTypes } from '../../domain/notification-model';
 
 @Injectable()
 export class EmailManager {
-  constructor(
-    private emailAdapter: EmailAdapter,
-    private readonly configService: ConfigService<ConfigurationType>,
-  ) {}
+  constructor(private emailAdapter: EmailAdapter) {}
+
+  async sendEmailMembershipSuccess(
+    userEmail: string,
+    userLogin: string,
+  ): Promise<void> {
+    const notificationData = {
+      from: `Interact Hub👻`,
+      subject: 'Membership purchase',
+      message: `,
+      <p>Thanks ${userLogin} for purchase subscription</p>`,
+      to: userEmail,
+    };
+
+    return this.emailAdapter.sendEmail(notificationData);
+  }
+
   async sendEmailRecoveryMessage(
     email: string,
     recoveryCode: string,
   ): Promise<string> {
     const recoveryLink = `https://somesite.com/password-recovery?recoveryCode=${recoveryCode}`;
-    const emailSettings = this.getEmailSettings();
 
     const passwordRecoveryData = {
-      emailSettings,
       from: `Interact Hub👻`,
       subject: 'Password recovery',
       message: `,
       <p>To finish password recovery please follow the link below:
       <a href='${recoveryLink}'>recovery password</a>
       </p>`,
-      email,
+      to: email,
     };
 
     return this.emailAdapter.sendEmail(passwordRecoveryData);
@@ -36,25 +44,17 @@ export class EmailManager {
     confirmationCode: string,
   ): Promise<string> {
     const confirmationLink = `https://somesite.com/confirm-email?code=${confirmationCode}`;
-    const emailSettings = this.getEmailSettings();
 
     const confirmationData = {
-      emailSettings,
-      from: `Social Hub👻 <${emailSettings?.EMAIL_USER}>`,
+      from: `Social Hub👻`,
       subject: 'Email Confirmation',
       message: `<h1>Thank for your registration</h1>
     <p>To finish registration please follow the link below:
         <a href=${confirmationLink}>complete registration</a>
     </p>`,
-      email,
+      to: email,
     };
 
     return this.emailAdapter.sendEmail(confirmationData);
-  }
-
-  private getEmailSettings(): EmailEnvSettingTypes {
-    return this.configService.get('emailSettings', {
-      infer: true,
-    })!;
   }
 }

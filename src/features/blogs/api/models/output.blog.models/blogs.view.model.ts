@@ -18,7 +18,7 @@ export const getBlogsViewModel = (blog: Blog): BlogViewModelType => ({
   description: blog.description,
   websiteUrl: blog.websiteUrl,
   createdAt: blog.created_at.toISOString(),
-  isMembership: blog.isMembership,
+  isMembership: false,
   images: blog.images
     ? convertImagesToView(blog.images as unknown as ImageInfoType[])
     : { wallpaper: null, main: [] },
@@ -32,7 +32,7 @@ export const getBlogsViewModelNew = (
   description: blog.description,
   websiteUrl: blog.websiteUrl,
   createdAt: blog.created_at.toISOString(),
-  isMembership: blog.isMembership,
+  isMembership: blog.isMembership || false,
   images: blog.images
     ? convertImagesToView(blog.images as unknown as ImageInfoType[])
     : { wallpaper: null, main: [] },
@@ -72,7 +72,7 @@ export const getBlogsViewModelWithImages = (
   description: blog.description,
   websiteUrl: blog.websiteUrl,
   createdAt: blog.created_at.toISOString(),
-  isMembership: blog.isMembership,
+  isMembership: false,
   images: blog.images
     ? convertImagesToView(blog.images)
     : { wallpaper: null, main: [] },
@@ -84,7 +84,7 @@ export const getSABlogsViewModelFromRaw = (rawBlog: any): SABlogsViewType => ({
   description: rawBlog.description,
   websiteUrl: rawBlog.websiteUrl,
   createdAt: rawBlog.created_at.toISOString(),
-  isMembership: rawBlog.isMembership,
+  isMembership: false,
   blogOwnerInfo: {
     userId: rawBlog?.userId,
     userLogin: rawBlog?.userLogin,

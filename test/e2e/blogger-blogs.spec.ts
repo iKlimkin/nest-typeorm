@@ -1,7 +1,7 @@
 import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import { configureTestSetup } from '../tools/fixtures/setup-environment';
 import { constants } from '../tools/helpers/constants';
-import { RouterPaths } from '../tools/helpers/routing';
+import { RouterPaths } from '../../src/infra/utils/routing';
 import {
   blogEqualTo,
   blogValidationErrors,

@@ -16,7 +16,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { RouterPaths } from '../../../../../test/tools/helpers/routing';
+import { RouterPaths } from '../../../../infra/utils/routing';
 import { PaginationViewModel } from '../../../../domain/sorting-base-filter';
 import { CurrentUserInfo } from '../../../auth/infrastructure/decorators/current-user-info.decorator';
 import { AccessTokenGuard } from '../../../auth/infrastructure/guards/accessToken.guard';

@@ -1,12 +1,13 @@
-import { RouterPaths } from '../helpers/routing';
+import { RouterPaths } from '../../../src/infra/utils/routing';
 import { BloggerUsersRouting } from './bloggerUsers.routing';
 import { BlogsRouting } from './blogs.routing';
 import { FeedbacksRouting } from './feedbacks.routing';
+import { PaymentsRouting } from './payments.routing';
 import { PostsRouting } from './posts.routing';
 import { QuizPairsRouting } from './quizPairs.routing';
 import { QuizQuestionsRouting } from './quizQuestions.routing';
 import { SAUsersRouting } from './sa-users.routing';
-import { IntegrationsRouting } from './telegram.routing';
+import { TelegramRouting } from './telegram.routing';
 import { AuthUsersRouting } from './users.routing';
 
 export class ApiRouting implements RoutingInterface {
@@ -20,7 +21,11 @@ export class ApiRouting implements RoutingInterface {
   posts: PostsRouting;
   users: AuthUsersRouting;
   bloggerUsers: BloggerUsersRouting;
-  integrations: IntegrationsRouting;
+  integrations: {
+    telegram: TelegramRouting;
+    payments: PaymentsRouting;
+  };
+
   constructor() {
     this.questions = new QuizQuestionsRouting();
     this.pairs = new QuizPairsRouting();
@@ -32,7 +37,10 @@ export class ApiRouting implements RoutingInterface {
     this.posts = new PostsRouting(RouterPaths.posts);
     this.users = new AuthUsersRouting(RouterPaths.auth);
     this.bloggerUsers = new BloggerUsersRouting(RouterPaths.bloggerUsers);
-    this.integrations = new IntegrationsRouting();
+    this.integrations = {
+      telegram: new TelegramRouting(),
+      payments: new PaymentsRouting(),
+    };
   }
 }
 
@@ -42,5 +50,8 @@ export interface RoutingInterface {
   SABlogs: BlogsRouting;
   questions: QuizQuestionsRouting;
   pairs: QuizPairsRouting;
-  integrations: IntegrationsRouting;
+  integrations: {
+    telegram: TelegramRouting;
+    payments: PaymentsRouting;
+  };
 }

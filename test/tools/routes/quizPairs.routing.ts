@@ -1,4 +1,4 @@
-import { RouterPaths } from '../helpers/routing';
+import { RouterPaths } from '../../../src/infra/utils/routing';
 
 export class QuizPairsRouting {
   constructor(private readonly baseUrl = RouterPaths.quiz) {}

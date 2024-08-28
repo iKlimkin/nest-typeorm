@@ -2,14 +2,12 @@ import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { DataSource } from 'typeorm';
 import { OutputId } from '../../../../domain/output.models';
 import { runInTransaction } from '../../../../domain/transaction-wrapper';
-import { TelegramAdapter } from '../../../../infra/adapters/telegram.adapter';
 import { LayerNoticeInterceptor } from '../../../../infra/utils/interlay-error-handler.ts/error-layer-interceptor';
 import { BlogService } from '../../../blogs/application/blog.service';
-import { IntegrationsRepository } from '../../../integrations/infrastructure/integrations.repository';
+import { NotifySubscribersEvent } from '../../../integrations/telegram/application/events/created-post-notify.event';
 import { Post } from '../../domain/entities/post.entity';
 import { PostsRepository } from '../../infrastructure/posts.repository';
 import { CreatePostCommand } from './commands/create-post.command';
-import { NotifySubscribersEvent } from '../../../blogs/application/events/created-post-notify.event';
 
 @CommandHandler(CreatePostCommand)
 export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
@@ -17,8 +15,6 @@ export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
     private postsRepo: PostsRepository,
     private dataSource: DataSource,
     private blogService: BlogService,
-    private integrationsRepo: IntegrationsRepository,
-    private tgAdapter: TelegramAdapter,
     private eventBus: EventBus,
   ) {}
 
@@ -30,8 +26,10 @@ export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
 
     return runInTransaction(dataSource, async (manager) => {
       const notice = new LayerNoticeInterceptor<OutputId | null>();
-      const blogServiceNotice =
-        await this.blogService.validateBlogAndUserRights(blogId, userId);
+      const blogServiceNotice = await this.blogService.ensureUserHasBlogAccess(
+        blogId,
+        userId,
+      );
 
       if (blogServiceNotice.hasError)
         return blogServiceNotice as LayerNoticeInterceptor<null>;
@@ -50,5 +48,4 @@ export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
       return notice;
     });
   }
-
 }

@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { CreateTgDto } from '../dto/create-tg.dto';
 import { UpdateTgDto } from '../dto/update-tg.dto';
 
-
 @Injectable()
 export class TgService {
   create(createTgDto: CreateTgDto) {

@@ -6,7 +6,7 @@ export * from '../features/posts/api/controllers/posts.controller';
 export * from '../app.controller';
 export * from '../features/quiz/api/controllers/pair-game-quiz.controller';
 export * from '../features/quiz/api/controllers/quiz-questions.controller';
-export * from '../features/integrations/api/controllers/telegram.controller';
+export * from '../features/integrations/telegram/api/controllers/telegram.controller';
 
 export * from '../data-testing/test.db.repo';
 export * from '../infra/decorators/validate/is-valid-blogId';

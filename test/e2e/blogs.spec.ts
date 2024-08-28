@@ -1,7 +1,7 @@
 import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { configureTestSetup } from '../tools/fixtures/setup-environment';
-import { RouterPaths } from '../tools/helpers/routing';
+import { RouterPaths } from '../../src/infra/utils/routing';
 import {
   BloggerBlogsTestManager,
   BlogTestManager,
@@ -12,9 +12,10 @@ import { PostsTestManager } from '../tools/managers/PostsTestManager';
 import { SATestManager } from '../tools/managers/SATestManager';
 import { UsersTestManager } from '../tools/managers/UsersTestManager';
 import { aDescribe } from '../tools/utils/aDescribe';
-import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
+import { cleanDatabase, clearDB } from '../tools/utils/dataBaseCleanup';
 import { initSettings } from '../tools/utils/initSettings';
 import { e2eTestNamesEnum, skipSettings } from '../tools/utils/testsSettings';
+import { MembershipPlansSeeder } from '../tools/utils/MembershipPlansSeeder';
 
 aDescribe(skipSettings.for(e2eTestNamesEnum.blogs))(
   'BlogsController (e2e)',
@@ -28,6 +29,7 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.blogs))(
     let saTestManager: SATestManager;
     let saBlogTestManager: SABlogsTestManager;
     let postTestManager: PostsTestManager;
+    let membershipBlogSeeder: MembershipPlansSeeder;
 
     beforeAll(async () => {
       const testSettings = await initSettings();
@@ -37,6 +39,7 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.blogs))(
       dataSource = testSettings.testingAppModule.get(DataSource);
       const { createTestManager } = new BlogTestManager(app);
       const createManager = createTestManager.bind(new BlogTestManager(app));
+      membershipBlogSeeder = new MembershipPlansSeeder(dataSource);
 
       const apiRouting = testSettings.apiRouting;
       saTestManager = new SATestManager(app, apiRouting.SAUsers);
@@ -202,6 +205,63 @@ aDescribe(skipSettings.for(e2eTestNamesEnum.blogs))(
           null,
           HttpStatus.NOT_FOUND,
         );
+      });
+    });
+    describe(`GET blogs with membership logic`, () => {
+      beforeAll(async () => {
+        await configureTestSetup(
+          () => ({
+            usersTestManager,
+            bloggerTestManager,
+          }),
+          { posts: true },
+        );
+      });
+
+      afterAll(async () => {
+        // await clearDB(dataSource);
+      });
+
+      it('seed membershipBlogPlans for blogByFirstToken', async () => {
+        const { blogByFirstToken, secondPlayerToken } = expect.getState();
+        const secondUserProfile = await usersTestManager.me(
+          null,
+          secondPlayerToken,
+        );
+
+        await membershipBlogSeeder.run(
+          secondUserProfile.userId,
+          blogByFirstToken.id,
+        );
+      });
+
+      it(`get blogById`, async () => {
+        const {
+          postByFirstToken,
+          blogByFirstToken,
+          firstPlayerToken,
+          secondPlayerToken,
+        } = expect.getState();
+
+        const blog = await publicBlogsManager.getPublicBlog(
+          blogByFirstToken.id,
+          secondPlayerToken,
+        );
+        expect(blog.isMembership).toBeTruthy();
+      });
+      it('get blogs', async () => {
+        const { blogByFirstToken, secondPlayerToken } = expect.getState();
+
+        const { items: blogs } = await publicBlogsManager.getPublicBlogs(
+          secondPlayerToken,
+        );
+        blogs.forEach((b) => {
+          if (b.id === blogByFirstToken.id) {
+            expect(b.isMembership).toBeTruthy();
+          } else {
+            expect(b.isMembership).toBeFalsy();
+          }
+        });
       });
     });
   },

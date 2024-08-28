@@ -1,7 +1,6 @@
 import { CommentsViewModel } from '../../../src/features/comments/api/controllers';
 import { PostViewModelType } from '../../../src/features/posts/api/models/post.view.models/post-view-model.type';
 import { BloggerBlogsTestManager } from '../managers/BlogsTestManager';
-import { FeedbacksTestManager } from '../managers/FeedbacksTestManager';
 import { PostsTestManager } from '../managers/PostsTestManager';
 import { UsersTestManager } from '../managers/UsersTestManager';
 

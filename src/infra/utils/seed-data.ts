@@ -39,7 +39,6 @@ const seedUsers = async (dataSource: DataSource) => {
   const user1 = new UserAccount();
   user1.login = 'login';
   user1.email = 'email@example.com';
-  user1.password_salt = 'salt';
   user1.password_hash = 'hash';
   user1.confirmation_code = '123';
   user1.confirmation_expiration_date = expirationDate;
@@ -48,7 +47,6 @@ const seedUsers = async (dataSource: DataSource) => {
   const user2 = new UserAccount();
   user2.login = 'user2';
   user2.email = 'user2@example.com';
-  user2.password_salt = 'salt2';
   user2.password_hash = 'hash2';
   user2.confirmation_code = '1234';
   user2.confirmation_expiration_date = expirationDate;
@@ -57,7 +55,6 @@ const seedUsers = async (dataSource: DataSource) => {
   const user3 = new UserAccount();
   user3.login = 'user3';
   user3.email = 'user3@example.com';
-  user3.password_salt = 'salt3';
   user3.password_hash = 'hash3';
   user3.confirmation_code = '12345';
   user3.confirmation_expiration_date = expirationDate;
@@ -66,7 +63,6 @@ const seedUsers = async (dataSource: DataSource) => {
   const user4 = new UserAccount();
   user4.login = 'login_user4';
   user4.email = 'user4@example.com';
-  user4.password_salt = 'salt4';
   user4.password_hash = 'hash4';
   user4.confirmation_code = '123456';
   user4.confirmation_expiration_date = expirationDate;
@@ -75,7 +71,6 @@ const seedUsers = async (dataSource: DataSource) => {
   const user5 = new UserAccount();
   user5.login = 'login_user5';
   user5.email = 'user5@example.com';
-  user5.password_salt = 'salt5';
   user5.password_hash = 'hash5';
   user5.confirmation_code = '123556';
   user5.confirmation_expiration_date = expirationDate;
@@ -98,7 +93,6 @@ const seedBlogs = async (dataSource: DataSource) => {
       blog.title = `Blog ${j}`;
       blog.description = `Description for Blog${j}`;
       blog.websiteUrl = `https://example${j}.com/blog${j}`;
-      blog.isMembership = false;
 
       doPush(blog);
     }

@@ -23,8 +23,10 @@ export class UpdateBlogUseCase implements ICommandHandler<UpdateBlogCommand> {
     const { blogId, description, name, websiteUrl, userId } = command.data;
     return runInTransaction(this.dataSource, async (manager) => {
       const notice = new LayerNoticeInterceptor<boolean>();
-      const blogServiceNotice =
-        await this.blogService.validateBlogAndUserRights(blogId, userId);
+      const blogServiceNotice = await this.blogService.ensureUserHasBlogAccess(
+        blogId,
+        userId,
+      );
 
       if (blogServiceNotice.hasError)
         return blogServiceNotice as LayerNoticeInterceptor;

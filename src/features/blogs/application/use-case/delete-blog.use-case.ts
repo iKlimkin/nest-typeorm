@@ -26,7 +26,7 @@ export class DeleteBlogUseCase implements ICommandHandler<DeleteBlogCommand> {
     return runInTransaction(dataSource, async (manager) => {
       const notice = new LayerNoticeInterceptor<boolean>();
 
-      const blogServiceNotice = await blogService.validateBlogAndUserRights(
+      const blogServiceNotice = await blogService.ensureUserHasBlogAccess(
         blogId,
         userId,
       );
@@ -34,7 +34,7 @@ export class DeleteBlogUseCase implements ICommandHandler<DeleteBlogCommand> {
       if (blogServiceNotice.hasError) return blogServiceNotice as any;
 
       const result = await blogsRepo.deleteBlog(blogId, manager);
-      
+
       if (!result) {
         notice.addError(
           `Couldn't delete blog`,

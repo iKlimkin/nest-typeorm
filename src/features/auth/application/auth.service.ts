@@ -10,13 +10,24 @@ import { UserSessionDto } from '../../security/api/models/security-input.models/
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ConfigurationType } from '../../../settings/config/configuration';
+import { CaptureAdapter } from '../../../infra/adapters/capture.adapter';
 
 @Injectable()
 export class AuthService {
+  private jwtConfig: ConfigurationType['jwtSettings'];
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService<ConfigurationType>,
-  ) {}
+    private captureAdapter: CaptureAdapter,
+  ) {
+    this.jwtConfig = this.configService.get('jwtSettings', {
+      infer: true,
+    });
+  }
+
+  async validateCaptureToken(token: string) {
+    return this.captureAdapter.isValid(token);
+  }
 
   async createTokenPair(userId: string): Promise<JwtTokens> {
     const deviceId = uuidv4();
@@ -65,17 +76,13 @@ export class AuthService {
   private async createNewTokens(
     payload: UserSessionDto,
   ): Promise<[accessToken: string, refreshToken: string]> {
-    const jwtConfig = this.configService.get('jwtSettings', {
-      infer: true,
-    });
-
     return Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: jwtConfig.ACCESS_TOKEN_SECRET,
+        secret: this.jwtConfig.ACCESS_TOKEN_SECRET,
         expiresIn: '10h',
       }),
       this.jwtService.signAsync(payload, {
-        secret: jwtConfig.REFRESH_TOKEN_SECRET,
+        secret: this.jwtConfig.REFRESH_TOKEN_SECRET,
         expiresIn: '20h',
       }),
     ]);

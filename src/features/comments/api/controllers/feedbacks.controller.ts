@@ -26,7 +26,7 @@ import {
   UpdateCommentReactionCommand,
   UserSessionDto,
 } from '.';
-import { RouterPaths } from '../../../../../test/tools/helpers/routing';
+import { RouterPaths } from '../../../../infra/utils/routing';
 
 @Controller(RouterPaths.comments)
 export class FeedbacksController {

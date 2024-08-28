@@ -31,6 +31,7 @@ export const sortingKeys = Object.keys(convertSortBy);
 
 export const sortingConstraints = {
   sa: ['id', 'login', 'email', 'createdAt'],
+  userPayments: ['userId', 'userLogin', 'blogId', 'blogTitle'],
   quizQuestions: ['body', 'id', 'correctAnswers', 'published', 'updatedAt'],
   quizGames: [
     'id',
@@ -94,14 +95,10 @@ export abstract class BaseFilter {
 
   @IsOptional()
   @IsString()
-  // @Min(1)
-  // @Max(51)
   abstract pageSize: string;
 
   @IsOptional()
   @IsString()
-  // @Min(1)
-  // @Max(51)
   abstract pageNumber: string;
 
   @IsOptional()
@@ -121,6 +118,7 @@ export abstract class BaseFilter {
   searchContentTerm?: string;
 }
 
+export type PaginationResponseModel<T> = Promise<PaginationViewModel<T>>;
 
 export class PaginationViewModel<P> {
   public readonly pagesCount: number;

@@ -16,6 +16,6 @@ export type UploadMainImageDataType = {
 };
 
 export type CreateFileMetadataType = Omit<
-UploadBlogMainImageCommand,
+  UploadBlogMainImageCommand,
   'fileBuffer'
 > & { url: string; id: string };

@@ -1,22 +1,32 @@
-import { Column, Entity, ManyToOne } from 'typeorm';
-import { BaseEntity } from '../../../../domain/base-entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { UserAccount } from '../../../admin/domain/entities/user-account.entity';
-import { Blog } from './blog.entity';
 import { SubscribeEnum } from '../../api/models/output.blog.models/blog.view.model-type';
+import { Blog } from './blog.entity';
 
 @Entity()
-export class Subscription extends BaseEntity {
+export class BlogNotifySubscription {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
   @ManyToOne(() => UserAccount, (user) => user.subscriptions)
+  @JoinColumn()
   user: UserAccount;
 
   @Column()
   subscribeStatus: SubscribeEnum;
 
-  @ManyToOne(() => Blog, (blog) => blog.subscriptions)
+  @ManyToOne(() => Blog, (blog) => blog.notifySubscriptions)
+  @JoinColumn()
   blog: Blog;
 
-  static create(userId: string, blogId: string): Subscription {
-    const subscription = new Subscription();
+  static create(userId: string, blogId: string): BlogNotifySubscription {
+    const subscription = new BlogNotifySubscription();
     subscription.user = { id: userId } as UserAccount;
     subscription.blog = { id: blogId } as Blog;
     subscription.subscribeStatus = SubscribeEnum.Subscribed;

@@ -15,7 +15,7 @@ import { ApiRouting } from '../tools/routes/api.routing';
 import { aDescribe } from '../tools/utils/aDescribe';
 import { initSettings } from '../tools/utils/initSettings';
 import { e2eTestNamesEnum, skipSettings } from '../tools/utils/testsSettings';
-import { RouterPaths } from '../tools/helpers/routing';
+import { RouterPaths } from '../../src/infra/utils/routing';
 import { cleanDatabase } from '../tools/utils/dataBaseCleanup';
 import { configureTestSetup } from '../tools/fixtures/setup-environment';
 import { createExceptions } from '../tools/utils/exceptionHandlers';

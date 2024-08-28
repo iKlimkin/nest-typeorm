@@ -44,25 +44,21 @@ import {
   UpdateQuestionUseCase,
   ValidateIdPipe,
 } from '.';
+import { BlogService } from '../features/blogs/application/blog.service';
+import { BlogsCrudApiService } from '../features/blogs/application/services/blogs-crud-api.service';
 import { SubscribeBlogUseCase } from '../features/blogs/application/use-case/subscribe-blog.use-case';
 import { UnsubscribeBlogUseCase } from '../features/blogs/application/use-case/unSubscribe-blog.use-case';
 import { UploadBackgroundWallpaperUseCase } from '../features/blogs/application/use-case/upload-background-wallpaper.use-case';
 import { UploadBlogMainImageUseCase } from '../features/blogs/application/use-case/upload-blog-main-image.use-case';
 import { UploadPostMainImageUseCase } from '../features/blogs/application/use-case/upload-post-main-image.use-case';
 import { FilesQueryRepository } from '../features/files/api/query.repo/files.query.repository';
+import { FilesScheduleService } from '../features/files/application/services/file-metadata.schedule.service';
 import { FilesService } from '../features/files/application/services/file-metadata.service';
 import { FilesCrudApiService } from '../features/files/application/services/files-crud-api.service';
-import { SetWebhookTelegramBotUseCase } from '../features/integrations/application/use-cases/set-hook-telegram-bot.use-case';
-import { HandleTelegramUpdatesUseCase } from '../features/integrations/application/use-cases/telegram-updates-handle.use-case';
-import { TelegramAdapter } from '../infra/adapters/telegram.adapter';
-import { GenerateAuthLinkTelegramBotUseCase } from '../features/integrations/application/use-cases/generate-auth-link-telegram-bot.use-case';
-import { IntegrationsRepository } from '../features/integrations/infrastructure/integrations.repository';
-import { LinkUserToTelegramBotUseCase } from '../features/integrations/application/use-cases/link-user-to-telegram-bot.use-case';
-import { TelegramCrudApiService } from '../features/integrations/application/tg-for-webhook-update.service';
-import { BlogService } from '../features/blogs/application/blog.service';
-import { BlogsCrudApiService } from '../features/blogs/application/services/blogs-crud-api.service';
-import { NotifySubscribersEventHandler } from '../features/blogs/application/events/created-post-notify.event';
-import { FilesScheduleService } from '../features/files/application/services/file-metadata.schedule.service';
+import { CreateBlogMembershipPlansEventHandler } from '../features/blogs/application/events/create-blog-membership-plans.event-handler';
+import { JoinTheMembershipPlanUseCase } from '../features/blogs/application/use-case/join-membership-plan.use.case';
+import { GoogleStrategy } from '../features/auth/infrastructure/guards/strategies/google.strategy';
+import { GithubStrategy } from '../features/auth/infrastructure/guards/strategies/github.strategy';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -81,18 +77,9 @@ const filesProviders = [
   FilesScheduleService,
 ];
 
-const telegramProviders: Provider[] = [
-  SetWebhookTelegramBotUseCase,
-  HandleTelegramUpdatesUseCase,
-  GenerateAuthLinkTelegramBotUseCase,
-  IntegrationsRepository,
-  LinkUserToTelegramBotUseCase,
-  TelegramCrudApiService,
-];
+const adapters = [FilesStorageAdapter];
 
-const adapters = [FilesStorageAdapter, TelegramAdapter];
-
-const events = [NotifySubscribersEventHandler];
+const events = [];
 
 const postsProviders: Provider[] = [
   PostsRepository,
@@ -101,6 +88,8 @@ const postsProviders: Provider[] = [
   BlogPostsCrudApiService,
   PostCrudApiService,
 ];
+
+const googleGithubStrategies = [GoogleStrategy, GithubStrategy];
 
 const feedbacksProviders: Provider[] = [
   FeedbacksRepository,
@@ -116,7 +105,7 @@ const useCases: Provider[] = [
   UpdateBloggerPostUseCase,
   SubscribeBlogUseCase,
   UnsubscribeBlogUseCase,
-  HandleTelegramUpdatesUseCase,
+  JoinTheMembershipPlanUseCase,
 
   UploadBackgroundWallpaperUseCase,
   UploadBlogMainImageUseCase,
@@ -163,12 +152,8 @@ export const providers: Provider[] = [
   ...testProviders,
   ...quizProviders,
   ...filesProviders,
-  ...telegramProviders,
   ...events,
-  // BlogsQueryRepo,
-  // BlogIdExistConstraint,
+  ...googleGithubStrategies,
   IsValidAnswersConstraint,
   ValidateIdPipe,
-  TelegramAdapter,
-  // FileDimensionsValidationPipe,
 ];

@@ -85,7 +85,7 @@ export const authEventHandlers: Provider[] = [
   CreateUserAccountEventHandler,
 ];
 
-export const adapters: Provider[] = [BcryptAdapter, EmailManager, EmailAdapter];
+export const adapters: Provider[] = [BcryptAdapter];
 
 export const providers = [
   ...strategies,

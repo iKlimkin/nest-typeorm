@@ -7,7 +7,7 @@ import { e2eTestNamesEnum, skipSettings } from './tools/utils/testsSettings';
 
 aDescribe(skipSettings.for(e2eTestNamesEnum.app))('AppController (e2e)', () => {
   let app: INestApplication;
-  
+
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],

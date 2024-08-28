@@ -7,8 +7,8 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationError, useContainer } from 'class-validator';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from '../app.module';
-import { HttpExceptionFilter } from '../infra/exception.filter';
 import { swaggerSetup } from './config/swagger.setup';
+import { HttpExceptionFilter } from '../infra/filters/exception.filter';
 
 export const applyAppSettings = (app: INestApplication) => {
   app.use(cookieParser());

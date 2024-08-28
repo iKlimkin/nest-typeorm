@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -15,7 +16,6 @@ import {
   AccessTokenGuard,
   AuthQueryRepository,
   AuthService,
-  ClientInfo,
   ConfirmEmailCommand,
   CreateSessionCommand,
   CreateTemporaryAccountCommand,
@@ -46,6 +46,8 @@ import {
   UserSessionDto,
   RouterPaths,
 } from '.';
+import { ClientInfo } from '../models/auth-input.models.ts/client-info.type';
+import { UserCredentialsWithCaptureTokenDto } from '../models/auth-input.models.ts/verify-credentials.model';
 
 @Controller(RouterPaths.auth)
 export class AuthController {
@@ -62,7 +64,11 @@ export class AuthController {
     @CurrentUserInfo() userInfo: UserSessionDto,
     @GetClientInfo() clientInfo: ClientInfo,
     @Res({ passthrough: true }) res: Response,
+    @Body() body: UserCredentialsWithCaptureTokenDto,
   ) {
+    const isValid = this.authService.validateCaptureToken(body.recaptureToken);
+    if (!isValid) throw new BadRequestException('Invalid recapture token');
+
     const { accessToken, refreshToken } =
       await this.authService.createTokenPair(userInfo.userId);
 

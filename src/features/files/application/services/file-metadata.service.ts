@@ -61,7 +61,7 @@ export class FilesService {
     } = uploadImageDto;
 
     const entitiesId = { blogId, userId };
-    const validationNotice = await this.blogService.validateBlogAndUserRights(
+    const validationNotice = await this.blogService.ensureUserHasBlogAccess(
       blogId,
       userId,
     );

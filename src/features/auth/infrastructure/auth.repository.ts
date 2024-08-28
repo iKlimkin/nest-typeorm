@@ -209,7 +209,6 @@ export class AuthRepository {
           password_recovery_code: '',
           password_recovery_expiration_date: '',
           password_hash: passwordHash,
-          password_salt: passwordSalt,
         },
       );
 
