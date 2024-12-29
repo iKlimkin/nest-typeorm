@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Logger,
   Param,
   Post,
   Query,
@@ -9,21 +10,30 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import config from './settings/config/configuration';
+import config from '../settings/config/configuration';
 import { DataSource } from 'typeorm';
-import { seedAllData } from './infra/utils/seed-data';
-import { ConfigurationType } from './settings/config/configuration';
+import { seedAllData } from '../infra/utils/seed-data';
+import { ConfigurationType } from '../settings/config/configuration';
 import { Request } from 'express';
-import { GoogleOauthGuard } from './features/auth/infrastructure/guards/google-oauth.guard';
-import { GithubOauthGuard } from './features/auth/infrastructure/guards/github-oauth.guard';
-import { writeLogAsync } from './infra/utils/fs-utils';
+import { GoogleOauthGuard } from '../features/auth/infrastructure/guards/google-oauth.guard';
+import { GithubOauthGuard } from '../features/auth/infrastructure/guards/github-oauth.guard';
+import { writeLogAsync } from '../infra/utils/fs-utils';
+import { AppService } from './app.service';
 
 @Controller('app')
 export class AppController {
+  private readonly logger = new Logger(AppController.name);
   constructor(
     private readonly configService: ConfigService<ConfigurationType>,
     private readonly dataSource: DataSource,
+    private readonly appService: AppService,
   ) {}
+
+  @Get()
+  async sayHello() {
+    this.logger.log('GET HELLO');
+    this.appService.getHello()
+  }
 
   @Get('google/login')
   @UseGuards(GoogleOauthGuard)
@@ -83,10 +93,5 @@ export class AppController {
     console.log({ params, query, queryParams });
 
     // console.log({ appId, testId });
-  }
-
-  @Get()
-  async sayHello() {
-    return 'Hello World!';
   }
 }

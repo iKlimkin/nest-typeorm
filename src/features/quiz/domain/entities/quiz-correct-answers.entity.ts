@@ -15,9 +15,9 @@ export class QuizCorrectAnswer extends BaseEntity {
     const answers: QuizCorrectAnswer[] = [];
     const doPush = Array.prototype.push.bind(answers);
 
-    for (const correctAnswer of correctAnswers) {
+    for (const answer of correctAnswers) {
       const quizAnswer = new QuizCorrectAnswer();
-      quizAnswer.answerText = correctAnswer;
+      quizAnswer.answerText = answer;
       doPush(quizAnswer);
     }
 

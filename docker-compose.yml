@@ -1,29 +1,28 @@
 version: '3.8'
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: nestjs-app
-    env_file: .env
-    environment:
-      POSTGRES_HOST: db
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      APP_PORT: ${PORT}
-    ports:
-      - '1488:1488'
-    depends_on:
-      - db
-    volumes:
-      - ./src:/app/src
-    networks:
-      - nest-hub-docker-compose-network
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: nestjs-app
+  #   env_file: .env
+  #   environment:
+  #     POSTGRES_HOST: ${POSTGRES_HOST}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_PORT: ${POSTGRES_PORT}
+  #     APP_PORT: ${PORT}
+  #   ports:
+  #     - '1488:1488'
+  #   depends_on:
+  #     - db
+  #   volumes:
+  #     - ./src:/app/src
+  #   networks:
+  #     - nest-hub-docker-compose-network
 
   db:
-    image: postgres
-    container_name: postgres-db
-    restart: always
+    image: postgres:latest
+    container_name: nest-typeorm
     ports:
       - '2345:5432'
     environment:
@@ -35,20 +34,20 @@ services:
     networks:
       - nest-hub-docker-compose-network
 
-  ngrok:
-    image: ngrok/ngrok:latest
-    restart: unless-stopped
-    command:
-      - "start"
-      - "--all"
-      - "--config"
-      - "/etc/ngrok.yml"
-    volumes:
-      - ./ngrok.yml:/etc/ngrok.yml
-    ports:
-      - 4040:4040
-    networks:
-      - nest-hub-docker-compose-network
+  # ngrok:
+  #   image: ngrok/ngrok:latest
+  #   restart: unless-stopped
+  #   command:
+  #     - "start"
+  #     - "--all"
+  #     - "--config"
+  #     - "/etc/ngrok.yml"
+  #   volumes:
+  #     - ./ngrok.yml:/etc/ngrok.yml
+  #   ports:
+  #     - 4040:4040
+  #   networks:
+  #     - nest-hub-docker-compose-network
 
 networks:
   nest-hub-docker-compose-network:
@@ -56,3 +55,4 @@ networks:
 
 volumes:
   pgdata:
+    driver: local 

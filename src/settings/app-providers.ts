@@ -59,6 +59,7 @@ import { CreateBlogMembershipPlansEventHandler } from '../features/blogs/applica
 import { JoinTheMembershipPlanUseCase } from '../features/blogs/application/use-case/join-membership-plan.use.case';
 import { GoogleStrategy } from '../features/auth/infrastructure/guards/strategies/google.strategy';
 import { GithubStrategy } from '../features/auth/infrastructure/guards/strategies/github.strategy';
+import { AppService } from '../app/app.service';
 
 const testProviders: Provider[] = [TestDatabaseRepo];
 
@@ -156,4 +157,5 @@ export const providers: Provider[] = [
   ...googleGithubStrategies,
   IsValidAnswersConstraint,
   ValidateIdPipe,
+  AppService,
 ];

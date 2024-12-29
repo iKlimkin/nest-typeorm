@@ -44,9 +44,7 @@ export class QuizRepository {
         }),
       );
 
-      return {
-        questionId: savedQuestion.id,
-      };
+      return { questionId: savedQuestion.id };
     } catch (error) {
       console.log(error);
       return null;

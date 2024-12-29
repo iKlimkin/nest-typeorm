@@ -16,6 +16,8 @@ import { providers } from './settings/app-providers';
 import { entities } from './settings/entities';
 import { TypeOrmOptions } from './settings/typeorm-options';
 import { StaticModule } from './static/static.module';
+import { LoggerModule } from './logger/logger.module';
+import { AppService } from './app/app.service';
 
 @Module({
   imports: [
@@ -33,11 +35,13 @@ import { StaticModule } from './static/static.module';
     PaymentModule,
     TelegramModule,
     RecaptchaModule,
+    LoggerModule,
   ],
   controllers,
   providers: [
     ...providers,
     { provide: FilesStorageAdapter, useClass: S3FilesStorageAdapter },
+    AppService,
   ],
 })
 export class AppModule {}

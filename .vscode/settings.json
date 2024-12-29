@@ -14,5 +14,7 @@
     "Unsub",
     "webmoney"
   ],
-  "prettier.configPath": "C:\\Users\\ghbro\\Project\\nest-typeorm\\.prettierrc"
+  "prettier.configPath": "C:\\Users\\ghbro\\Project\\nest-typeorm\\.prettierrc",
+  "editor.tabSize": 2,
+  "window.zoomLevel": 1
 }

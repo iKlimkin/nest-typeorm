@@ -38,18 +38,19 @@ export class ConnectPlayerUseCase
     try {
       return runInTransaction(this.dataSource, async (manager) => {
         const user = await this.usersRepo.getUserById(userId);
-        const pairToConnect = await quizRepo.getPendingPair(manager);
+        const notificationResult = await quizRepo.getPendingPair(manager);
 
-        if (pairToConnect.hasError || !user) {
+        if (notificationResult.hasError || !user) {
           notice.addError(
-            !pairToConnect.data
-              ? pairToConnect.errorMessage || 'No pending pairs'
+            !notificationResult.data
+              ? notificationResult.errorMessage || 'No pending pairs'
               : 'User not found',
             location,
             GetErrors.NotFound,
           );
           return notice;
         }
+        const { data: pendingGame } = notificationResult
 
         const secondPlayerProgress = QuizPlayerProgress.create(user);
 
@@ -58,7 +59,7 @@ export class ConnectPlayerUseCase
           manager,
         );
 
-        const createdConnectionToQuiz = pairToConnect.data.createConnection({
+        const createdConnectionToQuiz = pendingGame.createConnection({
           secondPlayerProgress: savedProgress,
           playerId: userId,
         });
@@ -79,7 +80,7 @@ export class ConnectPlayerUseCase
 
         const questions = await quizRepo.getFiveRandomQuestions(manager);
 
-        if (questions.data.length !== 5) {
+        if (questions.data.length < 5) {
           notice.addError(
             questions.errorMessage || 'No questions in db',
             location,

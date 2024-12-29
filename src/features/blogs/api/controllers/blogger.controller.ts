@@ -132,15 +132,6 @@ export class BloggerController {
     @Param('id') blogId: string,
     @CurrentUserInfo() userInfo: UserSessionDto,
     @UploadedFile(
-      // new ParseFilePipe({
-      //   validators: [
-      //     new FileDimensionsValidationPipe({
-      //       imageHeight: 312,
-      //       imageWidth: 1028,
-      //       fileTypes: ['image/jpeg', 'image/png', 'image/jpg'],
-      //     }),
-      //   ],
-      // }),
       new FileDimensionsValidationPipe({
         imageHeight: 312,
         imageWidth: 1028,

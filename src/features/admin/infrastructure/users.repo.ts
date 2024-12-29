@@ -97,7 +97,6 @@ export class UsersRepository {
     try {
       const user = await this.userAccounts.findOne({ where: { email } });
       console.log('user findOne', {user});
-      return null
       return await this.userAccounts.findOneBy({ email });
     } catch (error) {
       console.log(`error in findUserByEmail: ${error}`);

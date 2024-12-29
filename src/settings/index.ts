@@ -3,7 +3,7 @@ export * from '../features/blogs/api/controllers/blogger.controller';
 export * from '../features/blogs/api/controllers/sa-blogs.controller';
 export * from '../features/comments/api/controllers/feedbacks.controller';
 export * from '../features/posts/api/controllers/posts.controller';
-export * from '../app.controller';
+export * from '../app/app.controller';
 export * from '../features/quiz/api/controllers/pair-game-quiz.controller';
 export * from '../features/quiz/api/controllers/quiz-questions.controller';
 export * from '../features/integrations/telegram/api/controllers/telegram.controller';
